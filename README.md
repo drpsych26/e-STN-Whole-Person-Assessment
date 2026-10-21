@@ -8,7 +8,9 @@ Open `prototype/index.html` from the repository to inspect the tablet-friendly b
 
 ## Intended workflow
 
-Dashboard → Client & Consent → Whole Person Screening → Safety Gate → Integrated Results → Clinical Review → Whole-Person Care Plan → Report.
+Initial Assessment: Dashboard → Client & Consent → Whole Person Screening → Safety Gate → Integrated Results → Clinical Review → Whole-Person Care Plan → Report.
+
+Second-stage assessment: Clinical Follow-Up & Diagnostic Formulation, opened after the Initial Assessment for additional chronology, MSE, diagnostic-domain evidence review, differential considerations, 5Ps + Te Whare Tapa Whā formulation, clinician-led diagnostic indication statuses and care planning.
 
 ## Current implementation
 
