@@ -12,6 +12,12 @@ Initial Assessment: Dashboard → Client & Consent → Whole Person Screening �
 
 Second-stage assessment: Clinical Follow-Up & Diagnostic Formulation, opened after the Initial Assessment for additional chronology, MSE, diagnostic-domain evidence review, differential considerations, 5Ps + Te Whare Tapa Whā formulation, clinician-led diagnostic indication statuses and care planning.
 
+## Assessment modules
+
+- `prototype/index.html` — Whole Person Initial Assessment.
+- `prototype/follow-up-assessment.html` — second-stage Clinical Follow-Up & Diagnostic Formulation Assessment.
+- Both are designed to adapt to phone and tablet screens. The follow-up module is linked from the Initial Assessment navigation.
+
 ## Current implementation
 
 - Responsive browser-based demonstration interface.
