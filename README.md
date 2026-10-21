@@ -1,27 +1,43 @@
-# STN Whole Person Assessment — Digital Prototype
+# STN Whole Person Initial Assessment — Digital Prototype
 
-This private repository is the home for the Supportive Therapy Network (STN) Whole Person Initial Assessment digital prototype and its supporting technical pack.
+Private project repository for Supportive Therapy Network Limited (STN).
+
+## Current prototype
+
+Open `prototype/index.html` from the repository to inspect the tablet-friendly browser demonstration. GitHub's normal file viewer displays the source rather than running it. For local testing, download the HTML file and open it in a modern browser.
 
 ## Intended workflow
 
-Dashboard → New Client → Whole Person Initial Assessment → Safety Gate → Adaptive Routing → Selected Assessments → Integrated Results → Clinical Review → Diagnostic Decision Support → Whole-Person Care Plan → Finalise → Report.
+Dashboard → Client & Consent → Whole Person Screening → Safety Gate → Integrated Results → Clinical Review → Whole-Person Care Plan → Report.
 
-## Prototype status
+## Current implementation
 
-The browser prototype is a development demonstration, not a production-ready or clinically validated diagnostic system. Prototype questions and scores must not be represented as validated instruments or used alone to diagnose, triage, or make treatment decisions. A qualified clinician must determine risk disposition, diagnosis, and treatment.
+- Responsive browser-based demonstration interface.
+- Client intake and consent field capture.
+- Illustrative screening items with local progress and domain summaries.
+- Separate safety screen with positive responses flagged for clinician review.
+- Clinical review, formulation, care-plan and follow-up fields.
+- Printable assessment summary.
+- Local browser storage for demonstration only.
 
-Before real-client use, implement authentication, role-based access, encryption, server-side audit trails, backups, privacy notices, consent, retention/deletion controls, and security testing. Replace demonstration content with approved/licensed instruments and governed scoring rules, and validate safety escalation and adaptive routing with qualified clinicians.
+## Important status notice
 
-## Privacy
+This is a development prototype, not a production-ready or clinically validated diagnostic system. Demonstration questions and scores are not validated instruments. Do not use this tool alone to diagnose, triage, determine emergency disposition, or make treatment decisions. Do not enter real or identifiable client information.
 
-Keep this repository private. Do not commit real client information, credentials, API keys, private keys, production database exports, or identifiable clinical records. A private GitHub repository is still hosted by GitHub and is not offline-only storage.
+The repository currently contains a browser demonstration and selected project/governance documents. The complete supplied reference HTML files and Flutter ZIP packs have **not yet been imported** into this repository. This repository must not be treated as the full STN project handover until those original assets are added and checked.
 
-## Planned structure
+## Production gates
 
-- `prototype/` — tablet-friendly browser workflow
-- `flutter/` — supplied Flutter MVP/coding packs
-- `reference/` — paper assessment, specifications, and New Zealand production requirements
+Before real-client use, implement and approve:
+- authenticated clinician access and role-based permissions;
+- secure backend persistence, encryption and auditable access/change events;
+- privacy notices, consent, access/correction, retention and disposal workflows;
+- human-led safety escalation and documented crisis response;
+- approved/licensed instruments and governed scoring rules;
+- clinical governance, regression testing, UAT, security testing and recovery plans.
 
-## Current import note
+See `reference/PRODUCTION-NZ-REQUIREMENTS.md`, `reference/DEPLOYMENT-CHECKLIST.md`, `reference/MASTER_SPEC.md`, and `SECURITY.md`.
 
-The repository is being populated from the approved STN Digital Prototype GitHub Pack. The full reference pack and Flutter archives must be transferred and checked before this repository is considered a complete project import.
+## Privacy and repository access
+
+Keep this repository private while the project is being developed. Never commit real client records, credentials, API keys, private keys, or identifiable health information. A private GitHub repository is still hosted by GitHub; it is not offline-only storage.
