@@ -28,6 +28,20 @@ Second-stage assessment: Clinical Follow-Up & Diagnostic Formulation, opened aft
 - Printable assessment summary.
 - Local browser storage for demonstration only.
 
+## Latest verification update — 26 October 2026
+
+The prototype source has received a narrow safety/quality patch:
+- User-entered values rendered in the assessment report are HTML-escaped.
+- Client and assessment fields now have explicit restore mappings so the stored client name is mapped back to the correct form control.
+
+These changes were committed and the updated inline JavaScript passed a syntax parse in the available tool environment; the HTML-escaping helper was also exercised with a script-tag payload. This is not an end-to-end browser test. The browser execution environment blocked local/localhost page loading, and Flutter/Dart SDKs were unavailable, so browser workflow tests and Flutter build/test remain outstanding.
+
+See:
+- `reference/EXECUTION-VERIFICATION-2026-10-26.md`
+- `reference/ADDITIONAL-STATIC-CHECK-RESULTS-2026-10-26.md`
+
+The project remains **HOLD — private development only**. Do not enter real client data. No clinical validation or production security approval is implied.
+
 ## Important status notice
 
 This is a development prototype, not a production-ready or clinically validated diagnostic system. Demonstration questions and scores are not validated instruments. Do not use this tool alone to diagnose, triage, determine emergency disposition, or make treatment decisions. Do not enter real or identifiable client information.
