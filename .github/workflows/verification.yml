@@ -1,0 +1,74 @@
+name: STN verification
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prototype-static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check prototype inline JavaScript syntax
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const file = 'prototype/index.html';
+          if (!fs.existsSync(file)) throw new Error(`Missing ${file}`);
+          const html = fs.readFileSync(file, 'utf8');
+          const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
+            .map(m => m[1].trim()).filter(Boolean);
+          if (!scripts.length) throw new Error('No inline JavaScript found');
+          scripts.forEach((src, i) => new vm.Script(src, {filename: `${file}:inline-script-${i+1}`}));
+          console.log(`PASS: parsed ${scripts.length} inline script(s) in ${file}`);
+          NODE
+      - name: Check imported HTML source JavaScript when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(reference/source-html/*.html)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::warning::Original source HTML has not yet been imported to reference/source-html; source fidelity remains unverified."
+            exit 0
+          fi
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const path = require('path');
+          const files = fs.readdirSync('reference/source-html').filter(f => f.toLowerCase().endsWith('.html'));
+          let count = 0;
+          for (const name of files) {
+            const file = path.join('reference/source-html', name);
+            const html = fs.readFileSync(file, 'utf8');
+            const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
+              .map(m => m[1].trim()).filter(Boolean);
+            scripts.forEach((src, i) => new vm.Script(src, {filename: `${file}:inline-script-${i+1}`}));
+            count += scripts.length;
+            console.log(`PASS: ${file} (${scripts.length} inline script(s))`);
+          }
+          console.log(`PASS: parsed ${count} imported inline script(s)`);
+          NODE
+      - name: Verify Flutter source when present
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          projects=(flutter/source/*/pubspec.yaml)
+          if [ ${#projects[@]} -eq 0 ]; then
+            echo "::warning::Extracted Flutter source is not present at flutter/source/*; Flutter build gate remains open."
+            exit 0
+          fi
+          echo "Flutter project(s) found:"
+          printf '%s\n' "${projects[@]}"
+          echo "::notice::Flutter SDK setup and pub get/analyze/test/build are intentionally deferred until a verified project root and SDK constraints are documented."
+          exit 0
