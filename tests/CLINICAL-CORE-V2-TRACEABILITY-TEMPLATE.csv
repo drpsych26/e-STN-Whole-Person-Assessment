@@ -1,0 +1,21 @@
+requirement_id,domain,source_file,source_version,source_locator,exact_source_text_or_rule,implementation_locator,test_case_id,expected_result,observed_result,evidence_link,reviewer,approval_status
+SRC-001,Source authority,Clinical Core v2,2,,Authoritative baseline,,TC-SRC-001,Clinical Core v2 designated source of truth,,,,OPEN
+SRC-002,Question wording,Approved paper pilot,approved version,,Exact wording and order preserved,,TC-SRC-002,Exact text and sequence match,,,,OPEN
+SCALE-001,Response scales,Clinical Core v2,2,,Each question uses its specified response scale,,TC-SCALE-001,Response options and values match source,,,,OPEN
+SCORE-001,Scoring,Clinical Core v2,2,,Instrument-specific scoring rules,,TC-SCORE-001,Golden-case score matches approved rule,,,,OPEN
+CUT-001,Cutoffs,Instrument source/licence,approved version,,Published cutoffs and version provenance,,TC-CUT-001,Cutoff output matches licensed source,,,,OPEN
+SAFE-001,Safety gate,Clinical Core v2,2,,Safety endorsement is not masked by total score,,TC-SAFE-001,Positive or uncertain response raises required review flag,,,,OPEN
+SAFE-002,Escalation,Approved safety SOP,approved version,,Human response owner and escalation procedure,,TC-SAFE-002,Scenario routes to documented human response,,,,OPEN
+ROUTE-001,Adaptive routing,Clinical Core v2,2,,Conditional module routing,,TC-ROUTE-001,Selected modules match source rules,,,,OPEN
+RESULT-001,Integrated results,Clinical Core v2,2,,Separate raw response, computed result and interpretation,,TC-RESULT-001,Report labels each layer clearly,,,,OPEN
+DIAG-001,Decision support,Clinical Core v2,2,,No autonomous diagnosis,,TC-DIAG-001,Software does not finalize diagnosis without clinician review,,,,OPEN
+CARE-001,Whole-person care plan,Clinical Core v2,2,,Care plan fields and referral considerations,,TC-CARE-001,Required fields and safeguards present,,,,OPEN
+FINAL-001,Finalisation,Clinical Core v2,2,,Finalised records immutable except controlled addendum,,TC-FINAL-001,Edits require authorised addendum with audit metadata,,,,OPEN
+AUTH-001,Authentication,Security architecture,approved version,,Authentication and session controls,,TC-AUTH-001,Unauthenticated request denied,,,,OPEN
+RBAC-001,Role access,Security architecture,approved version,,Least privilege by role,,TC-RBAC-001,Unauthorized role action denied,,,,OPEN
+AUDIT-001,Audit logging,Security architecture,approved version,,Record access and mutation audit trail,,TC-AUDIT-001,Events are attributable and tamper-evident,,,,OPEN
+PRIV-001,Privacy,PIA and NZ legal review,approved version,,Purpose limitation, consent, retention, access/correction and disposal,,TC-PRIV-001,Controls match signed policies,,,,OPEN
+LIC-001,Licensing,Instrument register,approved version,,Permission to reproduce, score and distribute each instrument,,TC-LIC-001,No instrument used beyond documented rights,,,,OPEN
+OFF-001,Offline mode,Product requirements,approved version,,Offline safety, synchronization and conflict behavior,,TC-OFF-001,No silent data loss or unsafe status claim,,,,OPEN
+ACC-001,Accessibility,Accessibility test plan,approved version,,Keyboard, screen-reader, contrast and tablet usability,,TC-ACC-001,Acceptance criteria pass,,,,OPEN
+PILOT-001,Supervised pilot,Approved protocol,approved version,,Consent, eligibility, monitoring and stop criteria,,TC-PILOT-001,Pilot starts only after all required approvals,,,,OPEN
