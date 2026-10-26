@@ -63,3 +63,12 @@ See `reference/PRODUCTION-NZ-REQUIREMENTS.md`, `reference/DEPLOYMENT-CHECKLIST.m
 ## Privacy and repository access
 
 Keep this repository private while the project is being developed. Never commit real client records, credentials, API keys, private keys, or identifiable health information. A private GitHub repository is still hosted by GitHub; it is not offline-only storage.
+
+
+## Branding and consolidated source update — 26 October 2026
+
+The browser prototype now uses the STN purple/black/white palette (accent `#AF2CFF`), dark panels, and a Manrope-first sans-serif stack. This is a visual branding update to the repository prototype; it does not establish that the original uploaded logo asset or all locally supplied HTML/Flutter archives are stored in GitHub.
+
+A consolidated local review package is available from the working session as `STN_MASTER_CONSOLIDATED_PRIVATE.zip`. It preserves supplied HTML versions and Flutter v2/v3/v4 packs separately with a SHA-256 source inventory. Those local archives still need a deliberate repository asset-import step; this commit does not claim that binary ZIPs have been uploaded to GitHub.
+
+**Release remains on hold for real-client use.** Keep this repository private. No public deployment, copyright assignment, clinical validation, or production security approval is implied.
