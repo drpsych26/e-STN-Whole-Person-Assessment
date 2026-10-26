@@ -12,6 +12,8 @@ permissions:
 jobs:
   prototype-static-checks:
     runs-on: ubuntu-latest
+    outputs:
+      flutter_source_present: ${{ steps.flutter-check.outputs.present }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,7 +27,7 @@ jobs:
           const file = 'prototype/index.html';
           if (!fs.existsSync(file)) throw new Error(`Missing ${file}`);
           const html = fs.readFileSync(file, 'utf8');
-          const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)]
+          const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
             .map(m => m[1].trim()).filter(Boolean);
           if (!scripts.length) throw new Error('No inline JavaScript found');
           scripts.forEach((src, i) => new vm.Script(src, {filename: `${file}:inline-script-${i+1}`}));
@@ -50,7 +52,7 @@ jobs:
           for (const name of files) {
             const file = path.join('reference/source-html', name);
             const html = fs.readFileSync(file, 'utf8');
-            const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)]
+            const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
               .map(m => m[1].trim()).filter(Boolean);
             scripts.forEach((src, i) => new vm.Script(src, {filename: `${file}:inline-script-${i+1}`}));
             count += scripts.length;
@@ -58,18 +60,47 @@ jobs:
           }
           console.log(`PASS: parsed ${count} imported inline script(s)`);
           NODE
-      - name: Verify Flutter source when present
+      - name: Detect Flutter source
+        id: flutter-check
+        shell: bash
+        run: |
+          shopt -s nullglob
+          projects=(flutter/source/*/pubspec.yaml)
+          if [ ${#projects[@]} -eq 0 ]; then
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Flutter source not imported into repository; Flutter verification remains blocked."
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            printf 'Found Flutter project: %s\n' "${projects[@]}"
+          fi
+
+  flutter-build-tests:
+    needs: prototype-static-checks
+    if: needs.prototype-static-checks.outputs.flutter_source_present == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Analyze, test, and build each Flutter project
         shell: bash
         run: |
           set -euo pipefail
           shopt -s nullglob
           projects=(flutter/source/*/pubspec.yaml)
-          if [ ${#projects[@]} -eq 0 ]; then
-            echo "::warning::Extracted Flutter source is not present at flutter/source/*; Flutter build gate remains open."
-            exit 0
-          fi
-          echo "Flutter project(s) found:"
-          printf '%s\\n' "${projects[@]}"
-          echo "::notice::Flutter project found; running Flutter verification."
-    outputs:
-      flutter_source_present: ${{ steps.flutter-check.outputs.present }}
+          for pubspec in "${projects[@]}"; do
+            project="$(dirname "$pubspec")"
+            echo "=== Verifying $project ==="
+            cd "$GITHUB_WORKSPACE/$project"
+            if [ ! -d android ]; then
+              flutter create --platforms=android .
+            fi
+            flutter pub get
+            dart format --output=none --set-exit-if-changed lib test
+            flutter analyze
+            flutter test
+            flutter build apk --debug
+            cd "$GITHUB_WORKSPACE"
+          done
