@@ -25,7 +25,7 @@ jobs:
           const file = 'prototype/index.html';
           if (!fs.existsSync(file)) throw new Error(`Missing ${file}`);
           const html = fs.readFileSync(file, 'utf8');
-          const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
+          const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)]
             .map(m => m[1].trim()).filter(Boolean);
           if (!scripts.length) throw new Error('No inline JavaScript found');
           scripts.forEach((src, i) => new vm.Script(src, {filename: `${file}:inline-script-${i+1}`}));
@@ -50,7 +50,7 @@ jobs:
           for (const name of files) {
             const file = path.join('reference/source-html', name);
             const html = fs.readFileSync(file, 'utf8');
-            const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
+            const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)]
               .map(m => m[1].trim()).filter(Boolean);
             scripts.forEach((src, i) => new vm.Script(src, {filename: `${file}:inline-script-${i+1}`}));
             count += scripts.length;
@@ -69,6 +69,7 @@ jobs:
             exit 0
           fi
           echo "Flutter project(s) found:"
-          printf '%s\n' "${projects[@]}"
-          echo "::notice::Flutter SDK setup and pub get/analyze/test/build are intentionally deferred until a verified project root and SDK constraints are documented."
-          exit 0
+          printf '%s\\n' "${projects[@]}"
+          echo "::notice::Flutter project found; running Flutter verification."
+    outputs:
+      flutter_source_present: ${{ steps.flutter-check.outputs.present }}
