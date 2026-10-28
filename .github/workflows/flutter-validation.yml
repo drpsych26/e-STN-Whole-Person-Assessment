@@ -1,0 +1,45 @@
+name: STN Flutter validation
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  flutter-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Extract Flutter coding pack
+        run: |
+          python - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('flutter/STN_Diagnostic_Tool_Flutter_MVP_Coding_Pack.zip') as z:
+              bad = z.testzip()
+              if bad:
+                  raise SystemExit(f'Corrupt ZIP member: {bad}')
+              z.extractall('flutter-work')
+          PY
+      - name: Prepare web platform scaffold
+        working-directory: flutter-work/supportive_therapy_network_mvp
+        run: flutter create --platforms=web --project-name supportive_therapy_network .
+      - name: Resolve dependencies
+        working-directory: flutter-work/supportive_therapy_network_mvp
+        run: flutter pub get
+      - name: Format Dart source
+        working-directory: flutter-work/supportive_therapy_network_mvp
+        run: dart format .
+      - name: Static analysis
+        working-directory: flutter-work/supportive_therapy_network_mvp
+        run: flutter analyze
+      - name: Unit tests
+        working-directory: flutter-work/supportive_therapy_network_mvp
+        run: flutter test
+      - name: Web production build
+        working-directory: flutter-work/supportive_therapy_network_mvp
+        run: flutter build web --release
