@@ -13,7 +13,7 @@ replacements = {
         ('onPressed: _responses.length < questions.length ? null : _scoreAndSave,',
          'onPressed: _scoreAndSave,'),
         ('child: const Text("Score + Save (Encrypted)"),',
-         'child: const Text("Save draft / submit for clinician review"),'),
+         'child: const Text("Save draft (local demo)"),'),
         ('"Criteria Met: ${result.criteriaMet ? "YES" : "NO"}\\n"',
          '"Diagnostic criteria: NOT EVALUATED (not implemented or validated)\\n"'),
         ('"Risk Flag: ${result.riskFlag ? "YES" : "NO"}\\n\\n"',
