@@ -85,8 +85,17 @@ jobs:
           set -euo pipefail
           mkdir -p flutter/source
           base64 --decode flutter/archive/STN_Diagnostic_Tool_Flutter_MVP_Pack_v4.zip.b64 > /tmp/stn-flutter-v4.zip
-          unzip -t /tmp/stn-flutter-v4.zip
-          unzip -q /tmp/stn-flutter-v4.zip -d flutter/source
+          python3 - <<'PY'
+          import zipfile
+          archive = "/tmp/stn-flutter-v4.zip"
+          destination = "flutter/source"
+          with zipfile.ZipFile(archive) as source:
+              bad_member = source.testzip()
+              if bad_member:
+                  raise SystemExit("ZIP CRC validation failed: " + bad_member)
+              source.extractall(destination)
+              print("PASS: extracted", len(source.namelist()), "verified ZIP members")
+          PY
           project=flutter/source/supportive_therapy_network_v4
           test -f "$project/pubspec.yaml"
           mkdir -p "$project/test"
