@@ -1,45 +1,61 @@
-name: STN Flutter validation
+name: STN Flutter web validation
+
 on:
   workflow_dispatch:
   pull_request:
   push:
     branches: [main]
+
 permissions:
   contents: read
+
 jobs:
-  flutter-validation:
+  flutter-web-validation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.24.5'
           cache: true
-      - name: Extract Flutter coding pack
+      - name: Restore verified original Flutter v4 archive
+        shell: bash
         run: |
-          python - <<'PY'
-          import zipfile
-          with zipfile.ZipFile('flutter/STN_Diagnostic_Tool_Flutter_MVP_Coding_Pack.zip') as z:
-              bad = z.testzip()
-              if bad:
-                  raise SystemExit(f'Corrupt ZIP member: {bad}')
-              z.extractall('flutter-work')
-          PY
-      - name: Prepare web platform scaffold
-        working-directory: flutter-work/supportive_therapy_network_mvp
-        run: flutter create --platforms=web --project-name supportive_therapy_network .
+          set -euo pipefail
+          part_dir=flutter/source-archives/parts
+          mkdir -p /tmp/stn-v4 flutter/source
+          cat "$part_dir/part1.txt" "$part_dir/part2.txt" "$part_dir/part4.txt" > /tmp/stn-v4/source.b64
+          test "$(wc -c < /tmp/stn-v4/source.b64)" -eq 18404
+          base64 --decode /tmp/stn-v4/source.b64 > /tmp/stn-v4/source.zip
+          echo "4478e3e54131fdb94db943524a7aa00cef9239122e572eaad6d9e0d5ad95261c  /tmp/stn-v4/source.zip" | sha256sum --check
+          unzip -q /tmp/stn-v4/source.zip -d flutter/source
+      - name: Create web platform and apply maintained fixes
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: |
+          set -euo pipefail
+          flutter create --platforms=web .
+          patch_root="../../../implementation-patches/flutter-v4"
+          cp "$patch_root/lib/main.dart" lib/main.dart
+          cp "$patch_root/lib/logic/scoring_engine.dart" lib/logic/scoring_engine.dart
+          cp "$patch_root/lib/logic/report_builder.dart" lib/logic/report_builder.dart
+          cp "$patch_root/lib/storage/secure_hive.dart" lib/storage/secure_hive.dart
+          cp "$patch_root/lib/screens/home_screen.dart" lib/screens/home_screen.dart
+          cp "$patch_root/lib/screens/module_screen.dart" lib/screens/module_screen.dart
+          cp "$patch_root/lib/screens/results_screen.dart" lib/screens/results_screen.dart
+          cp "$patch_root/test/scoring_engine_test.dart" test/scoring_engine_test.dart
+          cp "$patch_root/test/widget_test.dart" test/widget_test.dart
       - name: Resolve dependencies
-        working-directory: flutter-work/supportive_therapy_network_mvp
+        working-directory: flutter/source/supportive_therapy_network_v4
         run: flutter pub get
-      - name: Format Dart source
-        working-directory: flutter-work/supportive_therapy_network_mvp
-        run: dart format .
+      - name: Format source
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: dart format lib test
       - name: Static analysis
-        working-directory: flutter-work/supportive_therapy_network_mvp
+        working-directory: flutter/source/supportive_therapy_network_v4
         run: flutter analyze
-      - name: Unit tests
-        working-directory: flutter-work/supportive_therapy_network_mvp
-        run: flutter test
-      - name: Web production build
-        working-directory: flutter-work/supportive_therapy_network_mvp
+      - name: Unit and widget tests
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: flutter test --reporter expanded
+      - name: Web release build
+        working-directory: flutter/source/supportive_therapy_network_v4
         run: flutter build web --release
