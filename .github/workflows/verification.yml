@@ -13,7 +13,7 @@ jobs:
   prototype-static-checks:
     runs-on: ubuntu-latest
     outputs:
-      flutter_source_present: \${{ steps.flutter-check.outputs.present }}
+      flutter_source_present: ${{ steps.flutter-check.outputs.present }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -25,13 +25,13 @@ jobs:
           const fs = require('fs');
           const vm = require('vm');
           const file = 'prototype/index.html';
-          if (!fs.existsSync(file)) throw new Error(\`Missing \${file}\`);
+          if (!fs.existsSync(file)) throw new Error('Missing ' + file);
           const html = fs.readFileSync(file, 'utf8');
           const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
             .map(m => m[1].trim()).filter(Boolean);
           if (!scripts.length) throw new Error('No inline JavaScript found');
-          scripts.forEach((src, i) => new vm.Script(src, {filename: \`\${file}:inline-script-\${i+1}\`}));
-          console.log(\`PASS: parsed \${scripts.length} inline script(s) in \${file}\`);
+          scripts.forEach((src, i) => new vm.Script(src, {filename: file + ':inline-script-' + (i+1)}));
+          console.log('PASS: parsed ' + scripts.length + ' inline script(s) in ' + file);
           NODE
       - name: Check imported HTML source JavaScript when present
         shell: bash
@@ -39,7 +39,7 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
           files=(reference/source-html/*.html)
-          if [ \${#files[@]} -eq 0 ]; then
+          if [ ${#files[@]} -eq 0 ]; then
             echo "::warning::Original source HTML has not yet been imported to reference/source-html; source fidelity remains unverified."
             exit 0
           fi
@@ -54,11 +54,11 @@ jobs:
             const html = fs.readFileSync(file, 'utf8');
             const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
               .map(m => m[1].trim()).filter(Boolean);
-            scripts.forEach((src, i) => new vm.Script(src, {filename: \`\${file}:inline-script-\${i+1}\`}));
+            scripts.forEach((src, i) => new vm.Script(src, {filename: file + ':inline-script-' + (i+1)}));
             count += scripts.length;
-            console.log(\`PASS: \${file} (\${scripts.length} inline script(s))\`);
+            console.log('PASS: ' + file + ' (' + scripts.length + ' inline script(s))');
           }
-          console.log(\`PASS: parsed \${count} imported inline script(s)\`);
+          console.log('PASS: parsed ' + count + ' imported inline script(s)');
           NODE
       - name: Detect preserved Flutter v4 source archive
         id: flutter-check
