@@ -35,6 +35,8 @@ jobs:
           NODE
       - name: Run browser prototype workflow regression tests with synthetic data
         run: node tests/prototype-smoke.test.js
+      - name: Run follow-up assessment regression tests with synthetic data
+        run: node tests/followup-smoke.test.js
       - name: Check imported HTML source JavaScript when present
         shell: bash
         run: |
