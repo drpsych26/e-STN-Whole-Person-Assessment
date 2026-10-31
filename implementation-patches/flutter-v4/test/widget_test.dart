@@ -19,6 +19,12 @@ void main() {
 
     expect(find.text('Depressed mood most of the day, nearly every day.'),
         findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Save response summary'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
+    await tester.pumpAndSettle();
     expect(find.text('Save response summary'), findsOneWidget);
   });
 
