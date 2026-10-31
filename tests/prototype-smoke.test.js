@@ -142,6 +142,14 @@ function run() {
   h.failWrites = true;
   assert.equal(app.saveData(), false,
     'Storage write failures must be caught and reported');
+  const previousMood = app.A.answers.mood;
+  app.setAnswer('mood', '2');
+  assert.equal(app.A.answers.mood, previousMood,
+    'Failed persistence must roll back the unsaved response');
+  app.show('dashboard');
+  app.show('safety');
+  assert.equal(elements.safety.classList.active, false,
+    'Failed persistence must block further assessment progression');
   assert.ok(alerts.some(message => message.includes('Browser storage failed')),
     'Storage write failure must show a visible warning');
 
