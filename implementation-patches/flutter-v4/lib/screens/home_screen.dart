@@ -10,7 +10,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("STN Diagnostic Tool"),
+        title: const Text("STN Whole Person Assessment — Flutter MVP"),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
@@ -31,11 +31,23 @@ class HomeScreen extends StatelessWidget {
         ],
       ),
       body: ListView(
+        padding: const EdgeInsets.all(12),
         children: [
-          _tile(context, "MDD", "Major Depressive Disorder (screening module)"),
-          _tile(context, "GAD", "Generalised Anxiety Disorder (screening module)"),
-          _tile(context, "PTSD", "PTSD / Trauma (screening module)"),
-          _tile(context, "ADHD", "ADHD (screening module)"),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                "Development MVP only. This application does not establish "
+                "a diagnosis, validated score, or clinical risk disposition. "
+                "Use synthetic data only until clinical, privacy, security, "
+                "and governance approvals are complete.",
+              ),
+            ),
+          ),
+          _tile(context, "MDD", "Depression symptom review"),
+          _tile(context, "GAD", "Anxiety symptom review"),
+          _tile(context, "PTSD", "Trauma symptom review"),
+          _tile(context, "ADHD", "Attention and impulsivity review"),
         ],
       ),
     );
@@ -44,7 +56,7 @@ class HomeScreen extends StatelessWidget {
   ListTile _tile(BuildContext context, String moduleId, String title) {
     return ListTile(
       title: Text(title),
-      subtitle: const Text("Structured responses • interim clinician-review flags"),
+      subtitle: const Text("Interim structured screening module"),
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(
