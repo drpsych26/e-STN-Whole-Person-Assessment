@@ -14,6 +14,13 @@ const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
 assert.equal(scripts.length, 1, 'Follow-up prototype must have one inline application script');
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
+const domainIds = [
+  'depression', 'anxiety', 'trauma', 'attention', 'moodEpisodes',
+  'psychosis', 'substanceDomain', 'neurodevelopment', 'personality', 'sleepMedical',
+];
+for (const id of domainIds) {
+  ids.push('evidence_' + id, 'status_' + id, 'diag_' + id, 'why_' + id);
+}
 function createHarness() {
   const elements = Object.fromEntries(ids.map(id => [id, {
     id,
