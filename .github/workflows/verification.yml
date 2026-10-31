@@ -27,7 +27,7 @@ jobs:
           const file = 'prototype/index.html';
           if (!fs.existsSync(file)) throw new Error(`Missing ${file}`);
           const html = fs.readFileSync(file, 'utf8');
-          const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
+          const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)]
             .map(m => m[1].trim()).filter(Boolean);
           if (!scripts.length) throw new Error('No inline JavaScript found');
           scripts.forEach((src, i) => new vm.Script(src, {filename: `${file}:inline-script-${i+1}`}));
@@ -52,7 +52,7 @@ jobs:
           for (const name of files) {
             const file = path.join('reference/source-html', name);
             const html = fs.readFileSync(file, 'utf8');
-            const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
+            const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)]
               .map(m => m[1].trim()).filter(Boolean);
             scripts.forEach((src, i) => new vm.Script(src, {filename: `${file}:inline-script-${i+1}`}));
             count += scripts.length;
@@ -60,19 +60,20 @@ jobs:
           }
           console.log(`PASS: parsed ${count} imported inline script(s)`);
           NODE
-      - name: Detect Flutter source
+      - name: Require imported Flutter source
         id: flutter-check
         shell: bash
         run: |
+          set -euo pipefail
           shopt -s nullglob
           projects=(flutter/source/*/pubspec.yaml)
           if [ ${#projects[@]} -eq 0 ]; then
             echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Flutter source not imported into repository; Flutter verification remains blocked."
-          else
-            echo "present=true" >> "$GITHUB_OUTPUT"
-            printf 'Found Flutter project: %s\n' "${projects[@]}"
+            echo "::error::Flutter source is missing from flutter/source/*/pubspec.yaml. CI is blocked until the original source is imported and reconciled."
+            exit 1
           fi
+          echo "present=true" >> "$GITHUB_OUTPUT"
+          printf 'Found Flutter project: %s\\n' "${projects[@]}"
 
   flutter-build-tests:
     needs: prototype-static-checks
