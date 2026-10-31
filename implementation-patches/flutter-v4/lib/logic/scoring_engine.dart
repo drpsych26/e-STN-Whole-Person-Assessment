@@ -7,18 +7,32 @@ import "../models/assessment_models.dart";
 /// instrument and rule is traced to an approved source, the numeric total is
 /// only a descriptive sum of entered response severities.
 class ScoringEngine {
+  static const _modulePrefixes = <String, String>{
+    "MDD": "mdd_",
+    "GAD": "gad_",
+    "PTSD": "ptsd_",
+    "ADHD": "adhd_",
+  };
+
   ModuleResult score(
     String moduleId,
     List<Question> questions,
     List<Answer> answers,
   ) {
-    if (questions.isEmpty) {
+    final prefix = _modulePrefixes[moduleId];
+    if (prefix == null || questions.isEmpty) {
       throw ArgumentError('Unknown or unconfigured assessment module: $moduleId');
+    }
+    if (questions.any((question) => !question.id.startsWith(prefix))) {
+      throw ArgumentError('Question set does not belong to module: $moduleId');
     }
 
     final questionIds = questions.map((question) => question.id).toSet();
-    final seen = <String>{};
+    if (questionIds.length != questions.length) {
+      throw ArgumentError('Assessment module contains duplicate question IDs.');
+    }
 
+    final seen = <String>{};
     for (final answer in answers) {
       if (!questionIds.contains(answer.questionId)) {
         throw ArgumentError('Unknown question ID: ${answer.questionId}');
