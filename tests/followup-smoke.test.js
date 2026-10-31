@@ -12,6 +12,10 @@ const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
   .map(match => match[1].trim())
   .filter(Boolean);
 assert.equal(scripts.length, 1, 'Follow-up prototype must have one inline application script');
+assert.match(html, /section,\.card\{[^}]*color:#171717/,
+  'White follow-up cards must set dark foreground text for readable contrast');
+assert.match(html, /input,textarea,select\{[^}]*color:#171717/,
+  'Form controls must use readable dark text on white backgrounds');
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
 const domainIds = [
@@ -73,6 +77,16 @@ function run() {
     'Successful save should show a visible saved status');
 
   app.buildReport();
+  assert.match(elements.reportOutput.innerHTML, /NOT RECORDED — clinician review required/,
+    'An unanswered safety status must remain explicitly unresolved in the report');
+  assert.match(elements.reportOutput.innerHTML, /Risk factors and warning signs/,
+    'Report must include risk-factor documentation');
+  assert.match(elements.reportOutput.innerHTML, /Protective factors and supports/,
+    'Report must include protective-factor documentation');
+  assert.match(elements.reportOutput.innerHTML, /Mental State Examination/,
+    'Report must include the MSE section');
+  assert.match(elements.reportOutput.innerHTML, /Whole-person care plan/,
+    'Report must include the care-plan section');
   assert.match(elements.reportOutput.innerHTML, /&lt;b&gt;Injected&lt;\/b&gt;/,
     'Follow-up report must escape user-entered HTML');
   assert.equal(elements.reportOutput.innerHTML.includes('<b>Injected</b>'), false,
