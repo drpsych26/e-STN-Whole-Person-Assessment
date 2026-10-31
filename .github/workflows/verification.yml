@@ -115,7 +115,7 @@ jobs:
           set -euo pipefail
           cd flutter/source/supportive_therapy_network_v4
           flutter create --platforms=android .
-          cp ../../../../implementation-patches/flutter-v4/test/widget_test.dart test/widget_test.dart
+          cp ../../../implementation-patches/flutter-v4/test/widget_test.dart test/widget_test.dart
           flutter --version
           dart --version
           flutter pub get
