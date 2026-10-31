@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/logic/scoring_engine.dart';
-import '../lib/models/assessment_models.dart';
-import '../lib/modules/mdd_module.dart';
+import 'package:supportive_therapy_network_v4/logic/scoring_engine.dart';
+import 'package:supportive_therapy_network_v4/models/assessment_models.dart';
+import 'package:supportive_therapy_network_v4/modules/mdd_module.dart';
 
 void main() {
   group('ScoringEngine conservative prototype behaviour', () {
@@ -11,9 +11,7 @@ void main() {
       final answers = mddQuestions
           .map((q) => Answer(questionId: q.id, severity: Severity.extreme))
           .toList();
-
       final result = engine.score('MDD', mddQuestions, answers);
-
       expect(result.criteriaMet, isFalse);
       expect(result.interpretation, contains('not a validated instrument score'));
     });
@@ -22,7 +20,6 @@ void main() {
       final result = engine.score('MDD', mddQuestions, [
         Answer(questionId: mddQuestions.first.id, severity: Severity.none),
       ]);
-
       expect(result.riskFlag, isTrue);
       expect(result.interpretation, contains('Clinician review required'));
     });
@@ -36,9 +33,7 @@ void main() {
                     : Severity.none,
               ))
           .toList();
-
       final result = engine.score('MDD', mddQuestions, answers);
-
       expect(result.riskFlag, isTrue);
     });
 
@@ -46,9 +41,7 @@ void main() {
       final answers = mddQuestions
           .map((q) => Answer(questionId: q.id, severity: Severity.none))
           .toList();
-
       final result = engine.score('MDD', mddQuestions, answers);
-
       expect(result.riskFlag, isFalse);
       expect(result.criteriaMet, isFalse);
       expect(result.totalScore, 0);
@@ -63,9 +56,7 @@ void main() {
                     : Severity.none,
               ))
           .toList();
-
       final result = engine.score('MDD', mddQuestions, answers);
-
       expect(result.totalScore, 2);
       expect(result.itemScores['mdd_q1_mood'], 2);
     });
