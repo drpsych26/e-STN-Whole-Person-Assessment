@@ -1,0 +1,23 @@
+name: STN static quality checks
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  static-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run prototype workflow regression tests with synthetic data
+        run: node tests/prototype-smoke.test.js
+      - name: Check inline JavaScript syntax and supplied ZIP integrity
+        run: python tools/static_quality_check.py
