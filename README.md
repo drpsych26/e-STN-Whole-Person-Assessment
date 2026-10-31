@@ -34,6 +34,19 @@ The Flutter app currently contains MDD, GAD, PTSD and ADHD screening modules, lo
 - incomplete answers and designated review items trigger a clinician-review flag;
 - local encrypted storage is not authentication, server-side authorisation, multi-user isolation, an immutable audit trail or a production clinical record.
 
+## Latest post-merge verification — 31 October 2026
+
+Repair PR #4 is merged into `main` at `d201460086919f4a0fdf7a9bbb7584bb4f7069dd`. The post-merge verification, Flutter web validation, and static-quality GitHub Actions runs all passed:
+- https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/41170645743
+- https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/41170645724
+- https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/41170645676
+
+An Android debug APK was built and uploaded as GitHub Actions artifact `13031137407` (expires 7 November 2026). It is for internal synthetic-data testing only, not a production release.
+
+See `reference/POST-MERGE-VERIFICATION-2026-10-31.md` for the exact checks, artifact details, repaired defects and remaining release blockers.
+
+A separate draft PR #7 proposes upgrading GitHub Actions to Node.js 24-compatible releases. It must pass its own CI before merge.
+
 ## Automated verification
 
 GitHub Actions checks:
