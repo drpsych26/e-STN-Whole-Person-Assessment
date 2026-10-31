@@ -65,12 +65,12 @@ class _ModuleScreenState extends State<ModuleScreen> {
             "An unanswered item is not treated as a negative response.",
           ),
           const SizedBox(height: 12),
+          Text("Answered ${_responses.length} of ${questions.length} items"),
+          const SizedBox(height: 8),
           ...questions.map(_questionTile),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _saving || _responses.length != questions.length
-                ? null
-                : _scoreAndSave,
+            onPressed: _saving ? null : _scoreAndSave,
             child: Text(_saving ? "Saving…" : "Save response summary"),
           ),
         ],
@@ -125,7 +125,7 @@ class _ModuleScreenState extends State<ModuleScreen> {
   }
 
   Future<void> _scoreAndSave() async {
-    if (_saving || _responses.length != _questions.length) return;
+    if (_saving) return;
     setState(() => _saving = true);
 
     try {
