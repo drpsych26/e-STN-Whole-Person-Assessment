@@ -34,6 +34,12 @@ The Flutter app currently contains MDD, GAD, PTSD and ADHD screening modules, lo
 - incomplete answers and designated review items trigger a clinician-review flag;
 - local encrypted storage is not authentication, server-side authorisation, multi-user isolation, an immutable audit trail or a production clinical record.
 
+## Controlled UAT v0.7
+
+The browser prototype now includes explicit `Yes`, `No`, `Unsure`, `Declined` and `Not asked` safety responses. Every non-`No` response remains flagged for human review; missing responses block the safety gate. A flagged response also requires a clinician review note before the simulated care-plan workflow can continue. This is a workflow safeguard only: it does not assign, notify, acknowledge or hand over to a clinician.
+
+See `reference/CONTROLLED-UAT-PROTOCOL-v0.7.md`. This is private synthetic-data UAT only. It does not authorise real-patient use, clinical care, triage, diagnosis, risk clearance or identifiable health information.
+
 ## Automated verification
 
 GitHub Actions checks:
