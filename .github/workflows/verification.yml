@@ -101,6 +101,9 @@ jobs:
           mkdir -p "$project/test"
           cp implementation-patches/flutter-v4/lib/logic/scoring_engine.dart "$project/lib/logic/scoring_engine.dart"
           cp implementation-patches/flutter-v4/test/scoring_engine_test.dart "$project/test/scoring_engine_test.dart"
+          cp implementation-patches/flutter-v4/test/widget_test.dart "$project/test/widget_test.dart"
+          cp implementation-patches/flutter-v4/lib/storage/secure_hive.dart "$project/lib/storage/secure_hive.dart"
+          cp implementation-patches/flutter-v4/lib/screens/home_screen.dart "$project/lib/screens/home_screen.dart"
           echo "Restored source project: $project"
       - uses: subosito/flutter-action@v2
         with:
@@ -112,6 +115,7 @@ jobs:
           set -euo pipefail
           cd flutter/source/supportive_therapy_network_v4
           flutter create --platforms=android .
+          cp ../../../../implementation-patches/flutter-v4/test/widget_test.dart test/widget_test.dart
           flutter --version
           dart --version
           flutter pub get
