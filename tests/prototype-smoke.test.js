@@ -8,15 +8,15 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'prototype/index.html'), 'utf8');
-const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)]
+const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
   .map(match => match[1].trim())
   .filter(Boolean);
-const style = (html.match(/<style>([\\s\\S]*?)<\\/style>/i) || [])[1] || '';
-assert.match(style, /input,textarea,select\\{[^}]*background:#fff[^}]*color:#171717/,
+const style = (html.match(/<style>([\s\S]*?)<\/style>/i) || [])[1] || '';
+assert.match(style, /input,textarea,select\{[^}]*background:#fff[^}]*color:#171717/,
   'Form controls must use readable dark text on their light background');
-assert.match(style, /\\.notice\\{[^}]*color:#171717/,
+assert.match(style, /\.notice\{[^}]*color:#171717/,
   'Notice panels must use readable dark text');
-assert.match(style, /\\.alert\\{[^}]*color:#721c24/,
+assert.match(style, /\.alert\{[^}]*color:#721c24/,
   'Alert panels must use readable dark warning text');
 
 assert.equal(scripts.length, 1, 'Prototype must contain exactly one inline application script');
