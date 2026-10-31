@@ -17,5 +17,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Run browser prototype workflow regression tests with synthetic data
+        run: node tests/prototype-smoke.test.js
+      - name: Run follow-up assessment regression tests with synthetic data
+        run: node tests/followup-smoke.test.js
       - name: Check inline JavaScript syntax and supplied ZIP integrity
         run: python tools/static_quality_check.py

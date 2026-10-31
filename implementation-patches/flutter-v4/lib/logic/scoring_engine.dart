@@ -7,12 +7,31 @@ import "../models/assessment_models.dart";
 /// instrument and rule is traced to an approved source, the numeric total is
 /// only a descriptive sum of entered response severities.
 class ScoringEngine {
-  ModuleResult score(String moduleId, List<Question> questions, List<Answer> answers) {
-    if (questions.isEmpty) {
+  static const _modulePrefixes = <String, String>{
+    "MDD": "mdd_",
+    "GAD": "gad_",
+    "PTSD": "ptsd_",
+    "ADHD": "adhd_",
+  };
+
+  ModuleResult score(
+    String moduleId,
+    List<Question> questions,
+    List<Answer> answers,
+  ) {
+    final prefix = _modulePrefixes[moduleId];
+    if (prefix == null || questions.isEmpty) {
       throw ArgumentError('Unknown or unconfigured assessment module: $moduleId');
     }
+    if (questions.any((question) => !question.id.startsWith(prefix))) {
+      throw ArgumentError('Question set does not belong to module: $moduleId');
+    }
 
-    final questionIds = questions.map((q) => q.id).toSet();
+    final questionIds = questions.map((question) => question.id).toSet();
+    if (questionIds.length != questions.length) {
+      throw ArgumentError('Assessment module contains duplicate question IDs.');
+    }
+
     final seen = <String>{};
     for (final answer in answers) {
       if (!questionIds.contains(answer.questionId)) {
@@ -23,35 +42,42 @@ class ScoringEngine {
       }
     }
 
-    final itemScores = <String, int>{};
-    for (final answer in answers) {
-      itemScores[answer.questionId] = severityToScore(answer.severity);
-    }
+    final itemScores = <String, int>{
+      for (final answer in answers)
+        answer.questionId: severityToScore(answer.severity),
+    };
     final total = itemScores.values.fold<int>(0, (sum, value) => sum + value);
-    final incomplete = questions.any((question) => !seen.contains(question.id));
+    final incomplete = questions.any(
+      (question) => !seen.contains(question.id),
+    );
 
-    // Missing/ambiguous safety information is never interpreted as negative.
-    // Positive responses to items marked for review also require a clinician.
+    // Missing safety information is never interpreted as a negative answer.
+    // Any non-zero response to a designated review item requires clinician
+    // review. This is a conservative workflow flag, not a risk assessment.
     final safetyReviewRequired = incomplete || questions.any((question) {
       if (!question.isRiskItem) return false;
-      Answer? answer;
-      for (final candidate in answers) {
-        if (candidate.questionId == question.id) answer = candidate;
-      }
-      return answer == null || answer.severity != Severity.none;
+      final answer = answers.where(
+        (candidate) => candidate.questionId == question.id,
+      );
+      return answer.isEmpty || answer.first.severity != Severity.none;
     });
 
-    final interpretation = (safetyReviewRequired
-        ? 'Clinician review required: assessment is incomplete and/or a designated review item is positive or unanswered. This flag is not a risk assessment or crisis disposition. '
-        : 'No review flag triggered by this interim rule set; this is not proof of safety. ') +
-        'The response-severity sum is descriptive only, not a validated instrument score or diagnosis. Diagnostic criteria are not assessed.';
+    final reviewText = safetyReviewRequired
+        ? 'Clinician review required: the assessment is incomplete and/or a '
+            'designated review item is positive or unanswered. This flag is '
+            'not a risk assessment or crisis disposition. '
+        : 'No review flag was triggered by this interim rule set; this is '
+            'not proof of safety. ';
+    const limitationText = 'The response-severity sum is descriptive only, '
+        'not a validated instrument score or diagnosis. Diagnostic criteria '
+        'are not assessed.';
 
     return ModuleResult(
       moduleId: moduleId,
       totalScore: total,
-      interpretation: interpretation,
+      interpretation: '$reviewText$limitationText',
       riskFlag: safetyReviewRequired,
-      criteriaMet: false, // Criteria are unvalidated/unimplemented; never default positive.
+      criteriaMet: false,
       completedAt: DateTime.now(),
       itemScores: itemScores,
     );
