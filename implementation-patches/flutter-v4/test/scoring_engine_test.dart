@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supportive_therapy_network/logic/scoring_engine.dart';
 import 'package:supportive_therapy_network/models/assessment_models.dart';
 import 'package:supportive_therapy_network/modules/mdd_module.dart';
+import 'package:supportive_therapy_network/modules/gad_module.dart';
 
 void main() {
   group('ScoringEngine conservative prototype behaviour', () {
@@ -83,6 +84,16 @@ void main() {
     test('unknown modules are rejected', () {
       expect(
         () => engine.score('UNKNOWN', const <Question>[], const <Answer>[]),
+        throwsArgumentError,
+      );
+    });
+
+    test('question sets from another module are rejected', () {
+      final answers = gadQuestions
+          .map((q) => Answer(questionId: q.id, severity: Severity.none))
+          .toList();
+      expect(
+        () => engine.score('MDD', gadQuestions, answers),
         throwsArgumentError,
       );
     });
