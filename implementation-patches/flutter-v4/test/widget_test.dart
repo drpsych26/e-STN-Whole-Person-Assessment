@@ -6,7 +6,7 @@ void main() {
     await tester.pumpWidget(const STNApp());
 
     expect(find.text('STN Diagnostic Tool'), findsOneWidget);
-    expect(find.text('Major Depressive Disorder (DSM gating)'), findsOneWidget);
+    expect(find.text('Major Depressive Disorder (screening module)'), findsOneWidget);
     expect(find.text('Generalised Anxiety Disorder'), findsOneWidget);
     expect(find.text('PTSD / Trauma'), findsOneWidget);
     expect(find.text('ADHD'), findsOneWidget);
