@@ -126,9 +126,9 @@ function run() {
   assert.equal(elements.report.classList.active, true,
     'Saved care plan should permit report viewing');
 
-  app.A.review.mse = '<img src=x onerror=alert(1)>';
+  app.A.review.mse = '<b>Injected</b>';
   app.renderReport();
-  assert.match(elements.reportBox.innerHTML, /&lt;img/,
+  assert.match(elements.reportBox.innerHTML, /&lt;b/,
     'User-entered report text must be HTML-escaped');
 
   app.setRisk('suicide', 'Yes');
