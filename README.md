@@ -72,3 +72,12 @@ The browser prototype now uses the STN purple/black/white palette (accent `#AF2C
 A consolidated local review package is available from the working session as `STN_MASTER_CONSOLIDATED_PRIVATE.zip`. It preserves supplied HTML versions and Flutter v2/v3/v4 packs separately with a SHA-256 source inventory. Those local archives still need a deliberate repository asset-import step; this commit does not claim that binary ZIPs have been uploaded to GitHub.
 
 **Release remains on hold for real-client use.** Keep this repository private. No public deployment, copyright assignment, clinical validation, or production security approval is implied.
+
+
+## Flutter v4 source recovery and CI — 31 October 2026
+
+The original uploaded Flutter v4 ZIP is now preserved in `flutter/source-archives/` as a base64-encoded file so the original archive bytes can be restored without alteration. GitHub Actions decodes it and verifies the full SHA-256 before extraction. The workflow then applies the separately tracked conservative scoring-engine and UI/report patches and runs Flutter 3.24.5 formatting, analysis, unit tests and an Android debug build.
+
+The Flutter app remains an MVP, not the full Whole Person Initial Assessment. Its four module question sets are not established as licensed or validated instruments. The app uses encrypted device-local Hive storage; this is not identity authentication, server-side RBAC or a secure multi-user clinical record. The UI explicitly identifies diagnostic criteria as not evaluated and the descriptive sum as non-diagnostic. Incomplete assessments can be saved as drafts and are flagged for review by the interim engine. A local review flag is not a human handover or crisis response service.
+
+The PR's CI run must pass before the source/build path is considered verified. The repository still requires original HTML source reconciliation, the approved Clinical Core v2 rulebook, an operational clinician escalation/acknowledgement service, production identity and backend architecture, NZ privacy/security assessment, instrument permissions, independent clinical validation and written clinical governance/pilot approval. Release remains **HOLD — private development and synthetic data only**.
