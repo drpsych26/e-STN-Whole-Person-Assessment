@@ -57,7 +57,7 @@ function createHarness() {
   };
 
   vm.runInNewContext(
-    scripts[0] + '\nglobalThis.__stnTest = { A, show, saveClientAndContinue, setAnswer, setRisk, saveSafety, calculate, saveReview, saveCare, flags, saveData, renderReport, band };',
+    scripts[0] + '\nglobalThis.__stnTest = { A, show, saveClientAndContinue, withdrawConsent, setAnswer, setRisk, saveSafety, calculate, saveReview, saveCare, flags, saveData, renderReport, band };',
     sandbox,
     { filename: 'prototype/index.html' },
   );
@@ -86,8 +86,22 @@ function run() {
   Object.assign(elements.clinician, { value: 'Test Clinician' });
   Object.assign(elements.consent, { value: 'Yes' });
   app.saveClientAndContinue();
+  assert.equal(elements.assessment.classList.active, false,
+    'Consent must not be recorded without privacy notice, understanding, capacity and recording details');
+  elements.privacyAcknowledged.checked = true;
+  elements.consentUnderstood.checked = true;
+  elements.capacityConfirmed.checked = true;
+  elements.consentMethod.value = 'Written / electronic';
+  elements.consentRecordedBy.value = 'Test Clinician';
+  app.saveClientAndContinue();
   assert.equal(elements.assessment.classList.active, true,
-    'Saved client with confirmed consent should open screening');
+    'Complete informed-consent record should open screening');
+  assert.equal(app.A.client.consentRecord.status, 'Granted',
+    'Consent status must be recorded explicitly');
+  assert.equal(app.A.client.consentRecord.optionalPermissions.gp, false,
+    'Optional sharing must default to not permitted');
+  assert.equal(app.A.client.consentRecord.wordingVersion.includes('NOT APPROVED'), true,
+    'Consent wording must remain visibly marked as draft pending approval');
   app.show('client');
   elements.consent.value = 'No';
   app.show('assessment');
@@ -97,6 +111,21 @@ function run() {
   app.show('assessment');
   assert.equal(elements.assessment.classList.active, true,
     'Restoring confirmed consent should permit the saved screening workflow');
+  app.withdrawConsent();
+  assert.equal(app.A.client.consentRecord.status, 'Withdrawn',
+    'Withdrawal must be recorded with a timestamped status');
+  app.show('assessment');
+  assert.equal(elements.assessment.classList.active, false,
+    'Withdrawal must block further assessment progression');
+  elements.consent.value = 'Yes';
+  elements.privacyAcknowledged.checked = true;
+  elements.consentUnderstood.checked = true;
+  elements.capacityConfirmed.checked = true;
+  elements.consentMethod.value = 'Written / electronic';
+  elements.consentRecordedBy.value = 'Test Clinician';
+  app.saveClient();
+  assert.equal(app.A.client.consentRecord.status, 'Granted',
+    'A new informed decision can replace a withdrawn status only after re-consent is recorded');
 
   for (const id of [
     'mood', 'sleep', 'energy', 'worry', 'tension',
