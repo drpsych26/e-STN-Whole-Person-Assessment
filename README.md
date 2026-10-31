@@ -76,7 +76,7 @@ A consolidated local review package is available from the working session as `ST
 
 ## Flutter v4 source recovery and CI — 31 October 2026
 
-The original uploaded Flutter v4 ZIP is now preserved in `flutter/source-archives/` as a base64-encoded file so the original archive bytes can be restored without alteration. GitHub Actions decodes it and verifies the full SHA-256 before extraction. The workflow then applies the separately tracked conservative scoring-engine and UI/report patches and runs Flutter 3.24.5 formatting, analysis, unit tests and an Android debug build.
+The original uploaded Flutter v4 ZIP is now preserved in `flutter/source-archives/` as base64 text chunks so the original archive bytes can be restored without alteration. GitHub Actions decodes it and verifies the full SHA-256 before extraction. The workflow then applies the separately tracked conservative scoring-engine and UI/report patches and runs Flutter 3.24.5 formatting, analysis, unit tests and an Android debug build.
 
 The Flutter app remains an MVP, not the full Whole Person Initial Assessment. Its four module question sets are not established as licensed or validated instruments. The app uses encrypted device-local Hive storage; this is not identity authentication, server-side RBAC or a secure multi-user clinical record. The UI explicitly identifies diagnostic criteria as not evaluated and the descriptive sum as non-diagnostic. Incomplete assessments can be saved as drafts and are flagged for review by the interim engine. A local review flag is not a human handover or crisis response service.
 
