@@ -42,6 +42,8 @@ jobs:
           cp "$patch_root/lib/screens/home_screen.dart" lib/screens/home_screen.dart
           cp "$patch_root/lib/screens/module_screen.dart" lib/screens/module_screen.dart
           cp "$patch_root/lib/screens/results_screen.dart" lib/screens/results_screen.dart
+          cp "$patch_root/lib/screens/profiles_screen.dart" lib/screens/profiles_screen.dart
+          cp "$patch_root/lib/screens/result_detail_screen.dart" lib/screens/result_detail_screen.dart
           cp "$patch_root/test/scoring_engine_test.dart" test/scoring_engine_test.dart
           cp "$patch_root/test/widget_test.dart" test/widget_test.dart
       - name: Resolve dependencies
