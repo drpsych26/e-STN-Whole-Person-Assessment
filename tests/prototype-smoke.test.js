@@ -75,6 +75,36 @@ function run() {
   const h = createHarness();
   const { app, elements, alerts } = h;
 
+  const declined = createHarness();
+  Object.assign(declined.elements.clientId, { value: 'SYNTHETIC-DECLINED' });
+  Object.assign(declined.elements.clientName, { value: 'Synthetic Declined Client' });
+  Object.assign(declined.elements.dob, { value: '1990-01-01' });
+  Object.assign(declined.elements.assessDate, { value: '2026-10-31' });
+  Object.assign(declined.elements.clinician, { value: 'Test Clinician' });
+  Object.assign(declined.elements.consent, { value: 'No' });
+  Object.assign(declined.elements.consentMethod, { value: 'Written / electronic' });
+  Object.assign(declined.elements.consentRecordedBy, { value: 'Test Clinician' });
+  declined.app.saveClientAndContinue();
+  assert.equal(declined.app.A.client.consentRecord.status, 'Declined',
+    'A declined decision must be recorded rather than discarded');
+  assert.equal(declined.elements.assessment.classList.active, false,
+    'A declined decision must not open screening');
+
+  const deferred = createHarness();
+  Object.assign(deferred.elements.clientId, { value: 'SYNTHETIC-DEFERRED' });
+  Object.assign(deferred.elements.clientName, { value: 'Synthetic Deferred Client' });
+  Object.assign(deferred.elements.dob, { value: '1990-01-01' });
+  Object.assign(deferred.elements.assessDate, { value: '2026-10-31' });
+  Object.assign(deferred.elements.clinician, { value: 'Test Clinician' });
+  Object.assign(deferred.elements.consent, { value: 'Deferred' });
+  Object.assign(deferred.elements.consentMethod, { value: 'Verbal (reason documented)' });
+  Object.assign(deferred.elements.consentRecordedBy, { value: 'Test Clinician' });
+  deferred.app.saveClientAndContinue();
+  assert.equal(deferred.app.A.client.consentRecord.status, 'Deferred',
+    'A deferred decision must be recorded');
+  assert.equal(deferred.elements.assessment.classList.active, false,
+    'A deferred decision must not open screening');
+
   app.show('assessment');
   assert.equal(elements.assessment.classList.active, false,
     'Assessment must not be accessible before consent and client details');
