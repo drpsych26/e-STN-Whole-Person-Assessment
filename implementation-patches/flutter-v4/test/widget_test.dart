@@ -1,5 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/main.dart';
+import 'package:supportive_therapy_network_v4/main.dart';
 
 void main() {
   testWidgets('STN app opens the assessment dashboard', (tester) async {
@@ -33,7 +34,6 @@ void main() {
     await tester.pumpWidget(
       const STNApp(startupError: 'secure storage unavailable'),
     );
-
     expect(find.text('STN cannot start safely'), findsOneWidget);
     expect(find.textContaining('assessment has been disabled'), findsOneWidget);
   });
