@@ -126,6 +126,11 @@ function run() {
 
   elements.signoff.value = 'Test Clinician';
   app.saveReview();
+  elements.mse.value = 'Unsaved review edit';
+  app.show('care');
+  assert.equal(elements.care.classList.active, false,
+    'Unsaved clinician review edits must block care-plan progression');
+  elements.mse.value = '';
   app.show('care');
   assert.equal(elements.care.classList.active, true,
     'Saved clinician review and sign-off should permit care planning');
@@ -133,6 +138,11 @@ function run() {
   elements.goals.value = 'Synthetic goal';
   elements.plan.value = 'Synthetic support';
   app.saveCare();
+  elements.goals.value = 'Unsaved care-plan edit';
+  app.show('report');
+  assert.equal(elements.report.classList.active, false,
+    'Unsaved care-plan edits must block report progression');
+  elements.goals.value = 'Synthetic goal';
   app.show('report');
   assert.equal(elements.report.classList.active, true,
     'Saved care plan should permit report viewing');
