@@ -27,7 +27,7 @@ jobs:
           const file = 'prototype/index.html';
           if (!fs.existsSync(file)) throw new Error(`Missing ${file}`);
           const html = fs.readFileSync(file, 'utf8');
-          const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
+          const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)]
             .map(m => m[1].trim()).filter(Boolean);
           if (!scripts.length) throw new Error('No inline JavaScript found');
           scripts.forEach((src, i) => new vm.Script(src, {filename: `${file}:inline-script-${i+1}`}));
@@ -52,7 +52,7 @@ jobs:
           for (const name of files) {
             const file = path.join('reference/source-html', name);
             const html = fs.readFileSync(file, 'utf8');
-            const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
+            const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)]
               .map(m => m[1].trim()).filter(Boolean);
             scripts.forEach((src, i) => new vm.Script(src, {filename: `${file}:inline-script-${i+1}`}));
             count += scripts.length;
@@ -60,18 +60,17 @@ jobs:
           }
           console.log(`PASS: parsed ${count} imported inline script(s)`);
           NODE
-      - name: Detect Flutter source
+      - name: Detect preserved Flutter v4 source archive
         id: flutter-check
         shell: bash
         run: |
-          shopt -s nullglob
-          projects=(flutter/source/*/pubspec.yaml)
-          if [ ${#projects[@]} -eq 0 ]; then
-            echo "present=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::Flutter source not imported into repository; Flutter verification remains blocked."
-          else
+          if [ -s flutter/archive/STN_Diagnostic_Tool_Flutter_MVP_Pack_v4.zip.b64 ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
-            printf 'Found Flutter project: %s\n' "${projects[@]}"
+            echo "Flutter v4 source archive found."
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::error::Flutter v4 source archive is missing."
+            exit 1
           fi
 
   flutter-build-tests:
@@ -80,27 +79,33 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-      - name: Analyze, test, and build each Flutter project
+      - name: Restore original Flutter v4 project and apply reviewed conservative scoring patch
         shell: bash
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          projects=(flutter/source/*/pubspec.yaml)
-          for pubspec in "${projects[@]}"; do
-            project="$(dirname "$pubspec")"
-            echo "=== Verifying $project ==="
-            cd "$GITHUB_WORKSPACE/$project"
-            if [ ! -d android ]; then
-              flutter create --platforms=android .
-            fi
-            flutter pub get
-            dart format --output=none --set-exit-if-changed lib test
-            flutter analyze
-            flutter test
-            flutter build apk --debug
-            cd "$GITHUB_WORKSPACE"
-          done
+          mkdir -p flutter/source
+          base64 --decode flutter/archive/STN_Diagnostic_Tool_Flutter_MVP_Pack_v4.zip.b64 > /tmp/stn-flutter-v4.zip
+          unzip -t /tmp/stn-flutter-v4.zip
+          unzip -q /tmp/stn-flutter-v4.zip -d flutter/source
+          project=flutter/source/supportive_therapy_network_v4
+          test -f "$project/pubspec.yaml"
+          mkdir -p "$project/test"
+          cp implementation-patches/flutter-v4/lib/logic/scoring_engine.dart "$project/lib/logic/scoring_engine.dart"
+          cp implementation-patches/flutter-v4/test/scoring_engine_test.dart "$project/test/scoring_engine_test.dart"
+          echo "Restored source project: $project"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          cache: true
+      - name: Analyze, test, and build Flutter v4
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd flutter/source/supportive_therapy_network_v4
+          flutter --version
+          dart --version
+          flutter pub get
+          dart format --output=none --set-exit-if-changed lib test
+          flutter analyze
+          flutter test --reporter expanded
+          flutter build apk --debug
