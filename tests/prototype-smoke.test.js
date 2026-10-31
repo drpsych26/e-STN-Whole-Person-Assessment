@@ -57,7 +57,7 @@ function createHarness() {
   };
 
   vm.runInNewContext(
-    scripts[0] + '\nglobalThis.__stnTest = { A, show, saveClientAndContinue, setAnswer, setRisk, saveSafety, calculate, saveReview, saveCare, flags, saveData, renderReport };',
+    scripts[0] + '\nglobalThis.__stnTest = { A, show, saveClientAndContinue, setAnswer, setRisk, saveSafety, calculate, saveReview, saveCare, flags, saveData, renderReport, band };',
     sandbox,
     { filename: 'prototype/index.html' },
   );
@@ -112,6 +112,8 @@ function run() {
     'Complete saved safety responses should permit results');
   assert.equal(app.flags().length, 0,
     'Negative safety responses must not create positive flags');
+  assert.match(app.band(99), /no validated severity threshold/,
+    'Browser prototype must not apply unvalidated severity bands');
 
   elements.signoff.value = 'Test Clinician';
   app.saveReview();
