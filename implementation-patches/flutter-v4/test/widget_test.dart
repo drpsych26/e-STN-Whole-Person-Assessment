@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:supportive_therapy_network_v4/main.dart';
+import 'package:supportive_therapy_network/main.dart';
 
 void main() {
   testWidgets('STN app opens the assessment dashboard', (tester) async {
