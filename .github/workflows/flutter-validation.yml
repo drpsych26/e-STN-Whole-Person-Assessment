@@ -1,0 +1,72 @@
+name: STN Flutter web validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  flutter-web-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: stable
+          cache: true
+      - name: Restore Flutter v4 source and apply reviewed fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p flutter/source
+          base64 --decode flutter/archive/STN_Diagnostic_Tool_Flutter_MVP_Pack_v4.zip.b64 > /tmp/stn-flutter-v4.zip
+          python3 - <<'PY'
+          import zipfile
+          with zipfile.ZipFile('/tmp/stn-flutter-v4.zip') as source:
+              bad_member = source.testzip()
+              if bad_member:
+                  raise SystemExit('ZIP CRC validation failed: ' + bad_member)
+              source.extractall('flutter/source')
+              print('PASS: extracted', len(source.namelist()), 'verified ZIP members')
+          PY
+          project=flutter/source/supportive_therapy_network_v4
+          test -f "$project/pubspec.yaml"
+          mkdir -p "$project/test"
+          echo "Restored Flutter v4 source."
+      - name: Create web platform scaffold
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: flutter create --platforms=web .
+      - name: Apply maintained STN fixes and tests
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: |
+          set -euo pipefail
+          root=../../../implementation-patches/flutter-v4
+          cp "$root/lib/main.dart" lib/main.dart
+          cp "$root/lib/logic/scoring_engine.dart" lib/logic/scoring_engine.dart
+          cp "$root/lib/logic/report_builder.dart" lib/logic/report_builder.dart
+          cp "$root/lib/storage/secure_hive.dart" lib/storage/secure_hive.dart
+          cp "$root/lib/screens/home_screen.dart" lib/screens/home_screen.dart
+          cp "$root/lib/screens/module_screen.dart" lib/screens/module_screen.dart
+          cp "$root/lib/screens/results_screen.dart" lib/screens/results_screen.dart
+          cp "$root/test/scoring_engine_test.dart" test/scoring_engine_test.dart
+          cp "$root/test/widget_test.dart" test/widget_test.dart
+      - name: Resolve dependencies
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: flutter pub get
+      - name: Format Dart source
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: dart format lib test
+      - name: Static analysis
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: flutter analyze
+      - name: Unit and widget tests
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: flutter test --reporter expanded
+      - name: Web production build
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: flutter build web --release
