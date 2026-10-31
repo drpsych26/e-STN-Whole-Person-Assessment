@@ -2,13 +2,13 @@
 
 The original uploaded archive is preserved as base64 text at:
 
-- `STN_Diagnostic_Tool_Flutter_MVP_Pack_v4.zip.b64`
+- `parts/part1.txt`, `parts/part2.txt` and `parts/part4.txt`
 
 This encoding preserves the original ZIP bytes. The SHA-256 of the decoded ZIP must equal:
 
 `4478e3e54131fdb94db943524a7aa00cef9239122e572eaad6d9e0d5ad95261c`
 
-The GitHub Actions workflow decodes and verifies the archive, extracts it into `flutter/source/`, applies the tracked conservative scoring-engine replacement and UI/report wording patch, and then runs the pinned Flutter formatter, analyzer, unit tests and Android debug build.
+The GitHub Actions workflow concatenates these chunks, verifies the exact encoded length and decoded SHA-256, then extracts the archive into `flutter/source/`, applies the tracked conservative scoring-engine replacement and UI/report wording patch, and then runs the pinned Flutter formatter, analyzer, unit tests and Android debug build.
 
 The original archive remains unchanged. The patches are maintained separately under `implementation-patches/flutter-v4/`.
 
