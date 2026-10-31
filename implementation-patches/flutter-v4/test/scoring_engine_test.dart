@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:supportive_therapy_network_v4/logic/scoring_engine.dart';
-import 'package:supportive_therapy_network_v4/models/assessment_models.dart';
-import 'package:supportive_therapy_network_v4/modules/mdd_module.dart';
+import 'package:supportive_therapy_network/logic/scoring_engine.dart';
+import 'package:supportive_therapy_network/models/assessment_models.dart';
+import 'package:supportive_therapy_network/modules/mdd_module.dart';
 
 void main() {
   group('ScoringEngine conservative prototype behaviour', () {
