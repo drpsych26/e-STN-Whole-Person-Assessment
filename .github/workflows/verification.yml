@@ -64,10 +64,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          archive_b64=flutter/source-archives/STN_Diagnostic_Tool_Flutter_MVP_Pack_v4.zip.b64
-          if [ -f "$archive_b64" ]; then
+          part_dir=flutter/source-archives/parts
+          if [ -f "$part_dir/part1.txt" ] && [ -f "$part_dir/part2.txt" ] && [ -f "$part_dir/part4.txt" ]; then
             mkdir -p /tmp/stn-v4 flutter/source
-            base64 --decode "$archive_b64" > /tmp/stn-v4/source.zip
+            cat "$part_dir/part1.txt" "$part_dir/part2.txt" "$part_dir/part4.txt" > /tmp/stn-v4/source.b64
+            test "$(wc -c < /tmp/stn-v4/source.b64)" -eq 18404
+            base64 --decode /tmp/stn-v4/source.b64 > /tmp/stn-v4/source.zip
             echo "4478e3e54131fdb94db943524a7aa00cef9239122e572eaad6d9e0d5ad95261c  /tmp/stn-v4/source.zip" | sha256sum --check
             unzip -q /tmp/stn-v4/source.zip -d flutter/source
             cp implementation-patches/flutter-v4/lib/logic/scoring_engine.dart flutter/source/supportive_therapy_network_v4/lib/logic/scoring_engine.dart
@@ -103,9 +105,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          archive_b64=flutter/source-archives/STN_Diagnostic_Tool_Flutter_MVP_Pack_v4.zip.b64
+          part_dir=flutter/source-archives/parts
           mkdir -p /tmp/stn-v4 flutter/source
-          base64 --decode "$archive_b64" > /tmp/stn-v4/source.zip
+          cat "$part_dir/part1.txt" "$part_dir/part2.txt" "$part_dir/part4.txt" > /tmp/stn-v4/source.b64
+          test "$(wc -c < /tmp/stn-v4/source.b64)" -eq 18404
+          base64 --decode /tmp/stn-v4/source.b64 > /tmp/stn-v4/source.zip
           echo "4478e3e54131fdb94db943524a7aa00cef9239122e572eaad6d9e0d5ad95261c  /tmp/stn-v4/source.zip" | sha256sum --check
           unzip -q /tmp/stn-v4/source.zip -d flutter/source
           cp implementation-patches/flutter-v4/lib/logic/scoring_engine.dart flutter/source/supportive_therapy_network_v4/lib/logic/scoring_engine.dart
