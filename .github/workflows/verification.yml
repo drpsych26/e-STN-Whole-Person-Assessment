@@ -73,6 +73,7 @@ jobs:
             cp implementation-patches/flutter-v4/lib/logic/scoring_engine.dart flutter/source/supportive_therapy_network_v4/lib/logic/scoring_engine.dart
             mkdir -p flutter/source/supportive_therapy_network_v4/test
             cp implementation-patches/flutter-v4/test/scoring_engine_test.dart flutter/source/supportive_therapy_network_v4/test/scoring_engine_test.dart
+            python3 implementation-patches/flutter-v4/patch_ui.py
           else
             echo "::error::Original Flutter v4 source archive is missing."
             exit 1
