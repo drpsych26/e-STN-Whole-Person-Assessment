@@ -160,6 +160,23 @@ function run() {
   assert.deepEqual(Array.from(app.flags()), ['suicide'],
     'A positive response must be surfaced for clinician review');
 
+  app.setRisk('suicide', 'Unsure');
+  app.setRisk('selfharm', 'Declined');
+  app.setRisk('attempt', 'Not asked');
+  app.saveSafety();
+  app.calculate();
+  assert.deepEqual(Array.from(app.flags()), ['suicide', 'selfharm', 'attempt'],
+    'Uncertain, declined and not-asked responses must remain visible for human review');
+  elements.safetyReview.value = '';
+  elements.signoff.value = 'Test Clinician';
+  app.saveReview();
+  assert.equal(app.A.reviewSaved, false,
+    'A flagged safety response must block progression until a human review note is recorded');
+  elements.safetyReview.value = 'Synthetic scenario: reviewed by test clinician; no actual handover exists.';
+  app.saveReview();
+  assert.equal(app.A.reviewSaved, true,
+    'A documented human review note should satisfy the simulated review gate');
+
   h.failWrites = true;
   assert.equal(app.saveData(), false,
     'Storage write failures must be caught and reported');
