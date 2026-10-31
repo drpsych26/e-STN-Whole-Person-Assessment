@@ -88,6 +88,15 @@ function run() {
   app.saveClientAndContinue();
   assert.equal(elements.assessment.classList.active, true,
     'Saved client with confirmed consent should open screening');
+  app.show('client');
+  elements.consent.value = 'No';
+  app.show('assessment');
+  assert.equal(elements.assessment.classList.active, false,
+    'Changing consent after saving must block stale consent from opening screening');
+  elements.consent.value = 'Yes';
+  app.show('assessment');
+  assert.equal(elements.assessment.classList.active, true,
+    'Restoring confirmed consent should permit the saved screening workflow');
 
   for (const id of [
     'mood', 'sleep', 'energy', 'worry', 'tension',
