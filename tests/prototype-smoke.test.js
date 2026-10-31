@@ -8,13 +8,13 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'prototype/index.html'), 'utf8');
-const scripts = [...html.matchAll(/<script\\b[^>]*>([\\s\\S]*?)<\\/script\\s*>/gi)]
+const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
   .map(match => match[1].trim())
   .filter(Boolean);
 
 assert.equal(scripts.length, 1, 'Prototype must contain exactly one inline application script');
 
-const ids = [...html.matchAll(/\\bid="([^"]+)"/g)].map(match => match[1]);
+const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
 const viewIds = [...html.matchAll(/<section id="([^"]+)"/g)].map(match => match[1]);
 
 function createHarness() {
