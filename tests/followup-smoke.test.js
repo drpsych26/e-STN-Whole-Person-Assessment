@@ -12,16 +12,16 @@ const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
   .map(match => match[1].trim())
   .filter(Boolean);
 assert.equal(scripts.length, 1, 'Follow-up prototype must have one inline application script');
-const style = (html.match(/<style>([\\s\\S]*?)<\\/style>/i) || [])[1] || '';
-assert.match(style, /section,\\.card\\{[^}]*background:#fff;color:#171717/,
+const style = (html.match(/<style>([\s\S]*?)<\/style>/i) || [])[1] || '';
+assert.match(style, /section,\.card\{[^}]*background:#fff;color:#171717/,
   'Follow-up form panels must use readable dark text');
-assert.match(style, /input,textarea,select\\{[^}]*background:#fff;color:#171717/,
+assert.match(style, /input,textarea,select\{[^}]*background:#fff;color:#171717/,
   'Follow-up form controls must use readable dark text');
-assert.match(style, /\\.notice\\{[^}]*color:#171717/,
+assert.match(style, /\.notice\{[^}]*color:#171717/,
   'Follow-up notice panels must use readable dark text');
-assert.match(style, /\\.alert\\{[^}]*color:#721c24/,
+assert.match(style, /\.alert\{[^}]*color:#721c24/,
   'Follow-up alert panels must use readable dark warning text');
-assert.match(style, /\\.small\\{[^}]*color:#62586a/,
+assert.match(style, /\.small\{[^}]*color:#62586a/,
   'Follow-up secondary text must remain readable on white panels');
 
 const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
