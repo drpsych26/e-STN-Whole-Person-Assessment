@@ -83,10 +83,10 @@ The v4 archive is not the 208-item Whole Person Initial Assessment. Its Flutter 
 
 ## 4. Current repository implementation comparison
 
-The current browser prototype contains 9 simplified screening questions and 8 safety prompts. Its current Flutter v4 source is a four-module MVP. The supplied paper pilot contains 208 items across 24 groups.
+The current browser prototype contains 9 simplified screening questions and 8 safety prompts. The original Flutter v4 archive is a four-module MVP; draft PR #12 adds the paper pilot's 25 Part A core items to Flutter, with source-wording golden tests, synthetic-only storage/profile guards and interim human-review flags. The supplied paper pilot contains 208 items across 24 groups.
 
 Therefore:
-- no exact-match claim is supported;
+- Part A has a partial Flutter implementation in PR #12; its wording is checked against a golden test, but CI and independent clinical review remain pending;
 - the browser prototype and Flutter MVP are not yet the full paper-pilot workflow;
 - question wording, order, response scales, branching, scoring, safety flags and report outputs still require row-level reconciliation;
 - no Clinical Core v2 canonical source file or signed approval is present in the supplied file inventory;
