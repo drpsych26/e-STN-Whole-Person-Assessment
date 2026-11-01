@@ -78,3 +78,19 @@ See:
 Launch-readiness engineering is authorised; launch is not. Do not enable production integrations, production credentials, real-client data, clinical use, public hosting or external beta. The application is not currently certified launch-ready: clinical source authority, instrument permissions, human safety operations, privacy/security approval, independent validation, accessibility/UAT and accountable go/no-go evidence remain open.
 
 A private GitHub repository is still hosted by GitHub; it is not offline-only storage. Never commit real client records, credentials, API keys, private keys or identifiable health information.
+
+
+## Copyright and release paperwork
+
+- `LICENSE` and `COPYRIGHT.md`: proprietary notice for STN-owned material; third-party licences remain applicable.
+- `docs/legal/IP-AND-LICENSING-REGISTER.md`: ownership, contributor assignment and instrument/dependency permission register.
+- `docs/governance/CLINICAL-RELEASE-DOSSIER.md`: clinical approval, safety case and release evidence index.
+- `docs/privacy/PRIVACY-IMPACT-ASSESSMENT-TEMPLATE.md`: New Zealand privacy impact assessment working template.
+- `docs/release/STN-v0.6.1-SOURCE-ARCHIVE-MANIFEST.md`: supplied archive integrity and integration status.
+- `docs/INTEGRATION-AND-RELEASE-STATUS-2026-11-02.md`: current integration and release boundaries.
+
+These documents are controlled working records/templates. They are not substitutes for signed approvals, executed IP assignments, instrument licences, a completed PIA, clinical validation or an accountable go/no-go decision.
+
+## Build artifacts
+
+GitHub Actions verifies the existing Flutter v4 source, builds the Android debug APK and builds the Flutter web release bundle. The workflows retain internal artifacts for seven days. These are engineering/test artifacts, not signed production distributions and not a public clinical deployment. The Android release APK still requires a controlled signing process. The browser prototype remains demonstration-only until the production identity, server-side clinical record, privacy, security and safety controls are implemented and approved.
