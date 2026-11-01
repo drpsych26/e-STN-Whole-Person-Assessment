@@ -8,6 +8,17 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'prototype/follow-up-assessment.html'), 'utf8');
+const style = (html.match(/<style>([\s\S]*?)<\/style>/i) || [])[1] || '';
+assert.match(style, /section,\.card\{[^}]*background:#fff;color:#171717/,
+  'Follow-up form panels must use readable dark text');
+assert.match(style, /input,textarea,select\{[^}]*background:#fff;color:#171717/,
+  'Follow-up form controls must use readable dark text');
+assert.match(style, /\.notice\{[^}]*color:#171717/,
+  'Follow-up notice panels must use readable dark text');
+assert.match(style, /\.alert\{[^}]*color:#721c24/,
+  'Follow-up alert panels must use readable dark warning text');
+assert.match(style, /\.small\{[^}]*color:#62586a/,
+  'Follow-up secondary text must remain readable on white panels');
 const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
   .map(match => match[1].trim())
   .filter(Boolean);

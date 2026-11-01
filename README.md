@@ -47,6 +47,16 @@ See `reference/POST-MERGE-VERIFICATION-2026-10-31.md` for the exact checks, arti
 
 A separate draft PR #7 proposes upgrading GitHub Actions to Node.js 24-compatible releases. It must pass its own CI before merge.
 
+## Controlled non-live UAT v0.8
+
+The browser prototype includes explicit `Yes`, `No`, `Unsure`, `Declined` and `Not asked` safety responses. Every non-`No` response remains flagged for human review; missing responses block the safety gate. A flagged response requires a documented human review note before the simulated care-plan workflow can continue. This does not assign, notify, acknowledge or hand over to a clinician.
+
+See `reference/CONTROLLED-UAT-PROTOCOL-v0.7.md`. The application is restricted to synthetic-data UAT. It is not authorised for real-patient use, diagnosis, triage, risk clearance or identifiable health information.
+
+## Source reconciliation status — 1 November 2026
+
+A local source inventory and section-level traceability baseline are recorded in `reference/SOURCE-RECONCILIATION-INVENTORY-2026-11-01.md` and `tests/PAPER-PILOT-SECTION-TRACEABILITY-2026-11-01.csv`. The supplied paper pilot contains 208 table items across 24 groups. The current browser prototype has 9 simplified screening questions and the Flutter v4 archive is a four-module MVP; neither is an exact implementation of the paper pilot. Original source import, authoritative-version approval, instrument permissions and item-level traceability remain open.
+
 ## Automated verification
 
 GitHub Actions checks:

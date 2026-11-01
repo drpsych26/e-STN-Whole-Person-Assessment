@@ -1,6 +1,6 @@
 # STN source import manifest and verification gates
 
-The source bundle at `/mnt/data/stn_upload_work/STN_Whole_Person_Digital_Prototype_GitHub_Pack.zip` was inspected in the working environment. It contains the following source assets. The manifest records source sizes and SHA-256 prefixes from that bundle; it does not mean these files have already been committed to GitHub.
+The original uploads were inventoried in the current project workspace on 1 November 2026. The full inventory and SHA-256 hashes are recorded in `reference/SOURCE-RECONCILIATION-INVENTORY-2026-11-01.md`. The five HTML sources have text-extracted representations in `reference/source-html/`; four are not byte-identical to their uploaded originals. The PDF and Flutter v2/v3/coding ZIPs remain local. The Flutter v4 archive is preserved as base64 chunks. Do not treat the HTML text imports as byte-identical originals.
 
 | Source asset | Bytes | SHA-256 prefix |
 |---|---:|---|
