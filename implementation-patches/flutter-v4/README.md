@@ -22,7 +22,8 @@ These changes reduce unsupported claims; they do not make the app clinically val
 
 ## Whole Person Core Intake v0.9
 
-- `lib/screens/whole_person_initial_assessment_screen.dart` — Part A's 25 source-worded core items, synthetic-only case ID guard, draft save/reopen/delete and human-review flags for the paper-pilot safety-tagged items.
+- `lib/models/core_intake.dart` — Part A's 25 source-worded core items, response scale, synthetic ID/alias rules and safety-tag rules.
+- `lib/screens/whole_person_initial_assessment_screen.dart` — synthetic-only core intake, draft save/reopen/delete and human-review flags for the paper-pilot safety-tagged items.
 - `test/whole_person_intake_rules_test.dart` — item count, synthetic ID, completeness and safety-tag regression tests.
 - `lib/storage/secure_hive.dart` — dedicated encrypted local Hive box for synthetic core-intake drafts.
 - `lib/screens/home_screen.dart` — adds the Whole Person Initial Assessment entry point.
