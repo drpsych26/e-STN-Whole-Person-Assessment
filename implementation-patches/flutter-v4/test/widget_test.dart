@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supportive_therapy_network/main.dart';
+import 'package:supportive_therapy_network/screens/profiles_screen.dart';
 
 void main() {
   testWidgets('STN app opens the assessment dashboard', (tester) async {
@@ -27,6 +28,20 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Save response summary'), findsOneWidget);
+  });
+
+  testWidgets('profile screen accepts synthetic identifiers only and exposes no patient PII fields',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: ProfilesScreen()),
+    );
+
+    expect(find.text('Synthetic case ID'), findsOneWidget);
+    expect(find.text('Synthetic tester alias'), findsOneWidget);
+    expect(find.text('Client full name'), findsNothing);
+    expect(find.text('DOB (YYYY-MM-DD)'), findsNothing);
+    expect(find.text('Contact (phone/email)'), findsNothing);
+    expect(find.text('Registration number'), findsNothing);
   });
 
   testWidgets('storage initialisation failure disables assessment access',
