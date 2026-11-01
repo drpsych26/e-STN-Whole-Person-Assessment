@@ -12,6 +12,7 @@
 - Safety-tagged items preserved as items 14, 19, 20, 21, 22, 23 and 24.
 - Missing or endorsed safety-tagged items remain visible for human review/clarification.
 - No automatic diagnostic score, severity band, safety tier or crisis disposition.
+- Interim conservative flag rule: any non-zero response or unanswered safety-tagged Part A item remains unresolved for human review. This is a software safeguard, not a source-approved risk threshold; clinical-owner approval is still required.
 - No automatic adaptive routing; the screen explicitly states that routing is not yet implemented.
 - Synthetic case IDs only; IDs not beginning with SYNTH- are rejected.
 - Simulation acknowledgement required before saving.
