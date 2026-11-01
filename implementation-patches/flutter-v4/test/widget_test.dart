@@ -22,12 +22,12 @@ void main() {
     expect(find.text('Depressed mood most of the day, nearly every day.'),
         findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('Save response summary'),
+      find.text('Save synthetic response summary'),
       300,
       scrollable: find.byType(Scrollable).last,
     );
     await tester.pumpAndSettle();
-    expect(find.text('Save response summary'), findsOneWidget);
+    expect(find.text('Save synthetic response summary'), findsOneWidget);
   });
 
   testWidgets('profile screen accepts synthetic identifiers only and exposes no patient PII fields',
