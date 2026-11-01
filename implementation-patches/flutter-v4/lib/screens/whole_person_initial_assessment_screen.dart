@@ -52,6 +52,11 @@ class CoreIntakeRules {
         caseSensitive: false,
       ).hasMatch(value.trim());
 
+  static bool isSyntheticTesterAlias(String value) => RegExp(
+        r"^TESTER-[A-Z0-9][A-Z0-9-]{1,30}$",
+        caseSensitive: false,
+      ).hasMatch(value.trim());
+
   static bool isComplete(Map<int, int> answers) =>
       coreIntakeQuestions.every((question) => answers.containsKey(question.number));
 
