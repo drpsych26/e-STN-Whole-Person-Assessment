@@ -31,6 +31,8 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
       }
       if (clinician != null && CoreIntakeRules.isSyntheticTesterAlias(clinician.name)) {
         _testerAlias.text = clinician.name;
+      } else if (clinician != null) {
+        _loadError = "A legacy non-synthetic tester profile is hidden. Clear it before UAT.";
       }
     } catch (error) {
       _loadError = error.toString();
