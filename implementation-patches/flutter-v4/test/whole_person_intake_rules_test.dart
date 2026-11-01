@@ -10,6 +10,37 @@ void main() {
       expect(coreIntakeQuestions.last.number, 25);
     });
 
+    test("preserves all 25 Part A source item wordings", () {
+      const expected = <String>[
+        "Low, depressed, empty or hopeless mood.",
+        "Much less interest or pleasure in usual activities.",
+        "Marked fatigue or unusually low energy.",
+        "Sleep problems that interfere with daytime functioning.",
+        "Excessive worry, tension or feeling on edge.",
+        "Sudden episodes of intense fear with strong physical symptoms.",
+        "Distressing memories, nightmares, avoidance or hyper-alertness after frightening events.",
+        "Intrusive unwanted thoughts or urges that are hard to dismiss.",
+        "Repeated behaviours or mental rituals done to reduce distress.",
+        "Periods of unusually high energy, reduced need for sleep, racing thoughts or increased activity.",
+        "Impulsive or risky behaviour that has caused meaningful problems.",
+        "Persistent problems with attention, organisation or completing tasks.",
+        "Long-standing social-communication or sensory differences affecting daily life.",
+        "Hearing, seeing or strongly believing things others do not that cause distress or impairment.",
+        "Feeling unreal, detached from yourself, or losing time/memory unexpectedly.",
+        "Alcohol use has caused concern, loss of control or consequences.",
+        "Drug or non-prescribed medication use has caused concern, loss of control or consequences.",
+        "Eating, weight or body-image concerns are affecting health or daily life.",
+        "Anger, aggression or loss of control has frightened you or others.",
+        "Thoughts of self-harm, suicide, or wishing you were dead.",
+        "Current intention, plan, preparation or access to means for suicide.",
+        "Thoughts, intention, plan or preparation to seriously harm another person.",
+        "You currently feel unsafe because of violence, abuse, exploitation, stalking or coercive control.",
+        "Housing, food, power, transport or other basic needs are unstable enough to affect health or safety.",
+        "Emotional or behavioural difficulties are significantly affecting work, study, parenting, relationships or self-care.",
+      ];
+      expect(coreIntakeQuestions.map((question) => question.text).toList(), expected);
+    });
+
     test("requires a synthetic case identifier", () {
       expect(CoreIntakeRules.isSyntheticCaseId("SYNTH-TEST-001"), isTrue);
       expect(CoreIntakeRules.isSyntheticCaseId("synth-demo-abc"), isTrue);
