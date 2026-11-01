@@ -78,3 +78,7 @@ See:
 Launch-readiness engineering is authorised; launch is not. Do not enable production integrations, production credentials, real-client data, clinical use, public hosting or external beta. The application is not currently certified launch-ready: clinical source authority, instrument permissions, human safety operations, privacy/security approval, independent validation, accessibility/UAT and accountable go/no-go evidence remain open.
 
 A private GitHub repository is still hosted by GitHub; it is not offline-only storage. Never commit real client records, credentials, API keys, private keys or identifiable health information.
+
+## Flutter Whole Person Core Intake v0.9
+
+A first Flutter implementation of Part A's 25 core intake items is maintained in `implementation-patches/flutter-v4/lib/screens/whole_person_initial_assessment_screen.dart`. It supports synthetic-ID-only entry, five-point responses, encrypted local draft save/reopen/delete and human-review flags for the paper-pilot safety-tagged items. The legacy profile screen is restricted to SYNTH- case IDs and TESTER- aliases; existing MDD/GAD/PTSD/ADHD interim modules require a saved SYNTH-/TESTER- profile, synthetic-data acknowledgement and complete responses before saving. It does not implement the remaining paper-pilot sections, licensed measures, adaptive routing, diagnostic scoring, safety tiers or real patient records. See `reference/FLUTTER-CORE-INTAKE-v0.9.md`.
