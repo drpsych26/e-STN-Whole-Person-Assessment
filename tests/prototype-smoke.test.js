@@ -8,6 +8,13 @@ const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'prototype/index.html'), 'utf8');
+const style = (html.match(/<style>([\s\S]*?)<\/style>/i) || [])[1] || '';
+assert.match(style, /input,textarea,select\{[^}]*background:#fff[^}]*color:#171717/,
+  'Form controls must use readable dark text on their light background');
+assert.match(style, /\.notice\{[^}]*color:#171717/,
+  'Notice panels must use readable dark text');
+assert.match(style, /\.alert\{[^}]*color:#721c24/,
+  'Alert panels must use readable dark warning text');
 const scripts = [...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)]
   .map(match => match[1].trim())
   .filter(Boolean);
@@ -159,6 +166,23 @@ function run() {
   app.calculate();
   assert.deepEqual(Array.from(app.flags()), ['suicide'],
     'A positive response must be surfaced for clinician review');
+
+  app.setRisk('suicide', 'Unsure');
+  app.setRisk('selfharm', 'Declined');
+  app.setRisk('attempt', 'Not asked');
+  app.saveSafety();
+  app.calculate();
+  assert.deepEqual(Array.from(app.flags()), ['suicide', 'selfharm', 'attempt'],
+    'Uncertain, declined and not-asked responses must remain visible for human review');
+  elements.safetyReview.value = '';
+  elements.signoff.value = 'Test Clinician';
+  app.saveReview();
+  assert.equal(app.A.reviewSaved, false,
+    'A flagged safety response must block progression until a human review note is recorded');
+  elements.safetyReview.value = 'Synthetic scenario: reviewed by test clinician; no actual handover exists.';
+  app.saveReview();
+  assert.equal(app.A.reviewSaved, true,
+    'A documented human review note should satisfy the simulated review gate');
 
   h.failWrites = true;
   assert.equal(app.saveData(), false,
