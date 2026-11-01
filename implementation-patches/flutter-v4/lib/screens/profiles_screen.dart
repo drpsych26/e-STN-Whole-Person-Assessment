@@ -18,11 +18,6 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
   bool _saving = false;
   String? _loadError;
 
-  bool _isSyntheticTesterAlias(String value) => RegExp(
-        r"^TESTER-[A-Z0-9][A-Z0-9-]{1,30}$",
-        caseSensitive: false,
-      ).hasMatch(value.trim());
-
   @override
   void initState() {
     super.initState();
@@ -34,7 +29,7 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
       } else if (client != null) {
         _loadError = "A legacy profile exists but is hidden because it is not a SYNTH- test ID. Clear it before UAT.";
       }
-      if (clinician != null && _isSyntheticTesterAlias(clinician.name)) {
+      if (clinician != null && CoreIntakeRules.isSyntheticTesterAlias(clinician.name)) {
         _testerAlias.text = clinician.name;
       }
     } catch (error) {
@@ -64,7 +59,7 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
       _message("Client profile must use a synthetic ID beginning with SYNTH-. Real client identifiers are blocked.");
       return;
     }
-    if (!_isSyntheticTesterAlias(testerAlias)) {
+    if (!CoreIntakeRules.isSyntheticTesterAlias(testerAlias)) {
       _message("Use a test alias beginning with TESTER-. Real names are not accepted.");
       return;
     }
