@@ -2,7 +2,7 @@ import "package:flutter/material.dart";
 import "package:uuid/uuid.dart";
 import "../models/profile_models.dart";
 import "../storage/secure_hive.dart";
-import "whole_person_initial_assessment_screen.dart";
+import "../models/core_intake.dart";
 
 class ProfilesScreen extends StatefulWidget {
   const ProfilesScreen({super.key});
