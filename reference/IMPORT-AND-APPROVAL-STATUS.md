@@ -6,7 +6,7 @@ The supplied STN Whole Person Initial Assessment HTML and paper-pilot HTML are t
 ## Current import status — 31 October 2026
 - The supplied Flutter v4 archive is preserved in `flutter/source-archives/parts/` and reconstructed in CI with an expected SHA-256 check.
 - Tracked Flutter remediation patches and tests are stored under `implementation-patches/flutter-v4/`.
-- The supplied HTML versions and Flutter v2/v3 packs have not all been imported into the repository and reconciled.
+- Five HTML source text-extracts are present in `reference/source-html/`; four are shorter than the uploaded originals and are not byte-identical. The PDF and Flutter v2/v3/coding ZIPs remain local and are not imported. See the source reconciliation inventory for byte counts and hashes.
 - The browser prototype and Flutter v4 module MVP have not been demonstrated to be exact matches for the approved paper pilot or Clinical Core v2.
 
 ## Approval boundary
