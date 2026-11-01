@@ -6,6 +6,7 @@ import "../modules/ptsd_module.dart";
 import "../modules/adhd_module.dart";
 import "../logic/scoring_engine.dart";
 import "../storage/secure_hive.dart";
+import "../models/core_intake.dart";
 
 class ModuleScreen extends StatefulWidget {
   final String moduleId;
@@ -147,6 +148,17 @@ class _ModuleScreenState extends State<ModuleScreen> {
     if (!_syntheticAcknowledged) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Confirm synthetic-data-only use before saving.")),
+      );
+      return;
+    }
+    final activeClient = SecureHive.loadActiveClient();
+    final activeTester = SecureHive.loadActiveClinician();
+    if (activeClient == null ||
+        !CoreIntakeRules.isSyntheticCaseId(activeClient.id) ||
+        activeTester == null ||
+        !CoreIntakeRules.isSyntheticTesterAlias(activeTester.name)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Create a SYNTH- case and TESTER- alias in Synthetic Test Profiles before saving.")),
       );
       return;
     }
