@@ -57,6 +57,10 @@ See `reference/CONTROLLED-UAT-PROTOCOL-v0.7.md`. The application is restricted t
 
 A local source inventory and section-level traceability baseline are recorded in `reference/SOURCE-RECONCILIATION-INVENTORY-2026-11-01.md` and `tests/PAPER-PILOT-SECTION-TRACEABILITY-2026-11-01.csv`. The supplied paper pilot contains 208 table items across 24 groups. The current browser prototype has 9 simplified screening questions and the Flutter v4 archive is a four-module MVP; neither is an exact implementation of the paper pilot. Original source import, authoritative-version approval, instrument permissions and item-level traceability remain open.
 
+## Flutter Whole Person Core Intake v0.9
+
+A first Flutter implementation of Part A's 25 core intake items is maintained in `implementation-patches/flutter-v4/lib/screens/whole_person_initial_assessment_screen.dart`. It supports synthetic-ID-only entry, five-point responses, encrypted local draft save/reopen/delete and human-review flags for the paper-pilot safety-tagged items. It does not implement the remaining paper-pilot sections, licensed measures, adaptive routing, diagnostic scoring, safety tiers or real patient records. See `reference/FLUTTER-CORE-INTAKE-v0.9.md`.
+
 ## Automated verification
 
 GitHub Actions checks:
