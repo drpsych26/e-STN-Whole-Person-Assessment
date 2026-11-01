@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "../storage/secure_hive.dart";
+import "profiles_screen.dart";
 
 class CoreIntakeQuestion {
   final int number;
@@ -81,6 +82,7 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
   String? _createdAt;
   bool _simulationAcknowledged = false;
   bool _saving = false;
+  bool _legacyProfileBlocked = false;
 
   @override
   void initState() {
@@ -102,10 +104,24 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
 
   Future<void> _refreshDrafts() async {
     try {
+      final client = SecureHive.loadActiveClient();
+      final clinician = SecureHive.loadActiveClinician();
+      final legacyProfile =
+          (client != null && !CoreIntakeRules.isSyntheticCaseId(client.id)) ||
+          (clinician != null &&
+              !CoreIntakeRules.isSyntheticTesterAlias(clinician.name));
       final drafts = SecureHive.loadWholePersonDrafts();
-      if (mounted) setState(() => _drafts = drafts);
+      if (mounted) {
+        setState(() {
+          _drafts = drafts;
+          _legacyProfileBlocked = legacyProfile;
+        });
+      }
     } catch (error) {
-      if (mounted) _showMessage("Could not load saved drafts: $error");
+      if (mounted) {
+        setState(() => _legacyProfileBlocked = true);
+        _showMessage("Could not verify local profile safety; UAT saving is blocked: $error");
+      }
     }
   }
 
@@ -148,6 +164,10 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
 
   Future<bool> _saveDraft({bool completed = false}) async {
     if (_saving) return false;
+    if (_legacyProfileBlocked) {
+      _showMessage("Clear legacy non-synthetic profile data in Profiles before using this UAT screen.");
+      return false;
+    }
     final caseId = _caseIdController.text.trim();
     if (!CoreIntakeRules.isSyntheticCaseId(caseId)) {
       _showMessage("Use a synthetic test ID beginning with SYNTH-. Real client identifiers are blocked.");
@@ -351,6 +371,34 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
               ),
             ),
           ),
+          if (_legacyProfileBlocked)
+            Card(
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Legacy profile data must be cleared before UAT saving is enabled.",
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text("The app will not use or display legacy non-synthetic profiles in this assessment."),
+                    OutlinedButton(
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ProfilesScreen()),
+                        );
+                        await _refreshDrafts();
+                      },
+                      child: const Text("Open synthetic profiles and clear legacy data"),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           _savedDraftsPanel(),
           Card(
             child: Padding(
