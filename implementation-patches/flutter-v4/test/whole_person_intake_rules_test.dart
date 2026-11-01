@@ -24,7 +24,8 @@ void main() {
     });
 
     test("flags endorsed safety-tagged items for human review", () {
-      final answers = {for (var i = 1; i <= 25; i++) i: 0, 20: 2};
+      final answers = {for (var i = 1; i <= 25; i++) i: 0};
+      answers[20] = 2;
       expect(CoreIntakeRules.unresolvedSafetyItems(answers), [20]);
     });
 
