@@ -31,3 +31,5 @@ These changes reduce unsupported claims; they do not make the app clinically val
 - `lib/screens/module_screen.dart` — requires a SYNTH-/TESTER- profile, synthetic-data acknowledgement and complete module responses before saving an interim summary.
 
 Both GitHub Flutter verification workflows copy the new screen and tests into the restored v4 project. This is Part A only; the other 183 paper-pilot items, adaptive routing and all clinical/governance gates remain open. Synthetic data only.
+
+The Part A safety flag rule is intentionally conservative: any endorsed or unanswered safety-tagged item remains unresolved for human review. This is not a clinically approved risk threshold or safety disposition.
