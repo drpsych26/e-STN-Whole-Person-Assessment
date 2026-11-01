@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:uuid/uuid.dart";
 import "../models/profile_models.dart";
 import "../storage/secure_hive.dart";
+import "whole_person_initial_assessment_screen.dart";
 
 class ProfilesScreen extends StatefulWidget {
   const ProfilesScreen({super.key});
@@ -12,15 +13,15 @@ class ProfilesScreen extends StatefulWidget {
 
 class _ProfilesScreenState extends State<ProfilesScreen> {
   final _uuid = const Uuid();
-  final _clientName = TextEditingController();
-  final _clientDob = TextEditingController();
-  final _clientContact = TextEditingController();
-  final _clinName = TextEditingController();
-  final _clinTitle = TextEditingController();
-  final _clinReg = TextEditingController();
-
+  final _caseId = TextEditingController();
+  final _testerAlias = TextEditingController();
   bool _saving = false;
   String? _loadError;
+
+  bool _isSyntheticTesterAlias(String value) => RegExp(
+        r"^TESTER-[A-Z0-9][A-Z0-9-]{1,30}$",
+        caseSensitive: false,
+      ).hasMatch(value.trim());
 
   @override
   void initState() {
@@ -28,15 +29,13 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
     try {
       final client = SecureHive.loadActiveClient();
       final clinician = SecureHive.loadActiveClinician();
-      if (client != null) {
-        _clientName.text = client.fullName;
-        _clientDob.text = client.dobIso;
-        _clientContact.text = client.contact;
+      if (client != null && CoreIntakeRules.isSyntheticCaseId(client.id)) {
+        _caseId.text = client.id;
+      } else if (client != null) {
+        _loadError = "A legacy profile exists but is hidden because it is not a SYNTH- test ID. Clear it before UAT.";
       }
-      if (clinician != null) {
-        _clinName.text = clinician.name;
-        _clinTitle.text = clinician.title;
-        _clinReg.text = clinician.registration;
+      if (clinician != null && _isSyntheticTesterAlias(clinician.name)) {
+        _testerAlias.text = clinician.name;
       }
     } catch (error) {
       _loadError = error.toString();
@@ -45,12 +44,8 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
 
   @override
   void dispose() {
-    _clientName.dispose();
-    _clientDob.dispose();
-    _clientContact.dispose();
-    _clinName.dispose();
-    _clinTitle.dispose();
-    _clinReg.dispose();
+    _caseId.dispose();
+    _testerAlias.dispose();
     super.dispose();
   }
 
@@ -63,43 +58,37 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
 
   Future<void> _save() async {
     if (_saving) return;
-    final clientName = _clientName.text.trim();
-    final clinicianName = _clinName.text.trim();
-    final dob = _clientDob.text.trim();
-
-    if (clientName.isEmpty || clinicianName.isEmpty) {
-      _message("Enter both a client name and clinician name.");
+    final caseId = _caseId.text.trim();
+    final testerAlias = _testerAlias.text.trim();
+    if (!CoreIntakeRules.isSyntheticCaseId(caseId)) {
+      _message("Client profile must use a synthetic ID beginning with SYNTH-. Real client identifiers are blocked.");
       return;
     }
-    if (dob.isNotEmpty && DateTime.tryParse(dob) == null) {
-      _message("Enter the date of birth in YYYY-MM-DD format.");
+    if (!_isSyntheticTesterAlias(testerAlias)) {
+      _message("Use a test alias beginning with TESTER-. Real names are not accepted.");
       return;
     }
 
     setState(() => _saving = true);
     try {
-      // Preserve existing IDs. Re-saving a profile must not silently create
-      // a different client or clinician identity.
-      final existingClient = SecureHive.loadActiveClient();
       final existingClinician = SecureHive.loadActiveClinician();
       final client = ClientProfile(
-        id: existingClient?.id ?? _uuid.v4(),
-        fullName: clientName,
-        dobIso: dob,
-        contact: _clientContact.text.trim(),
+        id: caseId,
+        fullName: "Synthetic case $caseId",
+        dobIso: "",
+        contact: "",
       );
       final clinician = ClinicianProfile(
         id: existingClinician?.id ?? _uuid.v4(),
-        name: clinicianName,
-        title: _clinTitle.text.trim(),
-        registration: _clinReg.text.trim(),
+        name: testerAlias,
+        title: "UAT tester",
+        registration: "NOT-APPLICABLE",
       );
-
       await SecureHive.saveActiveClient(client);
       await SecureHive.saveActiveClinician(clinician);
-      _message("Profiles saved to encrypted device-local MVP storage.");
+      _message("Synthetic test profiles saved to encrypted device-local demo storage.");
     } catch (error) {
-      _message("Could not save profiles: $error");
+      _message("Could not save synthetic profiles: $error");
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -107,17 +96,32 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
 
   Future<void> _clear() async {
     if (_saving) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text("Clear local test profiles?"),
+        content: const Text("This removes both current and legacy device-local profile data from this app."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text("Clear"),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
     setState(() => _saving = true);
     try {
       await SecureHive.clearProfiles();
       if (!mounted) return;
-      _clientName.clear();
-      _clientDob.clear();
-      _clientContact.clear();
-      _clinName.clear();
-      _clinTitle.clear();
-      _clinReg.clear();
-      _message("Device-local profiles cleared.");
+      _caseId.clear();
+      _testerAlias.clear();
+      setState(() => _loadError = null);
+      _message("All device-local test profile data cleared.");
     } catch (error) {
       _message("Could not clear profiles: $error");
     } finally {
@@ -129,11 +133,11 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Profiles"),
+        title: const Text("Synthetic Test Profiles"),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            tooltip: "Clear",
+            tooltip: "Clear all local profile data",
             onPressed: _saving ? null : _clear,
           ),
         ],
@@ -141,58 +145,51 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
-            "Development MVP only. These profiles are stored on this device; "
-            "they are not authenticated identities or production clinical records.",
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(14),
+              child: Text(
+                "PRIVATE UAT ONLY — SYNTHETIC DATA ONLY. "
+                "This profile screen does not collect client names, dates of birth, contact details or NHI numbers. "
+                "These local test profiles are not authenticated identities or clinical records.",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
           ),
           if (_loadError != null)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Text(
-                "Stored profiles could not be loaded: $_loadError",
+                _loadError!,
                 style: const TextStyle(color: Colors.red),
               ),
             ),
           const SizedBox(height: 12),
-          const Text(
-            "Client Profile",
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
+          const Text("Synthetic case", style: TextStyle(fontWeight: FontWeight.w700)),
           TextField(
-            controller: _clientName,
-            decoration: const InputDecoration(labelText: "Client full name"),
-          ),
-          TextField(
-            controller: _clientDob,
-            keyboardType: TextInputType.datetime,
-            decoration: const InputDecoration(labelText: "DOB (YYYY-MM-DD)"),
-          ),
-          TextField(
-            controller: _clientContact,
-            keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(labelText: "Contact (phone/email)"),
+            controller: _caseId,
+            decoration: const InputDecoration(
+              labelText: "Synthetic case ID",
+              hintText: "SYNTH-TEST-001",
+              helperText: "Must begin with SYNTH-. Real client identifiers are rejected.",
+            ),
+            textCapitalization: TextCapitalization.characters,
           ),
           const SizedBox(height: 20),
-          const Text(
-            "Clinician Profile",
-            style: TextStyle(fontWeight: FontWeight.w700),
-          ),
+          const Text("UAT tester", style: TextStyle(fontWeight: FontWeight.w700)),
           TextField(
-            controller: _clinName,
-            decoration: const InputDecoration(labelText: "Clinician name"),
-          ),
-          TextField(
-            controller: _clinTitle,
-            decoration: const InputDecoration(labelText: "Title"),
-          ),
-          TextField(
-            controller: _clinReg,
-            decoration: const InputDecoration(labelText: "Registration number"),
+            controller: _testerAlias,
+            decoration: const InputDecoration(
+              labelText: "Synthetic tester alias",
+              hintText: "TESTER-01",
+              helperText: "Must begin with TESTER-. Do not enter a real person's name.",
+            ),
+            textCapitalization: TextCapitalization.characters,
           ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: _saving ? null : _save,
-            child: Text(_saving ? "Saving…" : "Save Profiles"),
+            child: Text(_saving ? "Saving…" : "Save Synthetic Profiles"),
           ),
         ],
       ),
