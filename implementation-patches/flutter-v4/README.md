@@ -28,6 +28,6 @@ These changes reduce unsupported claims; they do not make the app clinically val
 - `lib/storage/secure_hive.dart` — dedicated encrypted local Hive box for synthetic core-intake drafts.
 - `lib/screens/home_screen.dart` — adds the Whole Person Initial Assessment entry point.
 - `lib/screens/profiles_screen.dart` — replaces name/DOB/contact fields with SYNTH- case IDs and TESTER- aliases; legacy profiles are not displayed and can be cleared.
-- `lib/screens/module_screen.dart` — requires synthetic-data acknowledgement and complete module responses before saving an interim summary.
+- `lib/screens/module_screen.dart` — requires a SYNTH-/TESTER- profile, synthetic-data acknowledgement and complete module responses before saving an interim summary.
 
 Both GitHub Flutter verification workflows copy the new screen and tests into the restored v4 project. This is Part A only; the other 183 paper-pilot items, adaptive routing and all clinical/governance gates remain open. Synthetic data only.
