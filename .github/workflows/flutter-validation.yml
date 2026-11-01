@@ -55,11 +55,13 @@ jobs:
           cp "$patch_root/lib/logic/report_builder.dart" lib/logic/report_builder.dart
           cp "$patch_root/lib/storage/secure_hive.dart" lib/storage/secure_hive.dart
           cp "$patch_root/lib/screens/home_screen.dart" lib/screens/home_screen.dart
+            cp "$patch_root/lib/screens/whole_person_initial_assessment_screen.dart" lib/screens/whole_person_initial_assessment_screen.dart
           cp "$patch_root/lib/screens/module_screen.dart" lib/screens/module_screen.dart
           cp "$patch_root/lib/screens/results_screen.dart" lib/screens/results_screen.dart
           cp "$patch_root/lib/screens/profiles_screen.dart" lib/screens/profiles_screen.dart
           cp "$patch_root/lib/screens/result_detail_screen.dart" lib/screens/result_detail_screen.dart
           cp "$patch_root/test/scoring_engine_test.dart" test/scoring_engine_test.dart
+            cp "$patch_root/test/whole_person_intake_rules_test.dart" test/whole_person_intake_rules_test.dart
           cp "$patch_root/test/widget_test.dart" test/widget_test.dart
       - name: Resolve dependencies
         working-directory: flutter/source/supportive_therapy_network_v4
