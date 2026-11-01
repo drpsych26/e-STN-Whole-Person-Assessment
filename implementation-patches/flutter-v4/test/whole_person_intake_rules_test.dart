@@ -1,5 +1,5 @@
 import "package:flutter_test/flutter_test.dart";
-import "package:supportive_therapy_network/screens/whole_person_initial_assessment_screen.dart";
+import "package:supportive_therapy_network/models/core_intake.dart";
 
 void main() {
   group("STN paper-pilot core intake structure", () {
