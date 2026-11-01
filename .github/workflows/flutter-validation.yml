@@ -76,3 +76,10 @@ jobs:
       - name: Web release build
         working-directory: flutter/source/supportive_therapy_network_v4
         run: flutter build web --release
+      - name: Upload internal web build artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: stn-flutter-web-${{ github.sha }}
+          path: flutter/source/supportive_therapy_network_v4/build/web/
+          if-no-files-found: error
+          retention-days: 7
