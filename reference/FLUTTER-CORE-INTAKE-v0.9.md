@@ -16,7 +16,8 @@
 - Synthetic case IDs only; IDs not beginning with SYNTH- are rejected.
 - Simulation acknowledgement required before saving.
 - Draft save, reopen and delete using a dedicated encrypted local Hive box.
-- No name, date of birth, NHI, contact details or other real patient identifiers are collected in this screen.
+- No name, date of birth, NHI, contact details or other real patient identifiers are collected in this screen or the synthetic profile screen.
+- The legacy profile screen is replaced with SYNTH- case IDs and TESTER- aliases; legacy non-synthetic client profiles are hidden and can be cleared.
 - Unit tests for item count, unique numbering, synthetic ID validation, completeness and safety-tag behaviour.
 - CI workflows copy this new screen and test into the restored Flutter v4 project before analysis, tests and builds.
 
