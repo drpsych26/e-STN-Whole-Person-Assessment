@@ -21,6 +21,7 @@ class _ModuleScreenState extends State<ModuleScreen> {
   final Map<String, Severity> _responses = {};
   final _engine = ScoringEngine();
   bool _saving = false;
+  bool _syntheticAcknowledged = false;
 
   List<Question> get _questions {
     switch (widget.moduleId) {
@@ -60,6 +61,19 @@ class _ModuleScreenState extends State<ModuleScreen> {
             "whether a person is safe.",
           ),
           const SizedBox(height: 12),
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _syntheticAcknowledged,
+            onChanged: _saving
+                ? null
+                : (value) => setState(
+                      () => _syntheticAcknowledged = value ?? false,
+                    ),
+            title: const Text(
+              "I confirm this is a synthetic test case only. No real patient information or responses are being entered.",
+            ),
+            controlAffinity: ListTileControlAffinity.leading,
+          ),
           const Text(
             "Rate each item: None, Mild, Moderate, Severe, or Extreme. "
             "An unanswered item is not treated as a negative response.",
@@ -70,8 +84,12 @@ class _ModuleScreenState extends State<ModuleScreen> {
           ...questions.map(_questionTile),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _saving ? null : _scoreAndSave,
-            child: Text(_saving ? "Saving…" : "Save response summary"),
+            onPressed: _saving ||
+                    !_syntheticAcknowledged ||
+                    _responses.length != questions.length
+                ? null
+                : _scoreAndSave,
+            child: Text(_saving ? "Saving…" : "Save synthetic response summary"),
           ),
         ],
       ),
@@ -126,6 +144,18 @@ class _ModuleScreenState extends State<ModuleScreen> {
 
   Future<void> _scoreAndSave() async {
     if (_saving) return;
+    if (!_syntheticAcknowledged) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Confirm synthetic-data-only use before saving.")),
+      );
+      return;
+    }
+    if (_responses.length != _questions.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Answer every item before saving this synthetic test.")),
+      );
+      return;
+    }
     setState(() => _saving = true);
 
     try {
