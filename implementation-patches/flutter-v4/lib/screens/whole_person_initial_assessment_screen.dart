@@ -225,7 +225,7 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
     if (confirmed != true) return;
     try {
       await SecureHive.deleteWholePersonDraft(id);
-      if (_draftId == id) _startNewDraft();
+      if (mounted && _draftId == id) _startNewDraft();
       await _refreshDrafts();
       _showMessage("Synthetic draft deleted.");
     } catch (error) {
