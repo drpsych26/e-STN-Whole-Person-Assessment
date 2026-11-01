@@ -47,10 +47,6 @@ See `reference/POST-MERGE-VERIFICATION-2026-10-31.md` for the exact checks, arti
 
 A separate draft PR #7 proposes upgrading GitHub Actions to Node.js 24-compatible releases. It must pass its own CI before merge.
 
-## Flutter Whole Person Core Intake v0.9
-
-A first Flutter implementation of Part A's 25 core intake items is maintained in `implementation-patches/flutter-v4/lib/screens/whole_person_initial_assessment_screen.dart`. It supports synthetic-ID-only entry, five-point responses, encrypted local draft save/reopen/delete and human-review flags for the paper-pilot safety-tagged items. It does not implement the remaining paper-pilot sections, licensed measures, adaptive routing, diagnostic scoring, safety tiers or real patient records. See `reference/FLUTTER-CORE-INTAKE-v0.9.md`.
-
 ## Automated verification
 
 GitHub Actions checks:
