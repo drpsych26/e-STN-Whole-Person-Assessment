@@ -15,8 +15,8 @@ jobs:
     outputs:
       flutter_source_present: ${{ steps.flutter-check.outputs.present }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - name: Check prototype inline JavaScript syntax
@@ -104,7 +104,7 @@ jobs:
     if: needs.prototype-static-checks.outputs.flutter_source_present == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Restore Flutter v4 source in build job
         shell: bash
         run: |
@@ -173,7 +173,7 @@ jobs:
             cd "$GITHUB_WORKSPACE"
           done
       - name: Upload internal debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: stn-flutter-v4-debug-${{ github.sha }}
           path: flutter/source/supportive_therapy_network_v4/build/app/outputs/flutter-apk/app-debug.apk
