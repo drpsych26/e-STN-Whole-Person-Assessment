@@ -9,6 +9,7 @@ class SecureHive {
   static const _secureKeyName = "stn_hive_key_v1";
   static const String resultsBoxName = "stn_results_box";
   static const String profilesBoxName = "stn_profiles_box";
+  static const String wholePersonDraftsBoxName = "stn_whole_person_drafts_box";
 
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
@@ -19,6 +20,9 @@ class SecureHive {
     }
     if (!Hive.isBoxOpen(profilesBoxName)) {
       await Hive.openBox(profilesBoxName, encryptionCipher: HiveAesCipher(key));
+    }
+    if (!Hive.isBoxOpen(wholePersonDraftsBoxName)) {
+      await Hive.openBox<String>(wholePersonDraftsBoxName, encryptionCipher: HiveAesCipher(key));
     }
   }
 
@@ -43,6 +47,7 @@ class SecureHive {
 
   static Box get _results => Hive.box(resultsBoxName);
   static Box get _profiles => Hive.box(profilesBoxName);
+  static Box<String> get _wholePersonDrafts => Hive.box<String>(wholePersonDraftsBoxName);
 
   static Future<void> addResult(ModuleResult result) async {
     await _results.add(result.toJson());
@@ -91,5 +96,40 @@ class SecureHive {
 
   static Future<void> clearProfiles() async {
     await _profiles.clear();
+  }
+
+  static Future<void> saveWholePersonDraft(Map<String, dynamic> draft) async {
+    final id = draft["id"];
+    if (id is! String || id.isEmpty) {
+      throw ArgumentError("Whole-person draft requires a non-empty ID.");
+    }
+    await _wholePersonDrafts.put(id, jsonEncode(draft));
+  }
+
+  static Map<String, dynamic>? loadWholePersonDraft(String id) {
+    final raw = _wholePersonDrafts.get(id);
+    if (raw == null) return null;
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) {
+      throw const FormatException("Stored whole-person draft is invalid.");
+    }
+    return Map<String, dynamic>.from(decoded);
+  }
+
+  static List<Map<String, dynamic>> loadWholePersonDrafts() {
+    final drafts = _wholePersonDrafts.values.map((raw) {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) {
+        throw const FormatException("Stored whole-person draft is invalid.");
+      }
+      return Map<String, dynamic>.from(decoded);
+    }).toList();
+    drafts.sort((a, b) => (b["updatedAt"] as String? ?? "")
+        .compareTo(a["updatedAt"] as String? ?? ""));
+    return drafts;
+  }
+
+  static Future<void> deleteWholePersonDraft(String id) async {
+    await _wholePersonDrafts.delete(id);
   }
 }
