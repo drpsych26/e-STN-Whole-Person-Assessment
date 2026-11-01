@@ -16,6 +16,7 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
   final _caseId = TextEditingController();
   final _testerAlias = TextEditingController();
   bool _saving = false;
+  bool _legacyProfileDetected = false;
   String? _loadError;
 
   @override
@@ -27,11 +28,13 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
       if (client != null && CoreIntakeRules.isSyntheticCaseId(client.id)) {
         _caseId.text = client.id;
       } else if (client != null) {
+        _legacyProfileDetected = true;
         _loadError = "A legacy profile exists but is hidden because it is not a SYNTH- test ID. Clear it before UAT.";
       }
       if (clinician != null && CoreIntakeRules.isSyntheticTesterAlias(clinician.name)) {
         _testerAlias.text = clinician.name;
       } else if (clinician != null) {
+        _legacyProfileDetected = true;
         _loadError = "A legacy non-synthetic tester profile is hidden. Clear it before UAT.";
       }
     } catch (error) {
@@ -57,6 +60,10 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
     if (_saving) return;
     final caseId = _caseId.text.trim();
     final testerAlias = _testerAlias.text.trim();
+    if (_legacyProfileDetected) {
+      _message("Clear legacy non-synthetic profile data before starting UAT.");
+      return;
+    }
     if (!CoreIntakeRules.isSyntheticCaseId(caseId)) {
       _message("Client profile must use a synthetic ID beginning with SYNTH-. Real client identifiers are blocked.");
       return;
@@ -117,7 +124,10 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
       if (!mounted) return;
       _caseId.clear();
       _testerAlias.clear();
-      setState(() => _loadError = null);
+      setState(() {
+        _loadError = null;
+        _legacyProfileDetected = false;
+      });
       _message("All device-local test profile data cleared.");
     } catch (error) {
       _message("Could not clear profiles: $error");
