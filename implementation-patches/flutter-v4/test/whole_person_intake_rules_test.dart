@@ -18,6 +18,13 @@ void main() {
       expect(CoreIntakeRules.isSyntheticCaseId(""), isFalse);
     });
 
+    test("requires a synthetic tester alias", () {
+      expect(CoreIntakeRules.isSyntheticTesterAlias("TESTER-01"), isTrue);
+      expect(CoreIntakeRules.isSyntheticTesterAlias("TESTER-UAT-02"), isTrue);
+      expect(CoreIntakeRules.isSyntheticTesterAlias("Dylan Hendriks"), isFalse);
+      expect(CoreIntakeRules.isSyntheticTesterAlias(""), isFalse);
+    });
+
     test("does not treat missing safety-tagged answers as negative", () {
       final unresolved = CoreIntakeRules.unresolvedSafetyItems(const <int, int>{});
       expect(unresolved, [14, 19, 20, 21, 22, 23, 24]);
