@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: '22'
+          node-version: '26.13.0'
       - name: Check prototype inline JavaScript syntax
         run: |
           node <<'NODE'
@@ -115,21 +115,6 @@ jobs:
           test "$(wc -c < /tmp/stn-v4/source.b64)" -eq 18404
           base64 --decode /tmp/stn-v4/source.b64 > /tmp/stn-v4/source.zip
           echo "4478e3e54131fdb94db943524a7aa00cef9239122e572eaad6d9e0d5ad95261c  /tmp/stn-v4/source.zip" | sha256sum --check
-          python3 - <<'PY'
-          import hashlib
-          import zipfile
-          archive = "/tmp/stn-v4/source.zip"
-          with zipfile.ZipFile(archive) as source:
-              members = source.infolist()
-              if not members:
-                  raise SystemExit("Flutter archive is empty")
-              for member in members:
-                  data = source.read(member.filename)  # also verifies member CRC
-                  if len(data) != member.file_size:
-                      raise SystemExit("Size mismatch: " + member.filename)
-                  print("Verified", member.filename, hashlib.sha256(data).hexdigest())
-              print("PASS: verified", len(members), "archive members")
-          PY
           unzip -q /tmp/stn-v4/source.zip -d flutter/source
           cp implementation-patches/flutter-v4/lib/logic/scoring_engine.dart flutter/source/supportive_therapy_network_v4/lib/logic/scoring_engine.dart
           mkdir -p flutter/source/supportive_therapy_network_v4/test
@@ -137,7 +122,7 @@ jobs:
           python3 implementation-patches/flutter-v4/patch_ui.py
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.47.9'
           cache: true
       - name: Analyze, test, and build each Flutter project
         shell: bash
@@ -158,11 +143,14 @@ jobs:
             cp "$patch_root/lib/logic/report_builder.dart" lib/logic/report_builder.dart
             cp "$patch_root/lib/storage/secure_hive.dart" lib/storage/secure_hive.dart
             cp "$patch_root/lib/screens/home_screen.dart" lib/screens/home_screen.dart
+            cp "$patch_root/lib/screens/whole_person_initial_assessment_screen.dart" lib/screens/whole_person_initial_assessment_screen.dart
+            cp "$patch_root/lib/models/core_intake.dart" lib/models/core_intake.dart
             cp "$patch_root/lib/screens/module_screen.dart" lib/screens/module_screen.dart
             cp "$patch_root/lib/screens/results_screen.dart" lib/screens/results_screen.dart
             cp "$patch_root/lib/screens/profiles_screen.dart" lib/screens/profiles_screen.dart
             cp "$patch_root/lib/screens/result_detail_screen.dart" lib/screens/result_detail_screen.dart
             cp "$patch_root/test/scoring_engine_test.dart" test/scoring_engine_test.dart
+            cp "$patch_root/test/whole_person_intake_rules_test.dart" test/whole_person_intake_rules_test.dart
             cp "$patch_root/test/widget_test.dart" test/widget_test.dart
             flutter pub get
             dart format lib test

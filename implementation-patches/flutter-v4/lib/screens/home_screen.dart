@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "module_screen.dart";
 import "results_screen.dart";
 import "profiles_screen.dart";
+import "whole_person_initial_assessment_screen.dart";
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -41,6 +42,20 @@ class HomeScreen extends StatelessWidget {
                 "a diagnosis, validated score, or clinical risk disposition. "
                 "Use synthetic data only until clinical, privacy, security, "
                 "and governance approvals are complete.",
+              ),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.assignment_outlined),
+              title: const Text("Whole Person Initial Assessment"),
+              subtitle: const Text("Part A — 25 core intake items · synthetic-data simulation"),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WholePersonInitialAssessmentScreen(),
+                ),
               ),
             ),
           ),

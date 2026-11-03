@@ -4,11 +4,13 @@ import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "package:hive/hive.dart";
 import "../models/assessment_models.dart";
 import "../models/profile_models.dart";
+import "../models/core_intake.dart";
 
 class SecureHive {
   static const _secureKeyName = "stn_hive_key_v1";
   static const String resultsBoxName = "stn_results_box";
   static const String profilesBoxName = "stn_profiles_box";
+  static const String wholePersonDraftsBoxName = "stn_whole_person_drafts_box";
 
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
@@ -19,6 +21,9 @@ class SecureHive {
     }
     if (!Hive.isBoxOpen(profilesBoxName)) {
       await Hive.openBox(profilesBoxName, encryptionCipher: HiveAesCipher(key));
+    }
+    if (!Hive.isBoxOpen(wholePersonDraftsBoxName)) {
+      await Hive.openBox<String>(wholePersonDraftsBoxName, encryptionCipher: HiveAesCipher(key));
     }
   }
 
@@ -43,18 +48,33 @@ class SecureHive {
 
   static Box get _results => Hive.box(resultsBoxName);
   static Box get _profiles => Hive.box(profilesBoxName);
+  static Box<String> get _wholePersonDrafts => Hive.box<String>(wholePersonDraftsBoxName);
 
   static Future<void> addResult(ModuleResult result) async {
-    await _results.add(result.toJson());
+    final client = loadActiveClient();
+    final clinician = loadActiveClinician();
+    if (client == null || !CoreIntakeRules.isSyntheticCaseId(client.id)) {
+      throw StateError('A synthetic case must be active before saving a response summary.');
+    }
+    if (clinician == null || !CoreIntakeRules.isSyntheticTesterAlias(clinician.name)) {
+      throw StateError('A synthetic tester alias must be active before saving a response summary.');
+    }
+    final payload = Map<String, dynamic>.from(result.toJson())
+      ..['_stnSyntheticCaseId'] = client.id
+      ..['_stnTesterAlias'] = clinician.name;
+    await _results.add(payload);
   }
 
   static List<ModuleResult> loadResults() {
-    final results = _results.values.map((value) {
-      if (value is! Map) {
-        throw const FormatException('Stored assessment result is not a map.');
-      }
-      return ModuleResult.fromJson(Map<String, dynamic>.from(value));
-    }).toList();
+    final client = loadActiveClient();
+    if (client == null || !client.id.startsWith('SYNTH-')) {
+      return <ModuleResult>[];
+    }
+    final results = _results.values
+        .where((value) =>
+            value is Map && value['_stnSyntheticCaseId'] == client.id)
+        .map((value) => ModuleResult.fromJson(Map<String, dynamic>.from(value)))
+        .toList();
     results.sort((a, b) => b.completedAt.compareTo(a.completedAt));
     return results;
   }
@@ -91,5 +111,40 @@ class SecureHive {
 
   static Future<void> clearProfiles() async {
     await _profiles.clear();
+  }
+
+  static Future<void> saveWholePersonDraft(Map<String, dynamic> draft) async {
+    final id = draft["id"];
+    if (id is! String || id.isEmpty) {
+      throw ArgumentError("Whole-person draft requires a non-empty ID.");
+    }
+    await _wholePersonDrafts.put(id, jsonEncode(draft));
+  }
+
+  static Map<String, dynamic>? loadWholePersonDraft(String id) {
+    final raw = _wholePersonDrafts.get(id);
+    if (raw == null) return null;
+    final decoded = jsonDecode(raw);
+    if (decoded is! Map) {
+      throw const FormatException("Stored whole-person draft is invalid.");
+    }
+    return Map<String, dynamic>.from(decoded);
+  }
+
+  static List<Map<String, dynamic>> loadWholePersonDrafts() {
+    final drafts = _wholePersonDrafts.values.map((raw) {
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) {
+        throw const FormatException("Stored whole-person draft is invalid.");
+      }
+      return Map<String, dynamic>.from(decoded);
+    }).toList();
+    drafts.sort((a, b) => (b["updatedAt"] as String? ?? "")
+        .compareTo(a["updatedAt"] as String? ?? ""));
+    return drafts;
+  }
+
+  static Future<void> deleteWholePersonDraft(String id) async {
+    await _wholePersonDrafts.delete(id);
   }
 }
