@@ -184,6 +184,25 @@ function run() {
   assert.equal(app.A.reviewSaved, true,
     'A documented human review note should satisfy the simulated review gate');
 
+  // Switching to a different synthetic client must never carry forward another case's answers or notes.
+  elements.clientId.value = 'SYNTHETIC-002';
+  elements.clientName.value = 'Second Synthetic Client';
+  elements.dob.value = '1992-02-02';
+  elements.assessDate.value = '2026-11-01';
+  elements.clinician.value = 'Test Clinician';
+  elements.consent.value = 'Yes';
+  app.saveClientAndContinue();
+  assert.equal(Object.keys(app.A.answers).length, 0,
+    'Changing client identity must clear all prior screening answers');
+  assert.equal(Object.keys(app.A.risk).length, 0,
+    'Changing client identity must clear all prior safety responses and notes');
+  assert.equal(Object.keys(app.A.review).length, 0,
+    'Changing client identity must clear prior clinical review notes');
+  assert.equal(Object.keys(app.A.care).length, 0,
+    'Changing client identity must clear prior care-plan content');
+  assert.equal(app.A.safetySaved, false,
+    'Changing client identity must require a fresh safety screen');
+
   h.failWrites = true;
   assert.equal(app.saveData(), false,
     'Storage write failures must be caught and reported');
