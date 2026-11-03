@@ -50,16 +50,30 @@ class SecureHive {
   static Box<String> get _wholePersonDrafts => Hive.box<String>(wholePersonDraftsBoxName);
 
   static Future<void> addResult(ModuleResult result) async {
-    await _results.add(result.toJson());
+    final client = loadActiveClient();
+    final clinician = loadActiveClinician();
+    if (client == null || !client.id.startsWith('SYNTH-')) {
+      throw StateError('A synthetic case must be active before saving a response summary.');
+    }
+    if (clinician == null || !clinician.name.startsWith('TESTER-')) {
+      throw StateError('A synthetic tester alias must be active before saving a response summary.');
+    }
+    final payload = Map<String, dynamic>.from(result.toJson())
+      ..['_stnSyntheticCaseId'] = client.id
+      ..['_stnTesterAlias'] = clinician.name;
+    await _results.add(payload);
   }
 
   static List<ModuleResult> loadResults() {
-    final results = _results.values.map((value) {
-      if (value is! Map) {
-        throw const FormatException('Stored assessment result is not a map.');
-      }
-      return ModuleResult.fromJson(Map<String, dynamic>.from(value));
-    }).toList();
+    final client = loadActiveClient();
+    if (client == null || !client.id.startsWith('SYNTH-')) {
+      return <ModuleResult>[];
+    }
+    final results = _results.values
+        .where((value) =>
+            value is Map && value['_stnSyntheticCaseId'] == client.id)
+        .map((value) => ModuleResult.fromJson(Map<String, dynamic>.from(value)))
+        .toList();
     results.sort((a, b) => b.completedAt.compareTo(a.completedAt));
     return results;
   }
