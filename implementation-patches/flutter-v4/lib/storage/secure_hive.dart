@@ -4,6 +4,7 @@ import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "package:hive/hive.dart";
 import "../models/assessment_models.dart";
 import "../models/profile_models.dart";
+import "../models/core_intake.dart";
 
 class SecureHive {
   static const _secureKeyName = "stn_hive_key_v1";
@@ -52,10 +53,10 @@ class SecureHive {
   static Future<void> addResult(ModuleResult result) async {
     final client = loadActiveClient();
     final clinician = loadActiveClinician();
-    if (client == null || !client.id.startsWith('SYNTH-')) {
+    if (client == null || !CoreIntakeRules.isSyntheticCaseId(client.id)) {
       throw StateError('A synthetic case must be active before saving a response summary.');
     }
-    if (clinician == null || !clinician.name.startsWith('TESTER-')) {
+    if (clinician == null || !CoreIntakeRules.isSyntheticTesterAlias(clinician.name)) {
       throw StateError('A synthetic tester alias must be active before saving a response summary.');
     }
     final payload = Map<String, dynamic>.from(result.toJson())
