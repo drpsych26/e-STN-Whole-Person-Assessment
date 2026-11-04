@@ -20,7 +20,7 @@ Use a restrained, high-contrast identity: STN purple on near-black for the corpo
 | Muted grey | `#C9C1D0` | Secondary text on dark |
 | Alert red | `#B42332` | Alert state only, paired with text and icon |
 
-Clinical assessment forms must remain neutral and readable. Ensure WCAG 2.2 AA contrast for text, controls, focus states and error states; validate actual rendered combinations rather than relying on token names.
+Clinical assessment forms must remain neutral and readable. Ensure WCAG 2.2 AA contrast for text, controls, focus states and error states; validate actual rendered combinations rather than relying on token names. Contrast checks for these tokens: white on STN purple is approximately 4.54:1 and narrowly passes the 4.5:1 normal-text AA threshold; STN purple on near-black is approximately 4.43:1 and on charcoal approximately 4.09:1. Therefore, do not use purple as normal-size text on dark surfaces. Use white text on purple controls and reserve purple on dark surfaces for non-text accents, borders and decorative marks.
 
 ## Typography
 
