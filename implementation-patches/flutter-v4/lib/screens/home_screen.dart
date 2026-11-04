@@ -11,7 +11,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: Padding(
+        leading: const Padding(
           padding: const EdgeInsets.all(7),
           child: CircleAvatar(
             backgroundColor: const Color(0xFFAF2CFF),
