@@ -22,10 +22,11 @@ The reference palette records purple accent `#AF2CFF`. Preserve the supplied art
 
 The full logo artwork is embedded as `LOGO_FULL_DATAURI` in the supplied source HTML under `reference/source-html/`. That embedded artwork is the current source reference; it is not permission to replace it with a newly generated asset.
 
-**Outstanding asset-control task:** extract the embedded PNG byte-for-byte into a dedicated asset path, record its SHA-256, dimensions, file type, source HTML path and extraction method, then verify every website/app use against that hash. Do not claim this extraction or cross-product verification is complete until the evidence is committed.
+**Canonical extracted asset:** `assets/brand/stn-logo-original.png` — extracted byte-for-byte from `LOGO_FULL_DATAURI` in `reference/source-html/Supportive Therapy Network - Whole Person Initial Assessment.html` (source Git blob `47faab1e9fa4f197f9478450c452969bd286f4a0`). The extracted file is a PNG, 700 × 280 pixels, 54,737 bytes; Git blob SHA-1 `0c0e4f86ce6f3e1d143ad96b94c83aa6290a49cc`. The PNG signature and dimensions were verified by reading the committed asset back from GitHub. A separate file SHA-256 has not yet been recorded. Cross-product placement verification remains outstanding.
 
 Until that task is completed:
 - Keep the original embedded artwork intact in the source HTML.
+- Use `assets/brand/stn-logo-original.png` as the canonical standalone copy; do not replace it with a re-encoded or recreated image.
 - Do not introduce a different logo file or a text-only substitute.
 - Keep logo aspect ratio; use contain-style sizing and no distortion.
 - Use the same artwork for header and hero placements. Scaling may differ; artwork must not.
