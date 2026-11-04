@@ -2,12 +2,14 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 const read = p => fs.readFileSync(path.join(root, p), 'utf8');
 const asset = fs.readFileSync(path.join(root, 'assets/brand/stn-logo-original.png'));
 assert.deepEqual(asset.subarray(0, 8), Buffer.from([137,80,78,71,13,10,26,10]));
 assert.equal(asset.readUInt32BE(16), 700);
 assert.equal(asset.readUInt32BE(20), 280);
+assert.equal(crypto.createHash('sha256').update(asset).digest('hex'), '93beeea13e34045240a76f975eef99840b9bd86e5f87383a361b1fca40a7f1e3');
 for (const file of ['prototype/index.html','prototype/follow-up-assessment.html']) {
  const html = read(file);
  assert.ok(html.includes('../assets/brand/stn-logo-original.png'), file);
