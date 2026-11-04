@@ -25,3 +25,13 @@ jobs:
         run: node tests/followup-smoke.test.js
       - name: Check inline JavaScript syntax and supplied ZIP integrity
         run: python tools/static_quality_check.py
+
+      - name: Package standalone synthetic-data HTML UAT
+        uses: actions/upload-artifact@v4
+        with:
+          name: stn-standalone-html-uat
+          path: |
+            prototype/STN-Whole-Person-Assessment-Standalone.html
+            assets/brand/stn-logo-original.png
+          if-no-files-found: error
+          retention-days: 14
