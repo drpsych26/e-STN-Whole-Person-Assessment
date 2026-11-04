@@ -77,6 +77,14 @@ class HomeScreen extends StatelessWidget {
           _tile(context, "GAD", "Anxiety symptom review"),
           _tile(context, "PTSD", "Trauma symptom review"),
           _tile(context, "ADHD", "Attention and impulsivity review"),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+            child: Text(
+              "© 2026 Supportive Therapy Network Limited. All rights reserved in STN-owned material. Third-party components remain subject to their own licences. Development prototype — synthetic data only.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: Colors.white54),
+            ),
+          ),
         ],
       ),
     );
