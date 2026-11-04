@@ -26,7 +26,23 @@ class STNApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Supportive Therapy Network",
-      theme: ThemeData(useMaterial3: true),
+      theme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFAF2CFF),
+          brightness: Brightness.dark,
+        ),
+        scaffoldBackgroundColor: const Color(0xFF08070A),
+        fontFamily: "sans-serif",
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF08070A),
+          foregroundColor: Colors.white,
+          centerTitle: false,
+          elevation: 0,
+        ),
+        cardColor: const Color(0xFF151219),
+      ),
       home: startupError == null
           ? const HomeScreen()
           : StartupFailureScreen(error: startupError!),

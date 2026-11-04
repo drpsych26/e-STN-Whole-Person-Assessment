@@ -11,7 +11,21 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("STN Whole Person Assessment — Flutter MVP"),
+        leading: const Padding(
+          padding: const EdgeInsets.all(7),
+          child: CircleAvatar(
+            backgroundColor: const Color(0xFFAF2CFF),
+            child: const Text(
+              "STN",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ),
+        title: const Text("STN Whole Person Assessment"),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
@@ -63,6 +77,14 @@ class HomeScreen extends StatelessWidget {
           _tile(context, "GAD", "Anxiety symptom review"),
           _tile(context, "PTSD", "Trauma symptom review"),
           _tile(context, "ADHD", "Attention and impulsivity review"),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 18, horizontal: 12),
+            child: Text(
+              "© 2026 Supportive Therapy Network Limited. All rights reserved in STN-owned material. Third-party components remain subject to their own licences. Development prototype — synthetic data only.",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: Colors.white54),
+            ),
+          ),
         ],
       ),
     );
