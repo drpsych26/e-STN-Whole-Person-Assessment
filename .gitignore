@@ -22,3 +22,7 @@ build/
 .vscode/
 .DS_Store
 Thumbs.db
+# Android signing material must remain local or in an approved secret manager.
+*.jks
+*.keystore
+key.properties
