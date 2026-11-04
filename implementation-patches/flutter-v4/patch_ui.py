@@ -2,6 +2,14 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[2] / "flutter/source/supportive_therapy_network_v4"
 replacements = {
+    "lib/main.dart": [
+        ('theme: ThemeData(useMaterial3: true),',
+         'theme: ThemeData(\n        useMaterial3: true,\n        brightness: Brightness.dark,\n        colorScheme: ColorScheme.fromSeed(\n          seedColor: const Color(0xFFAF2CFF),\n          brightness: Brightness.dark,\n        ),\n        scaffoldBackgroundColor: const Color(0xFF08070A),\n        fontFamily: "sans-serif",\n        appBarTheme: const AppBarTheme(\n          backgroundColor: Color(0xFF08070A),\n          foregroundColor: Colors.white,\n          centerTitle: false,\n          elevation: 0,\n        ),\n        cardColor: const Color(0xFF151219),\n      ),'),
+    ],
+    "lib/screens/home_screen.dart": [
+        ('title: const Text("STN Whole Person Assessment — Flutter MVP"),',
+         'leading: Padding(\n          padding: const EdgeInsets.all(7),\n          child: CircleAvatar(\n            backgroundColor: const Color(0xFFAF2CFF),\n            child: const Text("STN", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11)),\n          ),\n        ),\n        title: const Text("STN Whole Person Assessment"),'),
+    ],
     "lib/screens/home_screen.dart": [
         ('body: ListView(\n        children: [', 'body: ListView(\n        children: [\n          const Card(child: Padding(padding: EdgeInsets.all(16), child: Text("DEVELOPMENT PROTOTYPE — SYNTHETIC DATA ONLY. Local encrypted storage is not authentication or a secure multi-user clinical record. Do not enter real client information. This app does not provide a diagnosis, clinical risk assessment or crisis disposition.", style: TextStyle(fontWeight: FontWeight.w600)))),'),
         ('title: const Text("STN Diagnostic Tool")', 'title: const Text("STN Assessment Prototype")'),
