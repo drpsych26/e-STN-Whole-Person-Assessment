@@ -22,7 +22,7 @@ The reference palette records purple accent `#AF2CFF`. Preserve the supplied art
 
 The full logo artwork is embedded as `LOGO_FULL_DATAURI` in the supplied source HTML under `reference/source-html/`. That embedded artwork is the current source reference; it is not permission to replace it with a newly generated asset.
 
-**Canonical extracted asset:** `assets/brand/stn-logo-original.png` — extracted byte-for-byte from `LOGO_FULL_DATAURI` in `reference/source-html/Supportive Therapy Network - Whole Person Initial Assessment.html` (source Git blob `47faab1e9fa4f197f9478450c452969bd286f4a0`). The extracted file is a PNG, 700 × 280 pixels, 54,737 bytes; Git blob SHA-1 `0c0e4f86ce6f3e1d143ad96b94c83aa6290a49cc`. The PNG signature and dimensions were verified by reading the committed asset back from GitHub. A separate file SHA-256 has not yet been recorded. Cross-product placement verification remains outstanding.
+**Canonical extracted asset:** `assets/brand/stn-logo-original.png` — extracted byte-for-byte from `LOGO_FULL_DATAURI` in `reference/source-html/Supportive Therapy Network - Whole Person Initial Assessment.html` (source Git blob `47faab1e9fa4f197f9478450c452969bd286f4a0`). The extracted file is a PNG, 700 × 280 pixels, 54,737 bytes; Git blob SHA-1 `0c0e4f86ce6f3e1d143ad96b94c83aa6290a49cc`. The PNG signature and dimensions were verified by reading the committed asset back from GitHub. File SHA-256: `93beeea13e34045240a76f975eef99840b9bd86e5f87383a361b1fca40a7f1e3` (computed from the extracted PNG bytes and independently verified against the downloaded CI artifact). Cross-product placement verification remains outstanding.
 
 Until that task is completed:
 - Keep the original embedded artwork intact in the source HTML.
