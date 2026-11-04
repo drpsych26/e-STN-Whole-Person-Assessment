@@ -8,7 +8,7 @@ replacements = {
     ],
     "lib/screens/home_screen.dart": [
         ('body: ListView(\n        children: [', 'body: ListView(\n        children: [\n          const Card(child: Padding(padding: EdgeInsets.all(16), child: Text("DEVELOPMENT PROTOTYPE — SYNTHETIC DATA ONLY. Local encrypted storage is not authentication or a secure multi-user clinical record. Do not enter real client information. This app does not provide a diagnosis, clinical risk assessment or crisis disposition.", style: TextStyle(fontWeight: FontWeight.w600)))),'),
-        ('title: const Text("STN Diagnostic Tool")', 'leading: Padding(padding: const EdgeInsets.all(7), child: CircleAvatar(backgroundColor: const Color(0xFFAF2CFF), child: const Text("STN", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11)))), title: const Text("STN Whole Person Assessment")'),
+        ('title: const Text("STN Diagnostic Tool")', 'leading: const Padding(padding: EdgeInsets.all(7), child: CircleAvatar(backgroundColor: const Color(0xFFAF2CFF), child: const Text("STN", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11)))), title: const Text("STN Whole Person Assessment")'),
         ('subtitle: const Text("Score + criteria gating + encrypted save")', 'subtitle: const Text("Descriptive response summary · local encrypted demo save")'),
         ('_tile(context, "MDD", "Major Depressive Disorder (DSM gating)")', '_tile(context, "MDD", "Depression symptom domain (unvalidated prototype items)")'),
         ('_tile(context, "GAD", "Generalised Anxiety Disorder")', '_tile(context, "GAD", "Anxiety symptom domain (unvalidated prototype items)")'),
