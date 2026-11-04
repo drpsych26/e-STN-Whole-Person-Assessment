@@ -52,13 +52,13 @@ void main() {
     test("requires a synthetic tester alias", () {
       expect(CoreIntakeRules.isSyntheticTesterAlias("TESTER-01"), isTrue);
       expect(CoreIntakeRules.isSyntheticTesterAlias("TESTER-UAT-02"), isTrue);
-      expect(CoreIntakeRules.isSyntheticTesterAlias("Dylan Hendriks"), isFalse);
+      expect(CoreIntakeRules.isSyntheticTesterAlias("Real Person"), isFalse);
       expect(CoreIntakeRules.isSyntheticTesterAlias(""), isFalse);
     });
 
     test("does not treat missing safety-tagged answers as negative", () {
-      final unresolved = CoreIntakeRules.unresolvedSafetyItems(const <int, int>{});
-      expect(unresolved, [14, 19, 20, 21, 22, 23, 24]);
+      expect(CoreIntakeRules.unresolvedSafetyItems(const <int, int>{}),
+          [14, 19, 20, 21, 22, 23, 24]);
     });
 
     test("flags endorsed safety-tagged items for human review", () {
@@ -77,6 +77,30 @@ void main() {
       final answers = {for (var i = 1; i < 25; i++) i: 0};
       expect(CoreIntakeRules.isComplete(answers), isFalse);
       expect(CoreIntakeRules.answeredCount(answers), 24);
+    });
+
+    test("rejects response values outside the defined 0–4 scale", () {
+      for (final invalid in [-1, 5, 99]) {
+        final answers = {for (var i = 1; i <= 25; i++) i: 0};
+        answers[1] = invalid;
+        expect(CoreIntakeRules.areAnswersValid(answers), isFalse);
+        expect(CoreIntakeRules.isComplete(answers), isFalse);
+        expect(CoreIntakeRules.answeredCount(answers), 24);
+      }
+    });
+
+    test("rejects unknown question identifiers", () {
+      final answers = {for (var i = 1; i <= 25; i++) i: 0, 26: 0};
+      expect(CoreIntakeRules.areAnswersValid(answers), isFalse);
+      expect(CoreIntakeRules.isComplete(answers), isFalse);
+      expect(CoreIntakeRules.answeredCount(answers), 25);
+    });
+
+    test("invalid or missing safety values remain unresolved", () {
+      final answers = {for (var i = 1; i <= 25; i++) i: 0};
+      answers[20] = 7;
+      answers.remove(21);
+      expect(CoreIntakeRules.unresolvedSafetyItems(answers), [20, 21]);
     });
   });
 }
