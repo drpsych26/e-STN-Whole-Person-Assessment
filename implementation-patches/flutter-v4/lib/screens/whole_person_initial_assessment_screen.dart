@@ -112,6 +112,10 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
       _showMessage("Acknowledge the non-clinical simulation boundary before saving.");
       return false;
     }
+    if (!CoreIntakeRules.areAnswersValid(_answers)) {
+      _showMessage("One or more responses are invalid. Review the answers before saving.");
+      return false;
+    }
     if (completed && !CoreIntakeRules.isComplete(_answers)) {
       _showMessage("Answer all 25 core items before completing this synthetic test.");
       return false;
