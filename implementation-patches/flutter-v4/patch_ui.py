@@ -9,8 +9,6 @@ replacements = {
     "lib/screens/home_screen.dart": [
         ('title: const Text("STN Whole Person Assessment — Flutter MVP"),',
          'leading: Padding(\n          padding: const EdgeInsets.all(7),\n          child: CircleAvatar(\n            backgroundColor: const Color(0xFFAF2CFF),\n            child: const Text("STN", style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 11)),\n          ),\n        ),\n        title: const Text("STN Whole Person Assessment"),'),
-    ],
-    "lib/screens/home_screen.dart": [
         ('body: ListView(\n        children: [', 'body: ListView(\n        children: [\n          const Card(child: Padding(padding: EdgeInsets.all(16), child: Text("DEVELOPMENT PROTOTYPE — SYNTHETIC DATA ONLY. Local encrypted storage is not authentication or a secure multi-user clinical record. Do not enter real client information. This app does not provide a diagnosis, clinical risk assessment or crisis disposition.", style: TextStyle(fontWeight: FontWeight.w600)))),'),
         ('title: const Text("STN Diagnostic Tool")', 'title: const Text("STN Assessment Prototype")'),
         ('subtitle: const Text("Score + criteria gating + encrypted save")', 'subtitle: const Text("Descriptive response summary · local encrypted demo save")'),
