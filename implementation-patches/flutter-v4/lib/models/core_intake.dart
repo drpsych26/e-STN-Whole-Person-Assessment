@@ -43,6 +43,9 @@ const coreIntakeResponseLabels = <String>[
 
 class CoreIntakeRules {
   static const safetyItemNumbers = <int>{14, 19, 20, 21, 22, 23, 24};
+  static const validResponseValues = <int>{0, 1, 2, 3, 4};
+  static final Set<int> _knownItemNumbers =
+      coreIntakeQuestions.map((question) => question.number).toSet();
 
   static bool isSyntheticCaseId(String value) => RegExp(
         r"^SYNTH-[A-Z0-9][A-Z0-9-]{2,39}$",
@@ -54,12 +57,30 @@ class CoreIntakeRules {
         caseSensitive: false,
       ).hasMatch(value.trim());
 
+  /// Reject unknown item IDs and values outside the supported 0–4 scale.
+  /// This is structural input validation, not clinical validation.
+  static bool areAnswersValid(Map<int, int> answers) => answers.entries.every(
+        (entry) =>
+            _knownItemNumbers.contains(entry.key) &&
+            validResponseValues.contains(entry.value),
+      );
+
   static bool isComplete(Map<int, int> answers) =>
+      areAnswersValid(answers) &&
       coreIntakeQuestions.every((question) => answers.containsKey(question.number));
 
-  static int answeredCount(Map<int, int> answers) =>
-      coreIntakeQuestions.where((question) => answers.containsKey(question.number)).length;
+  static int answeredCount(Map<int, int> answers) => answers.entries
+      .where((entry) =>
+          _knownItemNumbers.contains(entry.key) &&
+          validResponseValues.contains(entry.value))
+      .length;
 
+  /// Missing, malformed or endorsed safety-tagged responses remain unresolved.
   static List<int> unresolvedSafetyItems(Map<int, int> answers) =>
-      safetyItemNumbers.where((number) => answers[number] == null || answers[number]! > 0).toList()..sort();
+      safetyItemNumbers
+          .where((number) =>
+              !validResponseValues.contains(answers[number]) ||
+              answers[number]! > 0)
+          .toList()
+        ..sort();
 }
