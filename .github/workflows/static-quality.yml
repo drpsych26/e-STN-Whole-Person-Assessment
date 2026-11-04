@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
+      - name: Verify STN logo and brand consistency across HTML screens
+        run: node tests/brand-consistency.test.js
       - name: Run browser prototype workflow regression tests with synthetic data
         run: node tests/prototype-smoke.test.js
       - name: Run follow-up assessment regression tests with synthetic data

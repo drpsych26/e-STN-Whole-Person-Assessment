@@ -1,0 +1,29 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..');
+const read = p => fs.readFileSync(path.join(root, p), 'utf8');
+const asset = fs.readFileSync(path.join(root, 'assets/brand/stn-logo-original.png'));
+assert.deepEqual(asset.subarray(0, 8), Buffer.from([137,80,78,71,13,10,26,10]));
+assert.equal(asset.readUInt32BE(16), 700);
+assert.equal(asset.readUInt32BE(20), 280);
+for (const file of ['prototype/index.html','prototype/follow-up-assessment.html']) {
+ const html = read(file);
+ assert.ok(html.includes('../assets/brand/stn-logo-original.png'), file);
+ assert.ok(html.includes('alt="Supportive Therapy Network logo"'), file);
+ assert.ok(html.includes('class="stn-brand"'), file);
+}
+const source = read('reference/source-html/Supportive Therapy Network - Whole Person Initial Assessment.html');
+const match = source.match(/const LOGO_FULL_DATAURI\s*=\s*"(data:image\/png;base64,[^"]+)"/);
+assert.ok(match, 'source logo data URI missing');
+const paperPilot = read('reference/source-html/STN_Initial_Assessment_Paper_Pilot.html');
+assert.ok(paperPilot.includes(match[1]), 'paper pilot must use the exact canonical embedded logo');
+const standalone = read('prototype/STN-Whole-Person-Assessment-Standalone.html');
+const embedded = standalone.match(/src="(data:image\/png;base64,[^"]+)"/);
+assert.ok(embedded, 'standalone logo missing');
+assert.equal(embedded[1], match[1], 'embedded logo differs from source');
+assert.deepEqual(Buffer.from(embedded[1].split(',')[1], 'base64'), asset);
+assert.ok(standalone.includes('SYNTHETIC DATA ONLY'));
+assert.ok(standalone.includes('NOT FOR CLINICAL CARE'));
+console.log('STN brand consistency checks passed.');
