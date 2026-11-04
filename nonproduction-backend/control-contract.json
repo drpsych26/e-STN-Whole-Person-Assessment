@@ -1,0 +1,116 @@
+{
+  "contract_version": "1.0.0",
+  "title": "STN non-production backend design/test control contract",
+  "boundary": {
+    "classification": "private non-production engineering design/test environment",
+    "permitted_data": "synthetic test data only",
+    "production_deployment": "prohibited",
+    "clinical_operation": "prohibited",
+    "public_release": "prohibited",
+    "real_client_data": "prohibited",
+    "external_integrations": "disabled by default; any sandbox integration must be separately allow-listed and use synthetic data only"
+  },
+  "authentication": {
+    "required": true,
+    "model": "test identity-provider integration contract; this repository contains no live identity provider, user directory, credential, or token",
+    "mfa_requirement": "required before any future non-synthetic environment; not implemented by this design-only harness",
+    "shared_credentials_prohibited": true,
+    "test_principal_prefixes": [
+      "TESTER-",
+      "UAT-"
+    ],
+    "session_controls": [
+      "short-lived test tokens only",
+      "expiry required",
+      "revocation behaviour must be tested before any environment promotion"
+    ]
+  },
+  "authorization": {
+    "required": true,
+    "enforcement": "server-side deny-by-default policy contract",
+    "tenant_isolation_required": true,
+    "roles": {
+      "uat_admin": [
+        "manage_synthetic_tenants",
+        "manage_synthetic_testers",
+        "view_audit_metadata"
+      ],
+      "synthetic_assessor": [
+        "create_synthetic_draft",
+        "read_own_synthetic_draft",
+        "update_own_synthetic_draft"
+      ],
+      "synthetic_reviewer": [
+        "read_assigned_synthetic_draft",
+        "record_non-clinical_review_note"
+      ],
+      "auditor": [
+        "read_audit_metadata_only"
+      ]
+    },
+    "prohibited_actions": [
+      "access_cross_tenant_data",
+      "access_real_client_data",
+      "perform_clinical_decision",
+      "send_live_notification",
+      "bypass_audit"
+    ]
+  },
+  "audit": {
+    "required": true,
+    "persistence_design": "append-only audit-event store with tamper-evident sequencing required before promotion",
+    "required_event_fields": [
+      "event_id",
+      "occurred_at_utc",
+      "actor_id",
+      "actor_role",
+      "tenant_id",
+      "action",
+      "resource_type",
+      "resource_id",
+      "decision",
+      "correlation_id",
+      "previous_event_hash"
+    ],
+    "payload_policy": "no assessment wording, response values, identifiers, credentials, or free-text notes in routine audit metadata",
+    "read_access": "auditor role only; separated from ordinary assessor access",
+    "retention_and_export": "not implemented; requires approved privacy/records policy"
+  },
+  "encryption": {
+    "required_in_transit": "TLS 1.2 or later for every deployed test endpoint",
+    "required_at_rest": "encrypted test datastore and encrypted backups when persistence is introduced",
+    "key_management": "environment-managed test keys outside source control; no keystores, private keys, passwords, or cloud secrets in this repository",
+    "rotation_and_recovery": "design and test required before promotion",
+    "client_storage_note": "Flutter local encryption is not a replacement for backend identity, authorization, auditing, key management, or records governance"
+  },
+  "privacy": {
+    "minimization": "only synthetic identifiers and fixture data are permitted",
+    "logging": "redacted structured logs only; do not log source responses, free text, tokens, secrets, IP addresses, or identifiers",
+    "analytics": "disabled",
+    "backup": "synthetic-only test backups; no production retention schedule is implied",
+    "access_and_correction": "not implemented; requires future privacy and operating procedure approval",
+    "data_residency": "not selected by this design"
+  },
+  "safety": {
+    "autonomous_diagnosis": false,
+    "autonomous_risk_disposition": false,
+    "autonomous_routing": false,
+    "autonomous_notification": false,
+    "safety_tag_handling": "a tagged synthetic response may create a non-clinical human-review-required state only; it must not be treated as a safety clearance or live escalation",
+    "production_safety_workflow": "not implemented; requires approved operational ownership, acknowledgement, timeout, fallback, after-hours coverage, and drill evidence"
+  },
+  "source_traceability": {
+    "authoritative_development_source": "reference/source-html/STN_Initial_Assessment_Paper_Pilot.html",
+    "item_register": "reference/traceability/STN-INITIAL-1.0.0-item-traceability.json",
+    "allowed_client_scope": "existing 25-item Flutter Part A mapping only",
+    "remaining_items": "not implemented by this contract"
+  },
+  "promotion_gates": [
+    "independent clinical approval for exact content, intended use, and safety process",
+    "instrument rights and digital-use permissions",
+    "completed privacy impact assessment and records governance",
+    "threat model, penetration test, security review, and remediation evidence",
+    "implemented identity, MFA, server-side authorization, tenant isolation, audit persistence, encryption, backup and recovery",
+    "human safety escalation operating procedure, ownership, drills, and signed release decision for an exact build"
+  ]
+}
