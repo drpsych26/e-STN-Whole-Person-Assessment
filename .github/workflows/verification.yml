@@ -162,6 +162,8 @@ jobs:
           done
       - name: Upload internal debug APK
         uses: actions/upload-artifact@v7
+        # APK compilation/tests remain verifiable when artifact storage is temporarily full.
+        continue-on-error: true
         with:
           name: stn-flutter-v4-debug-${{ github.sha }}
           path: flutter/source/supportive_therapy_network_v4/build/app/outputs/flutter-apk/app-debug.apk
