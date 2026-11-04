@@ -20,7 +20,7 @@ function decodeEntities(value) {
 function stripHtml(value) {
   return decodeEntities(
     value
-      .replace(/<br\s*\\?\/?/gi, ' ')
+      .replace(/<br\s*\/?>/gi, ' ')
       .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim(),
@@ -29,30 +29,30 @@ function stripHtml(value) {
 
 function parsePaperPilot(html) {
   const sourceItems = [];
-  const headings = [...html.matchAll(/<h2>([\s\S]*?)<\\/h2>([\s\S]*?)(?=<h2>|<\\/body>)/gi)];
+  const headings = [...html.matchAll(/<h2>([\s\S]*?)<\/h2>([\s\S]*?)(?=<h2>|<\/body>)/gi)];
 
   for (let headingIndex = 0; headingIndex < headings.length; headingIndex += 1) {
     const section = stripHtml(headings[headingIndex][1]);
-    const table = headings[headingIndex][2].match(/<table class="qtable">([\s\S]*?)<\\/table>/i)?.[1];
+    const table = headings[headingIndex][2].match(/<table class="qtable">([\s\S]*?)<\/table>/i)?.[1];
     if (!table) continue;
 
-    const headerRow = table.match(/<tr>([\s\S]*?)<\\/tr>/i)?.[1] ?? '';
-    const responseHeaders = [...headerRow.matchAll(/<th[^>]*>([\s\S]*?)<\\/th>/gi)]
+    const headerRow = table.match(/<tr>([\s\S]*?)<\/tr>/i)?.[1] ?? '';
+    const responseHeaders = [...headerRow.matchAll(/<th[^>]*>([\s\S]*?)<\/th>/gi)]
       .map((match) => stripHtml(match[1]))
       .filter((header) => header !== '#' && header !== 'Item');
 
-    for (const row of table.matchAll(/<tr>([\s\S]*?)<\\/tr>/gi)) {
-      const cells = [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\\/td>/gi)].map((match) => match[1]);
+    for (const row of table.matchAll(/<tr>([\s\S]*?)<\/tr>/gi)) {
+      const cells = [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/gi)].map((match) => match[1]);
       if (cells.length < 2) continue;
 
       const itemNumber = stripHtml(cells[0]);
       if (!/^\d+$/.test(itemNumber)) continue;
 
-      const safetyTags = [...cells[1].matchAll(/class=["']pill["'][^>]*>([\s\S]*?)<\\/span>/gi)]
+      const safetyTags = [...cells[1].matchAll(/class=["']pill["'][^>]*>([\s\S]*?)<\/span>/gi)]
         .map((match) => stripHtml(match[1]));
 
       sourceItems.push({
-        trace_id: `STN-INITIAL-1.0.0-H${String(headingIndex + 1).padStart(2, '0')}-I${String(itemNumber).padStart(2, '0')}`,
+        trace_id: 'STN-INITIAL-1.0.0-H' + String(headingIndex + 1).padStart(2, '0') + '-I' + String(itemNumber).padStart(2, '0'),
         source_heading_ordinal: headingIndex + 1,
         source_section: section,
         source_item_number: Number(itemNumber),
@@ -79,7 +79,7 @@ assert.equal(byTraceId.size, 208, 'Trace IDs must be unique.');
 
 for (const sourceItem of sourceItems) {
   const registered = byTraceId.get(sourceItem.trace_id);
-  assert.ok(registered, `Missing traceability row for ${sourceItem.trace_id}`);
+  assert.ok(registered, 'Missing traceability row for ' + sourceItem.trace_id);
   assert.deepEqual(
     {
       source_heading_ordinal: registered.source_heading_ordinal,
@@ -90,7 +90,7 @@ for (const sourceItem of sourceItems) {
       source_response_headers: registered.source_response_headers,
     },
     sourceItem,
-    `Source mismatch for ${sourceItem.trace_id}`,
+    'Source mismatch for ' + sourceItem.trace_id,
   );
 }
 
@@ -113,4 +113,4 @@ for (const item of nonPartA) {
   assert.equal(item.implementation.reporting_reference, null);
 }
 
-console.log(`PASS: 208 source items match ${registerPath}; 25 Part A mappings and 183 non-implemented items are explicit.`);
+console.log('PASS: 208 source items match ' + registerPath + '; 25 Part A mappings and 183 non-implemented items are explicit.');
