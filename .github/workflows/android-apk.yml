@@ -10,7 +10,7 @@ on:
       - ".github/workflows/android-apk.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   android-release:
@@ -84,10 +84,13 @@ jobs:
           file build/app/outputs/flutter-apk/app-release.apk
           sha256sum build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload installable APK
-        uses: actions/upload-artifact@v7
-        with:
-          name: stn-android-release-apk
-          path: flutter/source/supportive_therapy_network_v4/build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-          retention-days: 14
+      - name: Publish installable APK as a private repository release asset
+        working-directory: flutter/source/supportive_therapy_network_v4
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="stn-android-${GITHUB_RUN_NUMBER}"
+          gh release create "$tag" build/app/outputs/flutter-apk/app-release.apk \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "STN Android APK build ${GITHUB_RUN_NUMBER}" \
+            --notes "Automated Android release build from commit ${GITHUB_SHA}. Flutter static analysis and automated tests passed. Install for controlled testing only; this build is not clinical-production approved."
