@@ -1,0 +1,93 @@
+name: STN Android APK build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "flutter/source-archives/**"
+      - "implementation-patches/flutter-v4/**"
+      - ".github/workflows/android-apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  android-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.47.9"
+          cache: true
+
+      - name: Restore and verify original Flutter v4 source
+        shell: bash
+        run: |
+          set -euo pipefail
+          part_dir=flutter/source-archives/parts
+          mkdir -p /tmp/stn-v4 flutter/source
+          cat "$part_dir/part1.txt" "$part_dir/part2.txt" "$part_dir/part4.txt" > /tmp/stn-v4/source.b64
+          test "$(wc -c < /tmp/stn-v4/source.b64)" -eq 18404
+          base64 --decode /tmp/stn-v4/source.b64 > /tmp/stn-v4/source.zip
+          echo "4478e3e54131fdb94db943524a7aa00cef9239122e572eaad6d9e0d5ad95261c  /tmp/stn-v4/source.zip" | sha256sum --check
+          unzip -q /tmp/stn-v4/source.zip -d flutter/source
+
+      - name: Generate Android platform and apply maintained STN changes
+        working-directory: flutter/source/supportive_therapy_network_v4
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter create --platforms=android .
+          patch_root="../../../implementation-patches/flutter-v4"
+          cp "$patch_root/lib/main.dart" lib/main.dart
+          cp "$patch_root/lib/logic/scoring_engine.dart" lib/logic/scoring_engine.dart
+          cp "$patch_root/lib/logic/report_builder.dart" lib/logic/report_builder.dart
+          cp "$patch_root/lib/storage/secure_hive.dart" lib/storage/secure_hive.dart
+          cp "$patch_root/lib/screens/home_screen.dart" lib/screens/home_screen.dart
+          cp "$patch_root/lib/screens/whole_person_initial_assessment_screen.dart" lib/screens/whole_person_initial_assessment_screen.dart
+          cp "$patch_root/lib/models/core_intake.dart" lib/models/core_intake.dart
+          cp "$patch_root/lib/screens/module_screen.dart" lib/screens/module_screen.dart
+          cp "$patch_root/lib/screens/results_screen.dart" lib/screens/results_screen.dart
+          cp "$patch_root/lib/screens/profiles_screen.dart" lib/screens/profiles_screen.dart
+          cp "$patch_root/lib/screens/result_detail_screen.dart" lib/screens/result_detail_screen.dart
+          cp "$patch_root/test/scoring_engine_test.dart" test/scoring_engine_test.dart
+          cp "$patch_root/test/whole_person_intake_rules_test.dart" test/whole_person_intake_rules_test.dart
+          cp "$patch_root/test/widget_test.dart" test/widget_test.dart
+
+      - name: Resolve dependencies
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: flutter pub get
+
+      - name: Format source
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: dart format lib test
+
+      - name: Static analysis
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: flutter analyze
+
+      - name: Unit and widget tests
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: flutter test --reporter expanded
+
+      - name: Build Android release APK
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: flutter build apk --release
+
+      - name: Verify APK output
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: |
+          test -s build/app/outputs/flutter-apk/app-release.apk
+          file build/app/outputs/flutter-apk/app-release.apk
+          sha256sum build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: stn-android-release-apk
+          path: flutter/source/supportive_therapy_network_v4/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
