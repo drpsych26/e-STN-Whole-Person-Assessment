@@ -11,7 +11,21 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("STN Whole Person Assessment — Flutter MVP"),
+        leading: Padding(
+          padding: const EdgeInsets.all(7),
+          child: CircleAvatar(
+            backgroundColor: const Color(0xFFAF2CFF),
+            child: const Text(
+              "STN",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 11,
+              ),
+            ),
+          ),
+        ),
+        title: const Text("STN Whole Person Assessment"),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
