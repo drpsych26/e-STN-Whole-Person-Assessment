@@ -55,7 +55,11 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
     } catch (error) {
       if (mounted) {
         setState(() => _legacyProfileBlocked = true);
-        _showMessage("Could not verify local profile safety; UAT saving is blocked: $error");
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _showMessage("Could not verify local profile safety; UAT saving is blocked: $error");
+          }
+        });
       }
     }
   }
