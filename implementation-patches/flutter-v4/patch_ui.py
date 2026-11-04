@@ -16,6 +16,8 @@ replacements = {
         ('_tile(context, "GAD", "Generalised Anxiety Disorder")', '_tile(context, "GAD", "Anxiety symptom domain (unvalidated prototype items)")'),
         ('_tile(context, "PTSD", "PTSD / Trauma")', '_tile(context, "PTSD", "Trauma symptom domain (unvalidated prototype items)")'),
         ('_tile(context, "ADHD", "ADHD")', '_tile(context, "ADHD", "Attention symptom domain (unvalidated prototype items)")'),
+        ('_tile(context, "ADHD", "Attention symptom domain (unvalidated prototype items)"),',
+         '_tile(context, "ADHD", "Attention symptom domain (unvalidated prototype items)"),\n          const Padding(padding: EdgeInsets.symmetric(vertical: 18, horizontal: 12), child: Text("© 2026 Supportive Therapy Network Limited. All rights reserved in STN-owned material. Third-party components remain subject to their own licences. Development prototype — synthetic data only.", textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54))),'),
     ],
     "lib/screens/module_screen.dart": [
         ('const Text("Rate each item (0–4): 0 None, 1 Mild, 2 Moderate, 3 Severe, 4 Extreme."),',
