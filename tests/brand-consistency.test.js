@@ -17,6 +17,8 @@ for (const file of ['prototype/index.html','prototype/follow-up-assessment.html'
 const source = read('reference/source-html/Supportive Therapy Network - Whole Person Initial Assessment.html');
 const match = source.match(/const LOGO_FULL_DATAURI\s*=\s*"(data:image\/png;base64,[^"]+)"/);
 assert.ok(match, 'source logo data URI missing');
+const paperPilot = read('reference/source-html/STN_Initial_Assessment_Paper_Pilot.html');
+assert.ok(paperPilot.includes(match[1]), 'paper pilot must use the exact canonical embedded logo');
 const standalone = read('prototype/STN-Whole-Person-Assessment-Standalone.html');
 const embedded = standalone.match(/src="(data:image\/png;base64,[^"]+)"/);
 assert.ok(embedded, 'standalone logo missing');
