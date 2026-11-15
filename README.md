@@ -66,7 +66,7 @@ The repository is public and development is directed toward the STN production r
 
 The public repository must not be used to store client records, identifiable health information, passwords, API keys, signing keys or other secrets. Do not submit confidential clinical information through public issues or discussions.
 
-The clinical service must only be activated for real-client use after the relevant assessment content, instrument permissions, clinical validation, privacy and security controls, safety operations, practitioner governance, and release approvals have been completed and documented. Until then, demonstrations and test environments must use synthetic data only.
+The project owner confirms that clinical validation has been completed. The controlled release dossier records that status; the validation record must be mapped to the exact release version without publishing confidential material. Real-client activation remains dependent on the separate technical, instrument-permission, privacy, security, safety-operations, practitioner-governance and release-approval controls. Until the exact production environment is approved, demonstrations and test environments must use synthetic data only.
 
 ## New Zealand operating context
 
