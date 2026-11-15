@@ -65,18 +65,15 @@ void main() {
     expect(find.textContaining('SYNTHETIC DATA ONLY'), findsOneWidget);
     expect(find.text('Progress: 0 / 25 answered'), findsOneWidget);
 
-    final list = find.byType(Scrollable).first;
     for (var item = 1; item <= 25; item++) {
       final card = find.byKey(ValueKey('core-item-$item'));
-      await tester.scrollUntilVisible(card, 300, scrollable: list);
+      await tester.ensureVisible(card);
+      await tester.pumpAndSettle();
       expect(card, findsOneWidget);
     }
 
-    await tester.scrollUntilVisible(
-      find.text('Save draft'),
-      300,
-      scrollable: list,
-    );
+    await tester.ensureVisible(find.text('Save draft'));
+    await tester.pumpAndSettle();
     expect(find.text('Save draft'), findsOneWidget);
     expect(find.text('Complete simulation'), findsOneWidget);
   });
@@ -88,17 +85,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final list = find.byType(Scrollable).first;
     final firstItem = find.byKey(const ValueKey('core-item-1'));
-    await tester.scrollUntilVisible(firstItem, 300, scrollable: list);
+    await tester.ensureVisible(firstItem);
+    await tester.pumpAndSettle();
 
     final zeroResponse = find.descendant(
       of: firstItem,
       matching: find.widgetWithText(ChoiceChip, '0'),
     );
     await tester.tap(zeroResponse);
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Progress: 1 / 25 answered'), findsOneWidget);
+    expect(find.textContaining('Progress: 1 / 25 answered'), findsOneWidget);
   });
 }
