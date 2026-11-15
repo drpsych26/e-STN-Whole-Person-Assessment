@@ -5,25 +5,9 @@ A whole-person assessment and clinical support platform designed to connect inta
 
 This repository is the public engineering source for the STN digital assessment platform.
 
-## Product vision
+## Product pathway
 
-STN is building a connected pathway from initial client contact through comprehensive assessment and coordinated care. The platform is designed for use by clients and authorised practitioners, with clinical decisions remaining the responsibility of appropriately qualified professionals.
-
-## Platform components
-
-- Public STN website and service information.
-- Client-facing assessment experience.
-- Authorised clinician workspace.
-- Whole Person Initial Assessment (Stage 1).
-- Comprehensive Diagnostic Assessment (Stage 2).
-- Safety screening, safeguarding and escalation workflows.
-- Adaptive assessment pathways and approved screening instruments.
-- Integrated clinical formulation and diagnostic decision support.
-- Clinician review, care planning and reporting.
-- Follow-up, outcome monitoring and care navigation.
-- Android application and responsive web experience.
-
-## Two-stage assessment pathway
+Dashboard → New Client → Whole Person Initial Assessment → Safety Gate → Adaptive Routing → Selected Assessments → Integrated Results → Clinical Review → Diagnostic Decision Support → Whole-Person Care Plan → Finalise → Report.
 
 ### Stage 1 — Whole Person Initial Assessment
 
@@ -34,6 +18,18 @@ A broad intake covering presenting concerns, personal and developmental context,
 A structured clinician-led assessment covering symptom patterns, duration, severity, functional impairment, relevant history, mental status, differential diagnosis, comorbidity and clinical formulation. Diagnostic conclusions require practitioner review and approval; screening scores alone do not establish a diagnosis.
 
 Both stages are intended to share a single client record and minimise repeated data entry.
+
+## Verified build and deployment status — 15 November 2026
+
+- Main verification workflow run 223 passed: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/43657621191
+- Prototype JavaScript checks and synthetic-data regression tests passed.
+- Flutter source restoration, static analysis, automated tests and build completed successfully.
+- Android APK build 4 is available for controlled testing: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/releases/tag/stn-android-4
+- Direct APK download: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/releases/download/stn-android-4/app-release.apk
+- Public STN website deployment succeeded: https://github.com/drpsych26/STN-Website/actions/runs/43658020226
+- Website URL: https://drpsych26.github.io/STN-Website/
+
+**Important:** APK build 4 is an installable controlled-testing build, not a production-signed clinical release. A successful build or static website deployment does not establish that a secure clinical record backend or live clinical service is operational.
 
 ## Clinical and technical principles
 
@@ -47,11 +43,10 @@ Both stages are intended to share a single client record and minimise repeated d
 - Resilient operation for low-bandwidth settings, with offline capability subject to safe synchronisation controls.
 - Transparent scoring, limitations and decision-support rationale.
 
-## Technology
+## Technology and repository structure
 
 The mobile application is built with Flutter. The repository includes application source, browser-based assessment work, implementation patches, automated checks, source references and release documentation.
 
-Browse the repository:
 - `flutter/` — Flutter application source and source archives.
 - `prototype/` — browser assessment experience and prototypes.
 - `implementation-patches/` — tracked Flutter implementation changes.
@@ -60,27 +55,23 @@ Browse the repository:
 - `tests/` — regression tests and assessment traceability material.
 - `.github/workflows/` — automated build and verification workflows.
 
-## Development and release status
+## Production release gate
 
-The repository is public and development is directed toward the STN production release. Automated build and test results provide engineering evidence; they do not, by themselves, establish clinical validation or production readiness.
+The project owner confirms that clinical validation has been completed. That confirmation is separate from the remaining production controls. The exact release must still be mapped to the confidential validation evidence, and the technical, instrument-permission, privacy, security, safety-operations, practitioner-governance and release-approval gates must be completed.
 
-The public repository must not be used to store client records, identifiable health information, passwords, API keys, signing keys or other secrets. Do not submit confidential clinical information through public issues or discussions.
+See [Production Go-Live Gate](docs/release/PRODUCTION-GO-LIVE-GATE.md) for the current itemised release checklist.
 
-The project owner confirms that clinical validation has been completed. The controlled release dossier records that status; the validation record must be mapped to the exact release version without publishing confidential material. Real-client activation remains dependent on the separate technical, instrument-permission, privacy, security, safety-operations, practitioner-governance and release-approval controls. Until the exact production environment is approved, demonstrations and test environments must use synthetic data only.
+Until all applicable gates are approved, use synthetic test data only. Do not use the APK or website to collect, store or process identifiable client health information.
 
 ## New Zealand operating context
 
-The platform is being developed for a New Zealand service context. Applicable privacy, health-information, professional, consumer and safety obligations must be assessed for the actual service model and deployment. The project documentation includes working requirements and templates; these are not legal advice or evidence of completed regulatory approval.
+The platform is being developed for a New Zealand service context. Applicable privacy, health-information, professional, consumer and safety obligations must be assessed for the actual service model and deployment. Project documentation provides engineering and governance requirements; it is not legal advice or evidence of completed regulatory approval.
 
-## Build and verification
+## Security and intellectual property
 
-Use the workflow files in `.github/workflows/` for the supported automated checks and build processes. Consult the current workflow run and release notes for the exact status of each build. A successful build does not certify the application for clinical operation.
-
-## Intellectual property and third-party material
+The public repository must not store client records, identifiable health information, passwords, API keys, signing keys or other secrets. Do not submit confidential clinical information through public issues or discussions.
 
 STN-owned material is subject to the repository's copyright and licensing notices. Third-party packages, instruments, scales, fonts and other materials remain subject to their respective licences and permissions. Review `LICENSE`, `COPYRIGHT.md` and the intellectual-property register before reuse or redistribution.
-
-## Contributions and security
 
 Do not disclose vulnerabilities publicly. Follow `SECURITY.md` for responsible security reporting. Changes affecting clinical content, risk pathways, scoring, diagnostic logic or safety workflows require documented clinical review in addition to engineering review.
 
