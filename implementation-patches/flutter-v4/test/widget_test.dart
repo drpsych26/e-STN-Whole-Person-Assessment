@@ -67,12 +67,20 @@ void main() {
 
     for (var item = 1; item <= 25; item++) {
       final card = find.byKey(ValueKey('core-item-$item'));
-      await tester.ensureVisible(card);
+      await tester.scrollUntilVisible(
+        card,
+        300,
+        scrollable: find.byType(Scrollable).last,
+      );
       await tester.pumpAndSettle();
       expect(card, findsOneWidget);
     }
 
-    await tester.ensureVisible(find.text('Save draft'));
+    await tester.scrollUntilVisible(
+      find.text('Save draft'),
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.pumpAndSettle();
     expect(find.text('Save draft'), findsOneWidget);
     expect(find.text('Complete simulation'), findsOneWidget);
@@ -86,7 +94,11 @@ void main() {
     await tester.pumpAndSettle();
 
     final firstItem = find.byKey(const ValueKey('core-item-1'));
-    await tester.ensureVisible(firstItem);
+    await tester.scrollUntilVisible(
+      firstItem,
+      300,
+      scrollable: find.byType(Scrollable).last,
+    );
     await tester.pumpAndSettle();
 
     final zeroResponse = find.descendant(
