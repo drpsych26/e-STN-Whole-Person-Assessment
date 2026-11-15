@@ -1,45 +1,46 @@
 # STN clinical release dossier
 
-**Purpose:** Evidence index for a controlled clinical software release.
-**Current repository disposition:** Private development / release candidate. This dossier is a template and evidence index, not a certificate of clinical approval.
+**Purpose:** Controlled evidence index for the STN Whole-Person Assessment release.
+**Repository disposition:** Public source repository. This dossier records release evidence and does not itself constitute a regulatory certificate or deployment approval.
 
 ## 1. Product and release identity
 
 - Product: STN Whole Person Assessment
-- Version/build: v0.6.1+7 (supplied archive metadata; verify against the final build)
-- Release commit: to be recorded
-- Build artifact SHA-256: to be recorded
-- Intended use and exclusions: to be approved and version-controlled
-- Accountable release owner: to be named in signed decision
-- Clinical safety officer: to be named
-- Privacy officer: to be named
-- Technical/security owner: to be named
+- Current source baseline: main branch; record the exact release commit and tag at release
+- Build artifact SHA-256: record for each release artifact
+- Intended use and exclusions: governed by the approved STN clinical validation and service scope
+- Accountable release owner: record in the signed release decision
+- Clinical safety officer: record in the controlled governance record
+- Privacy officer: record in the controlled governance record
+- Technical/security owner: record in the controlled governance record
 
-## 2. Approval and authorisation evidence
+## 2. Clinical validation status
 
-Record the issuing body, approval reference, date, expiry/review date, approved software version, approved setting, clinician roles, intended population, conditions, exclusions and any post-market obligations. Attach the source approval in the controlled company evidence store. Do not publish confidential approval documents in a public repository.
+**Owner-confirmed status: Clinical validation has been completed and provided to the project.** It is not to be represented as an outstanding clinical-validation task in project status reporting.
 
-**Status:** Owner has stated that government authorisation and clinical verification exist. The approval details and scope have not been independently evidenced in this repository.
+For version-controlled release traceability, the controlled company evidence register should identify the validation report reference, approval date, methodology, population, limitations, reviewer/signatory, intended use, and exact assessment/software version covered. Confidential clinical validation documents must remain in the controlled evidence store and must not be uploaded to this public repository.
 
-## 3. Mandatory evidence index
+This evidence-index requirement is version mapping and document control; it does not reverse the owner's confirmation that clinical validation is complete.
 
-| Control | Evidence required | Status |
+## 3. Remaining release evidence index
+
+| Control | Release evidence / record | Status |
 |---|---|---|
-| Clinical validation | Protocol, sample/method, results, limitations, independent reviewer and signed report | Not evidenced here |
-| Clinical safety case | Hazard log, risk controls, residual-risk acceptance and safety sign-off | Not evidenced here |
-| Crisis escalation | Live workflow, named responder, acknowledgement, timeout, fallback and drill results | Not evidenced here |
-| Instrument permissions | Instrument-by-instrument written digital-use and scoring permissions | Not evidenced here |
-| Clinical Core traceability | Source item/rule → UI → logic → test → report mapping | Not evidenced here |
-| Identity and access | Approved identity provider, MFA, role model and negative authorisation tests | Not evidenced here |
-| Clinical record | Server-side persistence, encryption, tenant isolation and migration controls | Not evidenced here |
-| Audit | Tamper-evident access, change, export and sign-off events | Not evidenced here |
-| Privacy | PIA, collection notices, consent, access/correction, disclosure and retention | Not evidenced here |
-| Security | Threat model, SBOM, secret scan, penetration test and remediation | Not evidenced here |
-| Accessibility and UAT | Supported-device matrix, accessibility results and user acceptance | Not evidenced here |
-| Operations | Monitoring, backup/restore, incident response, support and rollback | Not evidenced here |
+| Clinical validation | Completed validation report and owner confirmation; map report reference and scope to the exact release | COMPLETE — OWNER CONFIRMED; version mapping to record |
+| Clinical source traceability | Approved source item/rule → UI → logic → test → report mapping | Verify exact release coverage |
+| Instrument permissions | Instrument-by-instrument written digital-use, reproduction, scoring and reporting permissions | Record/verify by instrument |
+| Clinical safety case | Hazard log, risk controls, residual-risk acceptance and accountable sign-off | Release evidence required |
+| Crisis escalation | Named responder, acknowledgement, timeout, fallback, after-hours coverage and drill record | Operational evidence required |
+| Identity and access | Approved identity provider, MFA decision, role model and negative authorisation tests | Technical evidence required |
+| Clinical record | Server-side persistence, encryption, tenant isolation and migration controls | Technical evidence required |
+| Audit | Tamper-evident access, change, export and sign-off events | Technical evidence required |
+| Privacy | Completed PIA, notices, consent, access/correction, disclosure and retention | Governance evidence required |
+| Security | Threat model, SBOM, secret scan, penetration test and remediation | Security evidence required |
+| Accessibility and UAT | Supported-device matrix, accessibility results and user acceptance | Test evidence required |
+| Operations | Monitoring, backup/restore, incident response, support and rollback | Operational evidence required |
 
 ## 4. Release decision
 
-A release decision must identify the exact commit and artifact hash, approved deployment environment, intended users, approved clinical scope, outstanding limitations, monitoring and rollback arrangements. It must be signed and dated by the accountable release owner and required clinical, privacy and security approvers.
+The release decision must identify the exact source commit and artifact hashes, approved deployment environment, intended users, approved clinical scope, known limitations, monitoring and rollback arrangements. It must be signed and dated by the accountable release owner and the required clinical, privacy, security and operational approvers.
 
-**Decision:** No production clinical deployment is authorised by this repository record. Do not use real patient information in this build until the evidence is attached to the controlled release record and all mandatory gates are closed.
+Clinical validation is recorded as complete on the owner's confirmation. Production activation remains a separate release decision dependent on the remaining technical, privacy, security, operational and version-specific controls.
