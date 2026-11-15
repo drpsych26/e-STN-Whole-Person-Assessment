@@ -84,7 +84,7 @@ jobs:
           file build/app/outputs/flutter-apk/app-release.apk
           sha256sum build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Publish installable APK as a private repository release asset
+      - name: Publish installable APK as a controlled testing release asset
         working-directory: flutter/source/supportive_therapy_network_v4
         env:
           GH_TOKEN: ${{ github.token }}
