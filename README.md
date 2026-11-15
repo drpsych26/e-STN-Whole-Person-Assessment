@@ -1,96 +1,90 @@
-# STN Whole Person Initial Assessment — private development repository
+# STN Whole-Person Assessment Platform
 
-Private project repository for Supportive Therapy Network Limited (STN).
+**Supportive Therapy Network Limited (STN)**  
+A whole-person assessment and clinical support platform designed to connect intake, safety screening, diagnostic assessment, clinical review, care planning and ongoing support.
 
-## Current status — 1 November 2026
+This repository is the public engineering source for the STN digital assessment platform.
 
-**DEVELOPMENT ACTIVE — NO GENERAL HOLD — PRIVATE / NON-LIVE — SYNTHETIC DATA ONLY.** Engineering, testing, integration, security remediation, documentation and launch-readiness work are authorised. Production deployment, public launch, external beta, real-client use and clinical operation remain unauthorised.
+## Product vision
 
-The repository remains private. No production environment is to be provisioned or connected. Keep development and test environments isolated from production. Do not enter identifiable client information, real health information, production credentials or secrets.
+STN is building a connected pathway from initial client contact through comprehensive assessment and coordinated care. The platform is designed for use by clients and authorised practitioners, with clinical decisions remaining the responsibility of appropriately qualified professionals.
 
-## Current verified implementation
+## Platform components
 
-- Browser-based Whole Person Initial Assessment demonstration with workflow gates and synthetic-data regression coverage.
-- Flutter v4 four-module MVP with conservative non-diagnostic screening behaviour, local encrypted storage, profile/result/follow-up scaffolding and regression tests.
-- Source manifests, section-level paper-pilot traceability baseline, controlled synthetic UAT protocol and release-gap documentation.
-- PR #7 (Node 24-compatible GitHub Actions maintenance) is merged.
-- PR #10 (controlled non-live safety gate, contrast fixes and source inventory baseline) is merged.
-- PR #12 (Flutter Part A 25-item Core Intake) has passed all three latest GitHub Actions workflows on head `d45e0bae0766e2bdc6717cdaa5735c664b8fe202` and is now ready for review; it is not merged. The branch still requires base-branch reconciliation/review before merge.
+- Public STN website and service information.
+- Client-facing assessment experience.
+- Authorised clinician workspace.
+- Whole Person Initial Assessment (Stage 1).
+- Comprehensive Diagnostic Assessment (Stage 2).
+- Safety screening, safeguarding and escalation workflows.
+- Adaptive assessment pathways and approved screening instruments.
+- Integrated clinical formulation and diagnostic decision support.
+- Clinician review, care planning and reporting.
+- Follow-up, outcome monitoring and care navigation.
+- Android application and responsive web experience.
 
-## Verified PR #12 CI
+## Two-stage assessment pathway
 
-All three workflows completed successfully on the latest PR head:
-- Static quality: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/41270183394
-- Flutter web validation: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/41270183352
-- STN verification (including Flutter Android debug build): https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/41270183354
+### Stage 1 — Whole Person Initial Assessment
 
-The Part A change includes 25 source-worded items, five-point response scale, golden wording/structure tests, synthetic-only case/tester identifiers, local encrypted draft handling and explicit human-review flags for seven safety-tagged items. It does not implement the remaining 183 items, adaptive routing, PHQ-9/GAD-7, clinical escalation or server-side clinical records. Passing CI is engineering evidence, not clinical approval.
+A broad intake covering presenting concerns, personal and developmental context, social circumstances, physical health, medications, substance use, mental health screening, safety, strengths and protective factors.
 
-## Existing verified baseline
+### Stage 2 — Comprehensive Diagnostic Assessment
 
-Repair PR #4 is merged into `main` at `d201460086919f4a0fdf7a9bbb7584bb4f7069dd`. Its post-merge verification, Flutter web validation and static-quality runs passed:
-- https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/41170645743
-- https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/41170645724
-- https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/41170645676
+A structured clinician-led assessment covering symptom patterns, duration, severity, functional impairment, relevant history, mental status, differential diagnosis, comorbidity and clinical formulation. Diagnostic conclusions require practitioner review and approval; screening scores alone do not establish a diagnosis.
 
-See `reference/POST-MERGE-VERIFICATION-2026-10-31.md` and `reference/PR12-VERIFICATION-2026-11-01.md` for recorded evidence.
+Both stages are intended to share a single client record and minimise repeated data entry.
 
-## Browser prototype
+## Clinical and technical principles
 
-Open `prototype/index.html` locally in a modern browser. GitHub's normal file viewer displays source rather than running it.
+- Human clinical oversight and accountable diagnostic decisions.
+- Traceability from approved source material to assessment items and scoring.
+- Clear distinction between screening, decision support and diagnosis.
+- Role-based access and least-privilege permissions.
+- Privacy, confidentiality and secure handling of health information.
+- Auditable clinical actions and safety-event workflows.
+- Accessible, responsive design for phones, tablets and desktop.
+- Resilient operation for low-bandwidth settings, with offline capability subject to safe synchronisation controls.
+- Transparent scoring, limitations and decision-support rationale.
 
-The demonstration workflow is:
-Dashboard → Client & Consent → Whole Person Screening → Safety Gate → Integrated Results → Clinical Review → Whole-Person Care Plan → Report.
+## Technology
 
-The browser prototype uses local browser storage for demonstration only. Workflow safeguards do not make it a secure clinical record system.
+The mobile application is built with Flutter. The repository includes application source, browser-based assessment work, implementation patches, automated checks, source references and release documentation.
 
-## Flutter scope
+Browse the repository:
+- `flutter/` — Flutter application source and source archives.
+- `prototype/` — browser assessment experience and prototypes.
+- `implementation-patches/` — tracked Flutter implementation changes.
+- `reference/` — product, clinical, privacy and deployment requirements.
+- `docs/` — governance, release and supporting documentation.
+- `tests/` — regression tests and assessment traceability material.
+- `.github/workflows/` — automated build and verification workflows.
 
-The original Flutter v4 archive is stored under `flutter/source-archives/parts/`. CI reconstructs it, verifies SHA-256, restores source and applies tracked fixes from `implementation-patches/flutter-v4/`.
+## Development and release status
 
-The Flutter app currently contains MDD, GAD, PTSD and ADHD interim modules. PR #12 adds Part A of the paper pilot only and is pending review/merge. It is not the complete Whole Person Initial Assessment.
+The repository is public and development is directed toward the STN production release. Automated build and test results provide engineering evidence; they do not, by themselves, establish clinical validation or production readiness.
 
-## Source reconciliation
+The public repository must not be used to store client records, identifiable health information, passwords, API keys, signing keys or other secrets. Do not submit confidential clinical information through public issues or discussions.
 
-The supplied paper pilot contains 208 items across 24 groups. The current browser prototype has nine simplified screening questions. PR #12 adds a partial Flutter Part A implementation of 25 items; it does not close the full source-to-code traceability requirement.
+The clinical service must only be activated for real-client use after the relevant assessment content, instrument permissions, clinical validation, privacy and security controls, safety operations, practitioner governance, and release approvals have been completed and documented. Until then, demonstrations and test environments must use synthetic data only.
 
-See:
-- `reference/SOURCE-RECONCILIATION-INVENTORY-2026-11-01.md`
-- `tests/PAPER-PILOT-SECTION-TRACEABILITY-2026-11-01.csv`
-- `reference/SOURCE-IMPORT-MANIFEST.md`
-- `reference/MASTER_SPEC.md`
-- `reference/PRODUCTION-NZ-REQUIREMENTS.md`
-- `reference/DEPLOYMENT-CHECKLIST.md`
-- `SECURITY.md`
+## New Zealand operating context
 
-## Active development priorities
+The platform is being developed for a New Zealand service context. Applicable privacy, health-information, professional, consumer and safety obligations must be assessed for the actual service model and deployment. The project documentation includes working requirements and templates; these are not legal advice or evidence of completed regulatory approval.
 
-1. Reconcile PR #12 with current main, complete review and merge only after conflict/base checks and evidence review.
-2. Import and hash-verify original source assets, including paper-pilot PDF and Flutter v2/v3/coding archives; preserve originals.
-3. Complete item-level source traceability and clinical-owner decisions before implementing further clinical questions or routing.
-4. Continue multi-client-safe data architecture, authenticated identity, server-side authorisation, audit and backend persistence in a non-production design/test environment.
-5. Design and test the safety event lifecycle, human acknowledgement, escalation, timeout and fallback only against an approved clinical operating protocol.
-6. Complete privacy impact, security threat modelling, dependency/SBOM/secret scanning, backup/recovery and accessibility test plans.
-7. Keep changelog, evidence register, defects and version provenance current.
+## Build and verification
 
-## Launch-readiness boundary
+Use the workflow files in `.github/workflows/` for the supported automated checks and build processes. Consult the current workflow run and release notes for the exact status of each build. A successful build does not certify the application for clinical operation.
 
-Launch-readiness engineering is authorised; launch is not. Do not enable production integrations, production credentials, real-client data, clinical use, public hosting or external beta. The application is not currently certified launch-ready: clinical source authority, instrument permissions, human safety operations, privacy/security approval, independent validation, accessibility/UAT and accountable go/no-go evidence remain open.
+## Intellectual property and third-party material
 
-A private GitHub repository is still hosted by GitHub; it is not offline-only storage. Never commit real client records, credentials, API keys, private keys or identifiable health information.
+STN-owned material is subject to the repository's copyright and licensing notices. Third-party packages, instruments, scales, fonts and other materials remain subject to their respective licences and permissions. Review `LICENSE`, `COPYRIGHT.md` and the intellectual-property register before reuse or redistribution.
 
+## Contributions and security
 
-## Copyright and release paperwork
+Do not disclose vulnerabilities publicly. Follow `SECURITY.md` for responsible security reporting. Changes affecting clinical content, risk pathways, scoring, diagnostic logic or safety workflows require documented clinical review in addition to engineering review.
 
-- `LICENSE` and `COPYRIGHT.md`: proprietary notice for STN-owned material; third-party licences remain applicable.
-- `docs/legal/IP-AND-LICENSING-REGISTER.md`: ownership, contributor assignment and instrument/dependency permission register.
-- `docs/governance/CLINICAL-RELEASE-DOSSIER.md`: clinical approval, safety case and release evidence index.
-- `docs/privacy/PRIVACY-IMPACT-ASSESSMENT-TEMPLATE.md`: New Zealand privacy impact assessment working template.
-- `docs/release/STN-v0.6.1-SOURCE-ARCHIVE-MANIFEST.md`: supplied archive integrity and integration status.
-- `docs/INTEGRATION-AND-RELEASE-STATUS-2026-11-02.md`: current integration and release boundaries.
+---
 
-These documents are controlled working records/templates. They are not substitutes for signed approvals, executed IP assignments, instrument licences, a completed PIA, clinical validation or an accountable go/no-go decision.
-
-## Build artifacts
-
-GitHub Actions verifies the existing Flutter v4 source, builds the Android debug APK and builds the Flutter web release bundle. The workflows retain internal artifacts for seven days. These are engineering/test artifacts, not signed production distributions and not a public clinical deployment. The Android release APK still requires a controlled signing process. The browser prototype remains demonstration-only until the production identity, server-side clinical record, privacy, security and safety controls are implemented and approved.
+**Supportive Therapy Network Limited**  
+STN Whole-Person Assessment Platform
