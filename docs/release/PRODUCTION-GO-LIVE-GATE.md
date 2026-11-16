@@ -2,7 +2,7 @@
 
 **Status: NOT APPROVED FOR IDENTIFIABLE CLIENT USE**
 
-This document separates successful engineering builds from approval to operate a clinical service. The owner has confirmed that clinical validation is complete; this status does not replace the technical, privacy, security, operational or release controls below.
+This document separates successful engineering builds from approval to operate a clinical service. Clinical validation is NOT treated as complete unless version-specific evidence, independent review and accountable sign-off are recorded. No such evidence is established by this document; technical, privacy, security, operational and release controls below remain separate mandatory gates.
 
 ## Verified engineering state (15 November 2026)
 
