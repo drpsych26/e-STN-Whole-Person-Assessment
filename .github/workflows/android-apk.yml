@@ -8,6 +8,11 @@ on:
       - "flutter/source-archives/**"
       - "implementation-patches/flutter-v4/**"
       - ".github/workflows/android-apk.yml"
+  pull_request:
+    paths:
+      - "flutter/source-archives/**"
+      - "implementation-patches/flutter-v4/**"
+      - ".github/workflows/android-apk.yml"
 
 permissions:
   contents: write
@@ -93,6 +98,7 @@ jobs:
           sha256sum "$apk" | tee SHA256SUMS
 
       - name: Publish installable APK as a controlled testing prerelease
+        if: github.event_name != 'pull_request'
         working-directory: flutter/source/supportive_therapy_network_v4
         env:
           GH_TOKEN: ${{ github.token }}
