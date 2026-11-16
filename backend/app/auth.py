@@ -8,7 +8,7 @@ from typing import Any
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jwt import PyJWKClient, PyJWTError
+from jwt import PyJWKClient
 
 _bearer = HTTPBearer(auto_error=False)
 
@@ -49,7 +49,7 @@ def require_identity(
             issuer=issuer,
             options={"require": ["exp", "sub"]},
         )
-    except (PyJWTError, Exception) as exc:
+    except Exception as exc:
         # Fail closed. Do not expose token, key, or provider details to callers.
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
