@@ -8,6 +8,11 @@ on:
       - "flutter/source-archives/**"
       - "implementation-patches/flutter-v4/**"
       - ".github/workflows/android-apk.yml"
+  pull_request:
+    paths:
+      - "flutter/source-archives/**"
+      - "implementation-patches/flutter-v4/**"
+      - ".github/workflows/android-apk.yml"
 
 permissions:
   contents: write
@@ -73,24 +78,38 @@ jobs:
         working-directory: flutter/source/supportive_therapy_network_v4
         run: flutter test --reporter expanded
 
-      - name: Build Android release APK
+      - name: Build Android release APK with a unique upgrade version
         working-directory: flutter/source/supportive_therapy_network_v4
-        run: flutter build apk --release
+        run: flutter build apk --release --build-name=0.4.1 --build-number="${GITHUB_RUN_NUMBER}"
 
-      - name: Verify APK output
+      - name: Verify APK signature and generate release checksums
         working-directory: flutter/source/supportive_therapy_network_v4
+        shell: bash
         run: |
-          test -s build/app/outputs/flutter-apk/app-release.apk
-          file build/app/outputs/flutter-apk/app-release.apk
-          sha256sum build/app/outputs/flutter-apk/app-release.apk
+          set -euo pipefail
+          apk="build/app/outputs/flutter-apk/app-release.apk"
+          test -s "$apk"
+          file "$apk"
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          test -n "$sdk_root"
+          apksigner_path="$(find "$sdk_root/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          aapt_path="$(find "$sdk_root/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          test -n "$apksigner_path"
+          test -n "$aapt_path"
+          "$apksigner_path" verify --verbose --print-certs "$apk" 2>&1 | tee apk-signature.txt
+          "$aapt_path" dump badging "$apk" | tee apk-metadata.txt
+          grep -F "versionCode='${GITHUB_RUN_NUMBER}' versionName='0.4.1'" apk-metadata.txt
+          sha256sum "$apk" | tee SHA256SUMS
 
-      - name: Publish installable APK as a controlled testing release asset
+      - name: Publish installable APK as a controlled testing prerelease
+        if: github.event_name != 'pull_request'
         working-directory: flutter/source/supportive_therapy_network_v4
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="stn-android-${GITHUB_RUN_NUMBER}"
-          gh release create "$tag" build/app/outputs/flutter-apk/app-release.apk \
+          gh release create "$tag" build/app/outputs/flutter-apk/app-release.apk apk-signature.txt apk-metadata.txt SHA256SUMS \
             --repo "$GITHUB_REPOSITORY" \
-            --title "STN Android APK build ${GITHUB_RUN_NUMBER}" \
-            --notes "Automated Android release build from commit ${GITHUB_SHA}. Flutter static analysis and automated tests passed. Install for controlled testing only; this build is not clinical-production approved."
+            --title "STN Android TEST build ${GITHUB_RUN_NUMBER}" \
+            --prerelease \
+            --notes "Automated Android testing build 0.4.1+${GITHUB_RUN_NUMBER} from commit ${GITHUB_SHA}. Flutter static analysis, automated tests, APK signature verification and package/version metadata checks passed. The APK is for controlled testing only. This workflow does not configure or prove use of STN's production signing certificate. Do not use with identifiable client information or for clinical production."
