@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#08070a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><title>STN | Whole Person Initial Assessment — Standalone UAT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Source+Serif+4:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 .stn-brand{display:flex;align-items:center;gap:18px;min-height:64px}.stn-brand img{display:block;width:140px;height:56px;object-fit:contain;flex:0 0 auto}.stn-brand-copy{min-width:0}.stn-brand-copy h1{margin:0}.stn-brand-copy p{margin:4px 0 0}@media(max-width:420px){.stn-brand{gap:10px}.stn-brand img{width:104px;height:44px}}
 
@@ -51,6 +52,15 @@ input,textarea,select{font-size:16px;max-width:100%}
   .card{padding:12px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+
+
+/* STN approved typography lock — brand artwork remains byte-for-byte unchanged. */
+:root{--stn-purple:#AF2CFF;--stn-black:#08070A;--stn-charcoal:#151219;--stn-muted:#C9C1D0;--stn-body:"Manrope",Arial,Helvetica,sans-serif;--stn-display:"Source Serif 4",Georgia,serif}
+body{font-family:var(--stn-body)}
+h1,h2,h3,h4,h5,h6,.section-title,.page-title{font-family:var(--stn-display);font-weight:600}
+header h1,.stn-brand-copy h1{font-family:var(--stn-display);font-weight:600}
+button,input,textarea,select{font-family:var(--stn-body)}
+:focus-visible{outline-color:var(--stn-purple)}
 
 </style></head>
 <body>
