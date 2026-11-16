@@ -4,15 +4,21 @@
 
 This document separates successful engineering builds from approval to operate a clinical service. Clinical validation is NOT treated as complete unless version-specific evidence, independent review and accountable sign-off are recorded. No such evidence is established by this document; technical, privacy, security, operational and release controls below remain separate mandatory gates.
 
-## Verified engineering state (15 November 2026)
+## Verified engineering state (17 November 2026)
 
-- Main verification workflow run 223 completed successfully: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/43657621191
-- Prototype JavaScript syntax and synthetic-data regression tests passed.
-- Flutter source restoration, static analysis, automated tests and build completed successfully.
-- Android APK build 4 was published as a controlled-testing asset: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/releases/tag/stn-android-4
-- APK asset: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/releases/download/stn-android-4/app-release.apk
-- APK release notes explicitly restrict this build to controlled testing. It is not the production-signed clinical release.
-- Website Pages deployment completed successfully: https://github.com/drpsych26/STN-Website/actions/runs/43658020226
+- Current app main commit: `c82a9cc3e68c99fb4175bc3a68ef08586b3dc43a`.
+- STN verification workflow run 243 completed successfully: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/43888352472
+- Flutter web release build completed successfully: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/43888352511
+- API foundation checks completed successfully: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/43888352412
+- Static quality checks completed successfully: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/actions/runs/43888352651
+- Android testing APK build 5 was published: https://github.com/drpsych26/e-STN-Whole-Person-Assessment/releases/tag/stn-android-5
+- APK SHA-256: `c75f9909242d18928da278103d9bbc8007916a104ccc39df093b5a72a7e08483`.
+- The APK is an automated build artifact. The production signing certificate has not been configured or independently verified; do not distribute it as a production-signed clinical release.
+- Website Pages deployment workflow completed successfully on the latest observed website commit: https://github.com/drpsych26/STN-Website/actions/runs/43658757147
+- The assessment repository is still public. Restrict it to private before placing non-public implementation material or any sensitive operational information there.
+- The custom domain, DNS, TLS certificate and redirects have not been independently verified.
+- The API remains a non-live identity foundation. It has no clinical database, client/assessment endpoints, RBAC, organisation scoping or persistent audit trail. The website and Flutter app are not yet integrated with a production clinical backend.
+- Automated engineering success is not clinical validation, privacy approval, penetration-test evidence, operational readiness or production authorisation.
 
 ## Required release gates
 
