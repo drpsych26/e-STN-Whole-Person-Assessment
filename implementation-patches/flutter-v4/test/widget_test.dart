@@ -25,7 +25,9 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Save synthetic response summary'),
       300,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find.byWidgetPredicate(
+          (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
+        ).first,
     );
     await tester.pumpAndSettle();
     expect(find.text('Save synthetic response summary'), findsOneWidget);
@@ -70,7 +72,9 @@ void main() {
       await tester.scrollUntilVisible(
         card,
         300,
-        scrollable: find.byType(Scrollable).last,
+        scrollable: find.byWidgetPredicate(
+          (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
+        ).first,
       );
       await tester.pumpAndSettle();
       expect(card, findsOneWidget);
@@ -79,7 +83,9 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Save draft'),
       300,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find.byWidgetPredicate(
+          (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
+        ).first,
     );
     await tester.pumpAndSettle();
     expect(find.text('Save draft'), findsOneWidget);
@@ -97,7 +103,9 @@ void main() {
     await tester.scrollUntilVisible(
       firstItem,
       300,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find.byWidgetPredicate(
+          (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
+        ).first,
     );
     await tester.pumpAndSettle();
 
