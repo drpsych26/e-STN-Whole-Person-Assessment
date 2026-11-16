@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supportive_therapy_network/main.dart';
 import 'package:supportive_therapy_network/screens/profiles_screen.dart';
+import 'package:supportive_therapy_network/screens/whole_person_initial_assessment_screen.dart';
 
 void main() {
   testWidgets('STN app opens the assessment dashboard', (tester) async {
@@ -24,7 +25,9 @@ void main() {
     await tester.scrollUntilVisible(
       find.text('Save synthetic response summary'),
       300,
-      scrollable: find.byType(Scrollable).last,
+      scrollable: find.byWidgetPredicate(
+          (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
+        ).first,
     );
     await tester.pumpAndSettle();
     expect(find.text('Save synthetic response summary'), findsOneWidget);
@@ -51,5 +54,73 @@ void main() {
     );
     expect(find.text('STN cannot start safely'), findsOneWidget);
     expect(find.textContaining('assessment has been disabled'), findsOneWidget);
+  });
+
+  testWidgets('Whole Person intake renders all 25 items and synthetic-only boundary',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: WholePersonInitialAssessmentScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Whole Person Initial Assessment'), findsOneWidget);
+    expect(find.textContaining('SYNTHETIC DATA ONLY'), findsOneWidget);
+    expect(find.text('Progress: 0 / 25 answered'), findsOneWidget);
+
+    for (var item = 1; item <= 25; item++) {
+      final card = find.byKey(ValueKey('core-item-$item'));
+      await tester.scrollUntilVisible(
+        card,
+        300,
+        scrollable: find.byWidgetPredicate(
+          (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
+        ).first,
+      );
+      await tester.pumpAndSettle();
+      expect(card, findsOneWidget);
+    }
+
+    await tester.scrollUntilVisible(
+      find.text('Save draft'),
+      300,
+      scrollable: find.byWidgetPredicate(
+          (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
+        ).first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Save draft'), findsOneWidget);
+    expect(find.text('Complete simulation'), findsOneWidget);
+  });
+
+  testWidgets('Whole Person intake updates progress when an answer is selected',
+      (tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: WholePersonInitialAssessmentScreen()),
+    );
+    await tester.pumpAndSettle();
+
+    final firstItem = find.byKey(const ValueKey('core-item-1'));
+    await tester.scrollUntilVisible(
+      firstItem,
+      300,
+      scrollable: find.byWidgetPredicate(
+          (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
+        ).first,
+    );
+    await tester.pumpAndSettle();
+
+    final zeroResponse = find.descendant(
+      of: firstItem,
+      matching: find.widgetWithText(ChoiceChip, '0'),
+    );
+    await tester.tap(zeroResponse);
+    await tester.pumpAndSettle();
+
+    // Return to the top of the single vertical intake list before checking
+    // the progress summary, which sits above the question cards.
+    await tester.drag(find.byType(ListView).first, const Offset(0, 5000));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Progress: 1 / 25 answered'), findsOneWidget);
   });
 }

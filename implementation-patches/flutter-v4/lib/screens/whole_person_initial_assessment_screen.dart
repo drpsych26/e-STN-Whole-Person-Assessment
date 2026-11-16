@@ -55,7 +55,11 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
     } catch (error) {
       if (mounted) {
         setState(() => _legacyProfileBlocked = true);
-        _showMessage("Could not verify local profile safety; UAT saving is blocked: $error");
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _showMessage("Could not verify local profile safety; UAT saving is blocked: $error");
+          }
+        });
       }
     }
   }
@@ -110,6 +114,10 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
     }
     if (!_simulationAcknowledged) {
       _showMessage("Acknowledge the non-clinical simulation boundary before saving.");
+      return false;
+    }
+    if (!CoreIntakeRules.areAnswersValid(_answers)) {
+      _showMessage("One or more responses are invalid. Review the answers before saving.");
       return false;
     }
     if (completed && !CoreIntakeRules.isComplete(_answers)) {
