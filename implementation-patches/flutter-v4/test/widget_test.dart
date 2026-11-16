@@ -116,15 +116,11 @@ void main() {
     await tester.tap(zeroResponse);
     await tester.pumpAndSettle();
 
-    final progress = find.textContaining('Progress: 1 / 25 answered');
-    await tester.scrollUntilVisible(
-      progress,
-      300,
-      scrollable: find.byWidgetPredicate(
-        (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
-      ).first,
-    );
+    // Return to the top of the single vertical intake list before checking
+    // the progress summary, which sits above the question cards.
+    await tester.drag(find.byType(ListView).first, const Offset(0, 5000));
     await tester.pumpAndSettle();
-    expect(progress, findsOneWidget);
+
+    expect(find.textContaining('Progress: 1 / 25 answered'), findsOneWidget);
   });
 }
