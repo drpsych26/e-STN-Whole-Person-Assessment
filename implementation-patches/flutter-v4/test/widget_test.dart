@@ -116,6 +116,15 @@ void main() {
     await tester.tap(zeroResponse);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Progress: 1 / 25 answered'), findsOneWidget);
+    final progress = find.textContaining('Progress: 1 / 25 answered');
+    await tester.scrollUntilVisible(
+      progress,
+      300,
+      scrollable: find.byWidgetPredicate(
+        (widget) => widget is Scrollable && widget.axisDirection == AxisDirection.down,
+      ).first,
+    );
+    await tester.pumpAndSettle();
+    expect(progress, findsOneWidget);
   });
 }
