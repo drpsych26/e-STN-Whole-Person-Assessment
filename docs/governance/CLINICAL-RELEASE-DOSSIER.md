@@ -16,17 +16,15 @@
 
 ## 2. Clinical validation status
 
-**Owner-confirmed status: Clinical validation has been completed and provided to the project.** It is not to be represented as an outstanding clinical-validation task in project status reporting.
+**Status: NOT VERIFIED FOR THIS RELEASE.** The repository does not currently contain a version-specific validation record that establishes the exact software build, assessment content, scoring rules, intended-use population, methodology, limitations, independent reviewer and accountable clinical sign-off covered by validation.
 
-For version-controlled release traceability, the controlled company evidence register should identify the validation report reference, approval date, methodology, population, limitations, reviewer/signatory, intended use, and exact assessment/software version covered. Confidential clinical validation documents must remain in the controlled evidence store and must not be uploaded to this public repository.
-
-This evidence-index requirement is version mapping and document control; it does not reverse the owner's confirmation that clinical validation is complete.
+This status does not claim that no clinical review or validation work has ever occurred. It means the evidence has not been independently mapped to this release in the controlled evidence index. Do not describe clinical validation as complete for this release until the responsible clinical owner records the evidence reference, approval date, methodology, population, limitations, reviewer/signatory, intended use and exact assessment/software version covered. Confidential clinical evidence must remain in the controlled evidence store and must not be uploaded to this public repository.
 
 ## 3. Remaining release evidence index
 
 | Control | Release evidence / record | Status |
 |---|---|---|
-| Clinical validation | Completed validation report and owner confirmation; map report reference and scope to the exact release | COMPLETE — OWNER CONFIRMED; version mapping to record |
+| Clinical validation | Version-specific validation report, methodology, population, limitations, reviewer/signatory and exact release mapping | NOT VERIFIED FOR THIS RELEASE — evidence and accountable sign-off required |
 | Clinical source traceability | Approved source item/rule → UI → logic → test → report mapping | Verify exact release coverage |
 | Instrument permissions | Instrument-by-instrument written digital-use, reproduction, scoring and reporting permissions | Record/verify by instrument |
 | Clinical safety case | Hazard log, risk controls, residual-risk acceptance and accountable sign-off | Release evidence required |
@@ -43,4 +41,4 @@ This evidence-index requirement is version mapping and document control; it does
 
 The release decision must identify the exact source commit and artifact hashes, approved deployment environment, intended users, approved clinical scope, known limitations, monitoring and rollback arrangements. It must be signed and dated by the accountable release owner and the required clinical, privacy, security and operational approvers.
 
-Clinical validation is recorded as complete on the owner's confirmation. Production activation remains a separate release decision dependent on the remaining technical, privacy, security, operational and version-specific controls.
+Clinical validation must not be represented as complete for a release until version-specific evidence and accountable sign-off are recorded. Production activation remains a separate release decision dependent on the technical, privacy, security, operational, licensing and clinical controls above.
