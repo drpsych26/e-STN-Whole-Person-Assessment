@@ -108,7 +108,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="stn-android-${GITHUB_RUN_NUMBER}"
-          gh release create "$tag" build/app/outputs/flutter-apk/app-release.apk apk-signature.txt SHA256SUMS \
+          gh release create "$tag" build/app/outputs/flutter-apk/app-release.apk apk-signature.txt apk-metadata.txt SHA256SUMS \
             --repo "$GITHUB_REPOSITORY" \
             --title "STN Android TEST build ${GITHUB_RUN_NUMBER}" \
             --prerelease \
