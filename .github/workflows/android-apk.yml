@@ -85,7 +85,9 @@ jobs:
           apk="build/app/outputs/flutter-apk/app-release.apk"
           test -s "$apk"
           file "$apk"
-          apksigner_path="$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          sdk_root="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          test -n "$sdk_root"
+          apksigner_path="$(find "$sdk_root/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           test -n "$apksigner_path"
           "$apksigner_path" verify --verbose --print-certs "$apk" 2>&1 | tee apk-signature.txt
           sha256sum "$apk" | tee SHA256SUMS
