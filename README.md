@@ -281,7 +281,7 @@ Until all applicable gates are approved, use synthetic test data only. Do not us
 
 The platform is being developed for a New Zealand service context. Applicable privacy, health-information, professional, consumer and safety obligations must be assessed for the actual service model and deployment. Project documentation provides engineering and governance requirements; it is not legal advice or evidence of completed regulatory approval.
 
-## Security and intellectual property
+## Legal, licensing and clinical governance\n\nThe controlled legal and compliance register is maintained in [docs/governance/LEGAL-LICENSING-AND-CLINICAL-GOVERNANCE.md](docs/governance/LEGAL-LICENSING-AND-CLINICAL-GOVERNANCE.md). The app should expose this information through a dedicated Legal & Compliance area, separating public summaries from restricted evidence. Certificate-specific public claims must be populated only from current source documents and approved for disclosure.\n\n## Security and intellectual property
 
 The public repository must not store client records, identifiable health information, passwords, API keys, signing keys or other secrets. Do not submit confidential clinical information through public issues or discussions.
 
