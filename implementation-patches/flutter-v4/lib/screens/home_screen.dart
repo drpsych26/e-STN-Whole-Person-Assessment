@@ -3,6 +3,7 @@ import "module_screen.dart";
 import "results_screen.dart";
 import "profiles_screen.dart";
 import "whole_person_initial_assessment_screen.dart";
+import "legal_compliance_screen.dart";
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -63,6 +64,18 @@ class HomeScreen extends StatelessWidget {
           _tile(context, "GAD", "Anxiety symptom review"),
           _tile(context, "PTSD", "Trauma symptom review"),
           _tile(context, "ADHD", "Attention and impulsivity review"),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.policy_outlined),
+              title: const Text("Legal & Compliance"),
+              subtitle: const Text("STN ownership, licensing, privacy and clinical governance"),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LegalComplianceScreen()),
+              ),
+            ),
+          ),
         ],
       ),
     );
