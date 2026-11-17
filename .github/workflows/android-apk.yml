@@ -47,6 +47,7 @@ jobs:
           cp "$patch_root/lib/logic/report_builder.dart" lib/logic/report_builder.dart
           cp "$patch_root/lib/storage/secure_hive.dart" lib/storage/secure_hive.dart
           cp "$patch_root/lib/screens/home_screen.dart" lib/screens/home_screen.dart
+          cp "$patch_root/lib/screens/legal_compliance_screen.dart" lib/screens/legal_compliance_screen.dart
           cp "$patch_root/lib/screens/whole_person_initial_assessment_screen.dart" lib/screens/whole_person_initial_assessment_screen.dart
           cp "$patch_root/lib/models/core_intake.dart" lib/models/core_intake.dart
           cp "$patch_root/lib/screens/module_screen.dart" lib/screens/module_screen.dart
