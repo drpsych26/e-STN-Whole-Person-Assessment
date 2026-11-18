@@ -1,13 +1,10 @@
 name: STN Android APK build
 
+# REVIEW CHANGE (2026-11-19): automatic release on push to main removed.
+# The APK is a controlled-testing build, is not production-signed, and this
+# repository is public. Releases are created manually and as DRAFTS only.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "flutter/source-archives/**"
-      - "implementation-patches/flutter-v4/**"
-      - ".github/workflows/android-apk.yml"
 
 permissions:
   contents: write
@@ -91,6 +88,7 @@ jobs:
         run: |
           tag="stn-android-${GITHUB_RUN_NUMBER}"
           gh release create "$tag" build/app/outputs/flutter-apk/app-release.apk \
+            --draft \
             --repo "$GITHUB_REPOSITORY" \
             --title "STN Android APK build ${GITHUB_RUN_NUMBER}" \
             --notes "Automated Android release build from commit ${GITHUB_SHA}. Flutter static analysis and automated tests passed. Install for controlled testing only; this build is not clinical-production approved."
