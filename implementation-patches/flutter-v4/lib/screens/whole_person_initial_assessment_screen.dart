@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+
 import "../storage/secure_hive.dart";
 import "../models/core_intake.dart";
 import "profiles_screen.dart";
@@ -6,10 +7,12 @@ import "profiles_screen.dart";
 class WholePersonInitialAssessmentScreen extends StatefulWidget {
   const WholePersonInitialAssessmentScreen({super.key});
   @override
-  State<WholePersonInitialAssessmentScreen> createState() => _WholePersonInitialAssessmentScreenState();
+  State<WholePersonInitialAssessmentScreen> createState() =>
+      _WholePersonInitialAssessmentScreenState();
 }
 
-class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialAssessmentScreen> {
+class _WholePersonInitialAssessmentScreenState
+    extends State<WholePersonInitialAssessmentScreen> {
   final TextEditingController _caseIdController = TextEditingController();
   final Map<int, int> _answers = <int, int>{};
   List<Map<String, dynamic>> _drafts = <Map<String, dynamic>>[];
@@ -57,7 +60,9 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
         setState(() => _legacyProfileBlocked = true);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            _showMessage("Could not verify local profile safety; UAT saving is blocked: $error");
+            _showMessage(
+              "Could not verify local profile safety; UAT saving is blocked: $error",
+            );
           }
         });
       }
@@ -72,7 +77,9 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
         await _refreshDrafts();
         return;
       }
-      final rawAnswers = Map<String, dynamic>.from(draft["answers"] as Map? ?? {});
+      final rawAnswers = Map<String, dynamic>.from(
+        draft["answers"] as Map? ?? {},
+      );
       setState(() {
         _draftId = id;
         _createdAt = draft["createdAt"] as String?;
@@ -104,24 +111,34 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
   Future<bool> _saveDraft({bool completed = false}) async {
     if (_saving) return false;
     if (_legacyProfileBlocked) {
-      _showMessage("Clear legacy non-synthetic profile data in Profiles before using this UAT screen.");
+      _showMessage(
+        "Clear legacy non-synthetic profile data in Profiles before using this UAT screen.",
+      );
       return false;
     }
     final caseId = _caseIdController.text.trim();
     if (!CoreIntakeRules.isSyntheticCaseId(caseId)) {
-      _showMessage("Use a synthetic test ID beginning with SYNTH-. Real client identifiers are blocked.");
+      _showMessage(
+        "Use a synthetic test ID beginning with SYNTH-. Real client identifiers are blocked.",
+      );
       return false;
     }
     if (!_simulationAcknowledged) {
-      _showMessage("Acknowledge the non-clinical simulation boundary before saving.");
+      _showMessage(
+        "Acknowledge the non-clinical simulation boundary before saving.",
+      );
       return false;
     }
     if (!CoreIntakeRules.areAnswersValid(_answers)) {
-      _showMessage("One or more responses are invalid. Review the answers before saving.");
+      _showMessage(
+        "One or more responses are invalid. Review the answers before saving.",
+      );
       return false;
     }
     if (completed && !CoreIntakeRules.isComplete(_answers)) {
-      _showMessage("Answer all 25 core items before completing this synthetic test.");
+      _showMessage(
+        "Answer all 25 core items before completing this synthetic test.",
+      );
       return false;
     }
 
@@ -138,8 +155,13 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
         "completed": completed,
         "simulationAcknowledged": _simulationAcknowledged,
         "sourceVersion": "STN-INITIAL-1.0.0",
-        "answers": {for (final entry in _answers.entries) entry.key.toString(): entry.value},
-        "unresolvedSafetyItems": CoreIntakeRules.unresolvedSafetyItems(_answers),
+        "answers": {
+          for (final entry in _answers.entries)
+            entry.key.toString(): entry.value,
+        },
+        "unresolvedSafetyItems": CoreIntakeRules.unresolvedSafetyItems(
+          _answers,
+        ),
       };
       await SecureHive.saveWholePersonDraft(draft);
       if (!mounted) return false;
@@ -148,9 +170,11 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
         _createdAt = createdAt;
       });
       await _refreshDrafts();
-      _showMessage(completed
-          ? "Synthetic core intake saved as a completed simulation."
-          : "Synthetic draft saved locally in encrypted demo storage.");
+      _showMessage(
+        completed
+            ? "Synthetic core intake saved as a completed simulation."
+            : "Synthetic draft saved locally in encrypted demo storage.",
+      );
       return true;
     } catch (error) {
       if (mounted) _showMessage("Draft could not be saved: $error");
@@ -167,12 +191,19 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(unresolved.isEmpty ? "Core intake recorded" : "Human review required"),
-        content: Text(unresolved.isEmpty
-            ? "No positive responses were recorded for the safety-tagged core items. This is not a safety clearance, risk assessment or crisis disposition."
-            : "Safety-tagged items requiring human review or clarification: ${unresolved.join(", ")}. This simulation does not contact, assign or notify a clinician and does not create a handover."),
+        title: Text(
+          unresolved.isEmpty ? "Core intake recorded" : "Human review required",
+        ),
+        content: Text(
+          unresolved.isEmpty
+              ? "No positive responses were recorded for the safety-tagged core items. This is not a safety clearance, risk assessment or crisis disposition."
+              : "Safety-tagged items requiring human review or clarification: ${unresolved.join(", ")}. This simulation does not contact, assign or notify a clinician and does not create a handover.",
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text("Close")),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Close"),
+          ),
         ],
       ),
     );
@@ -183,10 +214,18 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text("Delete synthetic draft?"),
-        content: const Text("This permanently removes the selected local test draft from this device."),
+        content: const Text(
+          "This permanently removes the selected local test draft from this device.",
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text("Cancel")),
-          TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text("Delete")),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text("Delete"),
+          ),
         ],
       ),
     );
@@ -215,7 +254,9 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
                 return ListTile(
                   title: Text(caseId),
                   subtitle: Text(completed ? "Completed simulation" : "Draft"),
-                  leading: Icon(completed ? Icons.assignment_turned_in : Icons.edit_note),
+                  leading: Icon(
+                    completed ? Icons.assignment_turned_in : Icons.edit_note,
+                  ),
                   onTap: () => _openDraft(id),
                   trailing: IconButton(
                     tooltip: "Delete synthetic draft",
@@ -240,9 +281,17 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(radius: 14, child: Text(question.number.toString())),
+                CircleAvatar(
+                  radius: 14,
+                  child: Text(question.number.toString()),
+                ),
                 const SizedBox(width: 10),
-                Expanded(child: Text(question.text, style: const TextStyle(fontWeight: FontWeight.w600))),
+                Expanded(
+                  child: Text(
+                    question.text,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
               ],
             ),
             if (question.safetyTagged)
@@ -257,17 +306,22 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
             Wrap(
               spacing: 8,
               runSpacing: 6,
-              children: List<Widget>.generate(5, (value) => Tooltip(
-                message: "$value — ${coreIntakeResponseLabels[value]}",
-                child: ChoiceChip(
-                  label: Text(value.toString()),
-                  selected: selected == value,
-                  onSelected: _saving ? null : (isSelected) {
-                    if (!isSelected) return;
-                    setState(() => _answers[question.number] = value);
-                  },
+              children: List<Widget>.generate(
+                5,
+                (value) => Tooltip(
+                  message: "$value — ${coreIntakeResponseLabels[value]}",
+                  child: ChoiceChip(
+                    label: Text(value.toString()),
+                    selected: selected == value,
+                    onSelected: _saving
+                        ? null
+                        : (isSelected) {
+                            if (!isSelected) return;
+                            setState(() => _answers[question.number] = value);
+                          },
+                  ),
                 ),
-              )),
+              ),
             ),
             if (selected != null)
               Padding(
@@ -327,16 +381,22 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(height: 8),
-                    const Text("The app will not use or display legacy non-synthetic profiles in this assessment."),
+                    const Text(
+                      "The app will not use or display legacy non-synthetic profiles in this assessment.",
+                    ),
                     OutlinedButton(
                       onPressed: () async {
                         await Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const ProfilesScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const ProfilesScreen(),
+                          ),
                         );
                         await _refreshDrafts();
                       },
-                      child: const Text("Open synthetic profiles and clear legacy data"),
+                      child: const Text(
+                        "Open synthetic profiles and clear legacy data",
+                      ),
                     ),
                   ],
                 ),
@@ -349,7 +409,10 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Synthetic test case", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Synthetic test case",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _caseIdController,
@@ -364,11 +427,20 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _simulationAcknowledged,
-                    onChanged: _saving ? null : (value) => setState(() => _simulationAcknowledged = value ?? false),
-                    title: const Text("I understand this is a non-clinical synthetic-data simulation."),
+                    onChanged: _saving
+                        ? null
+                        : (value) => setState(
+                            () => _simulationAcknowledged = value ?? false,
+                          ),
+                    title: const Text(
+                      "I understand this is a non-clinical synthetic-data simulation.",
+                    ),
                     controlAffinity: ListTileControlAffinity.leading,
                   ),
-                  Text("Progress: $answered / 25 answered", style: Theme.of(context).textTheme.titleSmall),
+                  Text(
+                    "Progress: $answered / 25 answered",
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                   LinearProgressIndicator(value: answered / 25),
                 ],
               ),
@@ -380,7 +452,10 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Response scale", style: TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    "Response scale",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   SizedBox(height: 6),
                   Text("0 — Not at all / no"),
                   Text("1 — A little / occasionally"),
@@ -388,7 +463,9 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
                   Text("3 — A lot / often"),
                   Text("4 — Extreme / nearly always"),
                   SizedBox(height: 6),
-                  Text("Past 2–4 weeks unless stated otherwise. The supplied paper pilot says safety items are interpreted independently from symptom burden."),
+                  Text(
+                    "Past 2–4 weeks unless stated otherwise. The supplied paper pilot says safety items are interpreted independently from symptom burden.",
+                  ),
                 ],
               ),
             ),
@@ -400,15 +477,24 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Safety-tagged item review", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Safety-tagged item review",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 6),
-                  Text(unresolved.isEmpty
-                      ? "No positive or missing safety-tagged core responses. This is not a safety clearance."
-                      : "Human review / clarification required for item(s): ${unresolved.join(", ")}."),
+                  Text(
+                    unresolved.isEmpty
+                        ? "No positive or missing safety-tagged core responses. This is not a safety clearance."
+                        : "Human review / clarification required for item(s): ${unresolved.join(", ")}.",
+                  ),
                   const SizedBox(height: 6),
-                  const Text("This prototype does not calculate a safety tier, initiate a crisis response, contact a clinician or record an acknowledged handover."),
+                  const Text(
+                    "This prototype does not calculate a safety tier, initiate a crisis response, contact a clinician or record an acknowledged handover.",
+                  ),
                   const SizedBox(height: 10),
-                  const Text("Adaptive follow-up routing and the remaining paper-pilot sections are not yet implemented in this Flutter screen. Do not infer routing from these descriptive responses."),
+                  const Text(
+                    "Adaptive follow-up routing and the remaining paper-pilot sections are not yet implemented in this Flutter screen. Do not infer routing from these descriptive responses.",
+                  ),
                 ],
               ),
             ),
@@ -423,7 +509,9 @@ class _WholePersonInitialAssessmentScreenState extends State<WholePersonInitialA
                 label: Text(_saving ? "Saving…" : "Save draft"),
               ),
               FilledButton.icon(
-                onPressed: _saving || !CoreIntakeRules.isComplete(_answers) ? null : _completeAssessment,
+                onPressed: _saving || !CoreIntakeRules.isComplete(_answers)
+                    ? null
+                    : _completeAssessment,
                 icon: const Icon(Icons.check_circle_outline),
                 label: const Text("Complete simulation"),
               ),

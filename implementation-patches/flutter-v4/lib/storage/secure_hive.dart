@@ -1,7 +1,9 @@
 import "dart:convert";
 import "dart:math";
+
 import "package:flutter_secure_storage/flutter_secure_storage.dart";
 import "package:hive/hive.dart";
+
 import "../models/assessment_models.dart";
 import "../models/profile_models.dart";
 import "../models/core_intake.dart";
@@ -23,7 +25,10 @@ class SecureHive {
       await Hive.openBox(profilesBoxName, encryptionCipher: HiveAesCipher(key));
     }
     if (!Hive.isBoxOpen(wholePersonDraftsBoxName)) {
-      await Hive.openBox<String>(wholePersonDraftsBoxName, encryptionCipher: HiveAesCipher(key));
+      await Hive.openBox<String>(
+        wholePersonDraftsBoxName,
+        encryptionCipher: HiveAesCipher(key),
+      );
     }
   }
 
@@ -48,16 +53,22 @@ class SecureHive {
 
   static Box get _results => Hive.box(resultsBoxName);
   static Box get _profiles => Hive.box(profilesBoxName);
-  static Box<String> get _wholePersonDrafts => Hive.box<String>(wholePersonDraftsBoxName);
+  static Box<String> get _wholePersonDrafts =>
+      Hive.box<String>(wholePersonDraftsBoxName);
 
   static Future<void> addResult(ModuleResult result) async {
     final client = loadActiveClient();
     final clinician = loadActiveClinician();
     if (client == null || !CoreIntakeRules.isSyntheticCaseId(client.id)) {
-      throw StateError('A synthetic case must be active before saving a response summary.');
+      throw StateError(
+        'A synthetic case must be active before saving a response summary.',
+      );
     }
-    if (clinician == null || !CoreIntakeRules.isSyntheticTesterAlias(clinician.name)) {
-      throw StateError('A synthetic tester alias must be active before saving a response summary.');
+    if (clinician == null ||
+        !CoreIntakeRules.isSyntheticTesterAlias(clinician.name)) {
+      throw StateError(
+        'A synthetic tester alias must be active before saving a response summary.',
+      );
     }
     final payload = Map<String, dynamic>.from(result.toJson())
       ..['_stnSyntheticCaseId'] = client.id
@@ -71,8 +82,9 @@ class SecureHive {
       return <ModuleResult>[];
     }
     final results = _results.values
-        .where((value) =>
-            value is Map && value['_stnSyntheticCaseId'] == client.id)
+        .where(
+          (value) => value is Map && value['_stnSyntheticCaseId'] == client.id,
+        )
         .map((value) => ModuleResult.fromJson(Map<String, dynamic>.from(value)))
         .toList();
     results.sort((a, b) => b.completedAt.compareTo(a.completedAt));
@@ -139,8 +151,11 @@ class SecureHive {
       }
       return Map<String, dynamic>.from(decoded);
     }).toList();
-    drafts.sort((a, b) => (b["updatedAt"] as String? ?? "")
-        .compareTo(a["updatedAt"] as String? ?? ""));
+    drafts.sort(
+      (a, b) => (b["updatedAt"] as String? ?? "").compareTo(
+        a["updatedAt"] as String? ?? "",
+      ),
+    );
     return drafts;
   }
 

@@ -38,7 +38,10 @@ void main() {
         "Housing, food, power, transport or other basic needs are unstable enough to affect health or safety.",
         "Emotional or behavioural difficulties are significantly affecting work, study, parenting, relationships or self-care.",
       ];
-      expect(coreIntakeQuestions.map((question) => question.text).toList(), expected);
+      expect(
+        coreIntakeQuestions.map((question) => question.text).toList(),
+        expected,
+      );
     });
 
     test("requires a synthetic case identifier", () {
@@ -57,8 +60,15 @@ void main() {
     });
 
     test("does not treat missing safety-tagged answers as negative", () {
-      expect(CoreIntakeRules.unresolvedSafetyItems(const <int, int>{}),
-          [14, 19, 20, 21, 22, 23, 24]);
+      expect(CoreIntakeRules.unresolvedSafetyItems(const <int, int>{}), [
+        14,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+      ]);
     });
 
     test("flags endorsed safety-tagged items for human review", () {

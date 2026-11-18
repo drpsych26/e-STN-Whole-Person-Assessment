@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+
 import "../models/assessment_models.dart";
 import "../modules/mdd_module.dart";
 import "../modules/gad_module.dart";
@@ -67,9 +68,8 @@ class _ModuleScreenState extends State<ModuleScreen> {
             value: _syntheticAcknowledged,
             onChanged: _saving
                 ? null
-                : (value) => setState(
-                      () => _syntheticAcknowledged = value ?? false,
-                    ),
+                : (value) =>
+                      setState(() => _syntheticAcknowledged = value ?? false),
             title: const Text(
               "I confirm this is a synthetic test case only. No real patient information or responses are being entered.",
             ),
@@ -85,12 +85,15 @@ class _ModuleScreenState extends State<ModuleScreen> {
           ...questions.map(_questionTile),
           const SizedBox(height: 16),
           ElevatedButton(
-            onPressed: _saving ||
+            onPressed:
+                _saving ||
                     !_syntheticAcknowledged ||
                     _responses.length != questions.length
                 ? null
                 : _scoreAndSave,
-            child: Text(_saving ? "Saving…" : "Save synthetic response summary"),
+            child: Text(
+              _saving ? "Saving…" : "Save synthetic response summary",
+            ),
           ),
         ],
       ),
@@ -147,7 +150,9 @@ class _ModuleScreenState extends State<ModuleScreen> {
     if (_saving) return;
     if (!_syntheticAcknowledged) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Confirm synthetic-data-only use before saving.")),
+        const SnackBar(
+          content: Text("Confirm synthetic-data-only use before saving."),
+        ),
       );
       return;
     }
@@ -158,13 +163,19 @@ class _ModuleScreenState extends State<ModuleScreen> {
         activeTester == null ||
         !CoreIntakeRules.isSyntheticTesterAlias(activeTester.name)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Create a SYNTH- case and TESTER- alias in Synthetic Test Profiles before saving.")),
+        const SnackBar(
+          content: Text(
+            "Create a SYNTH- case and TESTER- alias in Synthetic Test Profiles before saving.",
+          ),
+        ),
       );
       return;
     }
     if (_responses.length != _questions.length) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Answer every item before saving this synthetic test.")),
+        const SnackBar(
+          content: Text("Answer every item before saving this synthetic test."),
+        ),
       );
       return;
     }
@@ -172,12 +183,7 @@ class _ModuleScreenState extends State<ModuleScreen> {
 
     try {
       final answers = _responses.entries
-          .map(
-            (entry) => Answer(
-              questionId: entry.key,
-              severity: entry.value,
-            ),
-          )
+          .map((entry) => Answer(questionId: entry.key, severity: entry.value))
           .toList();
       final result = _engine.score(widget.moduleId, _questions, answers);
       await SecureHive.addResult(result);

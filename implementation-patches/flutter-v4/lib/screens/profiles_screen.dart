@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:uuid/uuid.dart";
+
 import "../models/profile_models.dart";
 import "../storage/secure_hive.dart";
 import "../models/core_intake.dart";
@@ -31,7 +32,8 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
         _legacyProfileDetected = true;
         _loadError = "A legacy profile exists but is hidden because it is not a SYNTH- test ID. Clear it before UAT.";
       }
-      if (clinician != null && CoreIntakeRules.isSyntheticTesterAlias(clinician.name)) {
+      if (clinician != null &&
+          CoreIntakeRules.isSyntheticTesterAlias(clinician.name)) {
         _testerAlias.text = clinician.name;
       } else if (clinician != null) {
         _legacyProfileDetected = true;
@@ -51,9 +53,8 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
 
   void _message(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _save() async {
@@ -65,11 +66,15 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
       return;
     }
     if (!CoreIntakeRules.isSyntheticCaseId(caseId)) {
-      _message("Client profile must use a synthetic ID beginning with SYNTH-. Real client identifiers are blocked.");
+      _message(
+        "Client profile must use a synthetic ID beginning with SYNTH-. Real client identifiers are blocked.",
+      );
       return;
     }
     if (!CoreIntakeRules.isSyntheticTesterAlias(testerAlias)) {
-      _message("Use a test alias beginning with TESTER-. Real names are not accepted.");
+      _message(
+        "Use a test alias beginning with TESTER-. Real names are not accepted.",
+      );
       return;
     }
 
@@ -90,7 +95,9 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
       );
       await SecureHive.saveActiveClient(client);
       await SecureHive.saveActiveClinician(clinician);
-      _message("Synthetic test profiles saved to encrypted device-local demo storage.");
+      _message(
+        "Synthetic test profiles saved to encrypted device-local demo storage.",
+      );
     } catch (error) {
       _message("Could not save synthetic profiles: $error");
     } finally {
@@ -104,7 +111,9 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text("Clear local test profiles?"),
-        content: const Text("This removes both current and legacy device-local profile data from this app."),
+        content: const Text(
+          "This removes both current and legacy device-local profile data from this app.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -172,7 +181,10 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
               ),
             ),
           const SizedBox(height: 12),
-          const Text("Synthetic case", style: TextStyle(fontWeight: FontWeight.w700)),
+          const Text(
+            "Synthetic case",
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
           TextField(
             controller: _caseId,
             decoration: const InputDecoration(
@@ -183,13 +195,17 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
             textCapitalization: TextCapitalization.characters,
           ),
           const SizedBox(height: 20),
-          const Text("UAT tester", style: TextStyle(fontWeight: FontWeight.w700)),
+          const Text(
+            "UAT tester",
+            style: TextStyle(fontWeight: FontWeight.w700),
+          ),
           TextField(
             controller: _testerAlias,
             decoration: const InputDecoration(
               labelText: "Synthetic tester alias",
               hintText: "TESTER-01",
-              helperText: "Must begin with TESTER-. Do not enter a real person's name.",
+              helperText:
+                  "Must begin with TESTER-. Do not enter a real person's name.",
             ),
             textCapitalization: TextCapitalization.characters,
           ),

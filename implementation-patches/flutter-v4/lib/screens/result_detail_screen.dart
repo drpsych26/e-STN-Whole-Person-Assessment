@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:share_plus/share_plus.dart";
+
 import "../models/assessment_models.dart";
 import "../models/profile_models.dart";
 import "../logic/report_builder.dart";
@@ -15,9 +16,9 @@ class ResultDetailScreen extends StatelessWidget {
       await Share.share(report, subject: "STN Development MVP Summary");
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Report export failed: $error")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Report export failed: $error")));
     }
   }
 
