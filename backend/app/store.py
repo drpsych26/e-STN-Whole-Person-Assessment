@@ -48,7 +48,7 @@ def _now() -> str:
 
 class Store:
     def __init__(self, path: str | Path):
-        self._conn = sqlite3.connect(str(path))
+        self._conn = sqlite3.connect(str(path), check_same_thread=False)
         self._conn.execute("PRAGMA foreign_keys = ON")
         self._conn.executescript(SCHEMA)
         self._conn.commit()

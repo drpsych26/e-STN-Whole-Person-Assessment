@@ -65,7 +65,7 @@ def _get(token):
 def test_valid_signed_token_is_accepted():
     response = _get(_rs256(_claims()))
     assert response.status_code == 200
-    assert response.json() == {"subject": "clinician-001", "authenticated": True}
+    assert response.json() == {"subject": "clinician-001", "authenticated": True, "roles": []}
 
 
 def test_expired_token_is_rejected():

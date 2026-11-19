@@ -64,4 +64,7 @@ def require_identity(
             detail="Access token has no valid subject.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return {"sub": subject, "issuer": issuer, "audience": audience}
+    roles_claim = os.getenv("STN_OIDC_ROLES_CLAIM", "roles").strip() or "roles"
+    raw_roles = claims.get(roles_claim, [])
+    roles = [r for r in raw_roles if isinstance(r, str)] if isinstance(raw_roles, list) else []
+    return {"sub": subject, "issuer": issuer, "audience": audience, "roles": roles}
