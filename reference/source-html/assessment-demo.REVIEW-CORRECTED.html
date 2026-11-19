@@ -483,7 +483,8 @@ function classifyCssrs(answers={}){
   let level;
   if (yes('cssrs_5') || yes('cssrs_6') || !feelsSafe) level='crisis';
   else if (yes('cssrs_4')) level='high';
-  else if (yes('cssrs_2') || yes('cssrs_3')) level='moderate';
+  // INTERIM SAFETY FLOOR (engineering, pending clinical review): any Yes to Q1-Q3 is at least MODERATE.
+  else if (yes('cssrs_1') || yes('cssrs_2') || yes('cssrs_3')) level='moderate';
   else level='low';
   const action = {
     crisis:'CRISIS — follow the Safety Response Protocol now. Do not continue the assessment. Escalate immediately.',

@@ -13,3 +13,4 @@ Canonical v2.6 source is undetermined (STN-H04). This file is a review copy, not
 
 ## Update
 - Help-line panel added to the top of the review copy (STN-H10 engineering part). Clinical sign-off on the crisis pathway is still required.
+- INTERIM (unreviewed): C-SSRS floor raised so any Yes to Q1, Q2 or Q3 is at least MODERATE (previously Q1 Yes with Q2 No returned LOW). This is a safety-increasing interim measure. It is not clinical validation and must be confirmed or amended by a clinician on the sign-off form (item C04).
