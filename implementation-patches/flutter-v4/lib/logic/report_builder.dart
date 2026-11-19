@@ -11,7 +11,9 @@ class ReportBuilder {
 
     buffer.writeln("SUPPORTIVE THERAPY NETWORK LTD");
     buffer.writeln("Clinical Module Summary — Development MVP");
-    buffer.writeln("------------------------------------------------------------");
+    buffer.writeln(
+      "------------------------------------------------------------",
+    );
     buffer.writeln("Client: ${client?.fullName ?? "[Not set]"}");
     buffer.writeln("Client DOB: ${client?.dobIso ?? "[Not set]"}");
     buffer.writeln("Client Contact: ${client?.contact ?? "[Not set]"}");
@@ -19,7 +21,9 @@ class ReportBuilder {
     buffer.writeln("Clinician: ${clinician?.name ?? "[Not set]"}");
     buffer.writeln("Title: ${clinician?.title ?? "[Not set]"}");
     buffer.writeln("Registration: ${clinician?.registration ?? "[Not set]"}");
-    buffer.writeln("------------------------------------------------------------");
+    buffer.writeln(
+      "------------------------------------------------------------",
+    );
     buffer.writeln("Module: ${r.moduleId}");
     buffer.writeln("Completed: ${r.completedAt.toLocal()}");
     buffer.writeln("Descriptive response sum: ${r.totalScore}");

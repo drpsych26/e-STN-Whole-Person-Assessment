@@ -14,7 +14,10 @@ void main() {
           .toList();
       final result = engine.score('MDD', mddQuestions, answers);
       expect(result.criteriaMet, isFalse);
-      expect(result.interpretation, contains('not a validated instrument score'));
+      expect(
+        result.interpretation,
+        contains('not a validated instrument score'),
+      );
     });
 
     test('incomplete answers require clinician review', () {
@@ -27,35 +30,42 @@ void main() {
 
     test('positive designated review item requires clinician review', () {
       final answers = mddQuestions
-          .map((q) => Answer(
-                questionId: q.id,
-                severity: q.id == 'mdd_q9_suicide'
-                    ? Severity.mild
-                    : Severity.none,
-              ))
+          .map(
+            (q) => Answer(
+              questionId: q.id,
+              severity: q.id == 'mdd_q9_suicide'
+                  ? Severity.mild
+                  : Severity.none,
+            ),
+          )
           .toList();
       final result = engine.score('MDD', mddQuestions, answers);
       expect(result.riskFlag, isTrue);
     });
 
-    test('fully answered negative review item does not trigger interim flag', () {
-      final answers = mddQuestions
-          .map((q) => Answer(questionId: q.id, severity: Severity.none))
-          .toList();
-      final result = engine.score('MDD', mddQuestions, answers);
-      expect(result.riskFlag, isFalse);
-      expect(result.criteriaMet, isFalse);
-      expect(result.totalScore, 0);
-    });
+    test(
+      'fully answered negative review item does not trigger interim flag',
+      () {
+        final answers = mddQuestions
+            .map((q) => Answer(questionId: q.id, severity: Severity.none))
+            .toList();
+        final result = engine.score('MDD', mddQuestions, answers);
+        expect(result.riskFlag, isFalse);
+        expect(result.criteriaMet, isFalse);
+        expect(result.totalScore, 0);
+      },
+    );
 
     test('descriptive total is the sum of entered responses', () {
       final answers = mddQuestions
-          .map((q) => Answer(
-                questionId: q.id,
-                severity: q.id == 'mdd_q1_mood'
-                    ? Severity.moderate
-                    : Severity.none,
-              ))
+          .map(
+            (q) => Answer(
+              questionId: q.id,
+              severity: q.id == 'mdd_q1_mood'
+                  ? Severity.moderate
+                  : Severity.none,
+            ),
+          )
           .toList();
       final result = engine.score('MDD', mddQuestions, answers);
       expect(result.totalScore, 2);

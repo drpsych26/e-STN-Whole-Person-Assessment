@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+
 import "../storage/secure_hive.dart";
 import "../models/assessment_models.dart";
 import "result_detail_screen.dart";
@@ -67,34 +68,34 @@ class _ResultsScreenState extends State<ResultsScreen> {
               ),
             )
           : _results.isEmpty
-              ? const Center(child: Text("No saved response summaries yet."))
-              : ListView.builder(
-                  itemCount: _results.length,
-                  itemBuilder: (_, index) {
-                    final result = _results[index];
-                    return ListTile(
-                      title: Text(
-                        "${result.moduleId} — Response sum ${result.totalScore}",
-                      ),
-                      subtitle: Text(
-                        "${result.completedAt.toLocal()}\n"
-                        "Diagnostic criteria: Not assessed\n"
-                        "${result.interpretation}",
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: result.riskFlag
-                          ? const Icon(Icons.warning_amber)
-                          : null,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ResultDetailScreen(result: result),
-                        ),
-                      ).then((_) => _refresh()),
-                    );
-                  },
-                ),
+          ? const Center(child: Text("No saved response summaries yet."))
+          : ListView.builder(
+              itemCount: _results.length,
+              itemBuilder: (_, index) {
+                final result = _results[index];
+                return ListTile(
+                  title: Text(
+                    "${result.moduleId} — Response sum ${result.totalScore}",
+                  ),
+                  subtitle: Text(
+                    "${result.completedAt.toLocal()}\n"
+                    "Diagnostic criteria: Not assessed\n"
+                    "${result.interpretation}",
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: result.riskFlag
+                      ? const Icon(Icons.warning_amber)
+                      : null,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ResultDetailScreen(result: result),
+                    ),
+                  ).then((_) => _refresh()),
+                );
+              },
+            ),
     );
   }
 }

@@ -21,7 +21,9 @@ class ScoringEngine {
   ) {
     final prefix = _modulePrefixes[moduleId];
     if (prefix == null || questions.isEmpty) {
-      throw ArgumentError('Unknown or unconfigured assessment module: $moduleId');
+      throw ArgumentError(
+        'Unknown or unconfigured assessment module: $moduleId',
+      );
     }
     if (questions.any((question) => !question.id.startsWith(prefix))) {
       throw ArgumentError('Question set does not belong to module: $moduleId');
@@ -38,7 +40,9 @@ class ScoringEngine {
         throw ArgumentError('Unknown question ID: ${answer.questionId}');
       }
       if (!seen.add(answer.questionId)) {
-        throw ArgumentError('Duplicate answer for question: ${answer.questionId}');
+        throw ArgumentError(
+          'Duplicate answer for question: ${answer.questionId}',
+        );
       }
     }
 
@@ -47,28 +51,29 @@ class ScoringEngine {
         answer.questionId: severityToScore(answer.severity),
     };
     final total = itemScores.values.fold<int>(0, (sum, value) => sum + value);
-    final incomplete = questions.any(
-      (question) => !seen.contains(question.id),
-    );
+    final incomplete = questions.any((question) => !seen.contains(question.id));
 
     // Missing safety information is never interpreted as a negative answer.
     // Any non-zero response to a designated review item requires clinician
     // review. This is a conservative workflow flag, not a risk assessment.
-    final safetyReviewRequired = incomplete || questions.any((question) {
-      if (!question.isRiskItem) return false;
-      final answer = answers.where(
-        (candidate) => candidate.questionId == question.id,
-      );
-      return answer.isEmpty || answer.first.severity != Severity.none;
-    });
+    final safetyReviewRequired =
+        incomplete ||
+        questions.any((question) {
+          if (!question.isRiskItem) return false;
+          final answer = answers.where(
+            (candidate) => candidate.questionId == question.id,
+          );
+          return answer.isEmpty || answer.first.severity != Severity.none;
+        });
 
     final reviewText = safetyReviewRequired
         ? 'Clinician review required: the assessment is incomplete and/or a '
-            'designated review item is positive or unanswered. This flag is '
-            'not a risk assessment or crisis disposition. '
+              'designated review item is positive or unanswered. This flag is '
+              'not a risk assessment or crisis disposition. '
         : 'No review flag was triggered by this interim rule set; this is '
-            'not proof of safety. ';
-    const limitationText = 'The response-severity sum is descriptive only, '
+              'not proof of safety. ';
+    const limitationText =
+        'The response-severity sum is descriptive only, '
         'not a validated instrument score or diagnosis. Diagnostic criteria '
         'are not assessed.';
 

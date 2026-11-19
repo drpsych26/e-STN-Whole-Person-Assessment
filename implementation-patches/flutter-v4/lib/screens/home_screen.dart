@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+
 import "module_screen.dart";
 import "results_screen.dart";
 import "profiles_screen.dart";
@@ -11,7 +12,20 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("STN Whole Person Assessment — Flutter MVP"),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              "assets/brand/stn-logo-original.png",
+              height: 40,
+              fit: BoxFit.contain,
+              semanticLabel: "Supportive Therapy Network Ltd, Rehab. Right.",
+              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+            ),
+            const SizedBox(width: 12),
+            const Flexible(child: Text("STN Whole Person Assessment — Flutter MVP", overflow: TextOverflow.ellipsis)),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
@@ -49,7 +63,9 @@ class HomeScreen extends StatelessWidget {
             child: ListTile(
               leading: const Icon(Icons.assignment_outlined),
               title: const Text("Whole Person Initial Assessment"),
-              subtitle: const Text("Part A — 25 core intake items · synthetic-data simulation"),
+              subtitle: const Text(
+                "Part A — 25 core intake items · synthetic-data simulation",
+              ),
               trailing: const Icon(Icons.chevron_right),
               onTap: () => Navigator.push(
                 context,

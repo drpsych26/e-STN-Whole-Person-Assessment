@@ -1,0 +1,13 @@
+{
+  "name": "STN Whole Person Assessment",
+  "short_name": "STN Assessment",
+  "description": "Supportive Therapy Network — Whole Person Initial Assessment (in development; not clinically signed off).",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#08070A",
+  "theme_color": "#08070A",
+  "lang": "en-NZ",
+  "icons": [
+    { "src": "../../assets/brand/stn-logo-original.png", "sizes": "700x280", "type": "image/png", "purpose": "any" }
+  ]
+}
