@@ -64,6 +64,10 @@ jobs:
           cp "$patch_root/test/scoring_engine_test.dart" test/scoring_engine_test.dart
           cp "$patch_root/test/whole_person_intake_rules_test.dart" test/whole_person_intake_rules_test.dart
           cp "$patch_root/test/widget_test.dart" test/widget_test.dart
+          python3 "$patch_root/apply_assets.py" .
+          grep -q "STN-BRAND-ASSETS" pubspec.yaml
+          test -f assets/brand/stn-logo-original.png
+          test -f assets/fonts/Manrope_400Regular.ttf
       - name: Resolve dependencies
         working-directory: flutter/source/supportive_therapy_network_v4
         run: flutter pub get

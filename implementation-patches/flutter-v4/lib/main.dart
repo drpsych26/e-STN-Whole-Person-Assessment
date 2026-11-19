@@ -36,8 +36,19 @@ ThemeData _stnTheme() {
   return ThemeData(
     useMaterial3: true,
     colorScheme: scheme,
+    fontFamily: "Manrope",
     scaffoldBackgroundColor: canvas,
-    appBarTheme: const AppBarTheme(backgroundColor: canvas, foregroundColor: Color(0xFFF7F4FA), elevation: 0),
+    appBarTheme: const AppBarTheme(
+      backgroundColor: canvas,
+      foregroundColor: Color(0xFFF7F4FA),
+      elevation: 0,
+      titleTextStyle: TextStyle(
+        fontFamily: "SourceSerif4",
+        fontWeight: FontWeight.w600,
+        fontSize: 20,
+        color: Color(0xFFF7F4FA),
+      ),
+    ),
   );
 }
 
