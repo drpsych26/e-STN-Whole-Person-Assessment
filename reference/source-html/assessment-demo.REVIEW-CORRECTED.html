@@ -1,0 +1,1597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STN Whole Person Assessment — Initial Assessment + Diagnostic Assessment</title>
+<meta name="description" content="Supportive Therapy Network's digital whole person initial assessment and DSM-5 diagnostic checklist prototype — wraparound screening, validated clinical instruments and stepped-care allocation.">
+<meta name="robots" content="index,follow">
+<meta property="og:title" content="Supportive Therapy Network — Whole Person Initial Assessment">
+<meta property="og:description" content="Digital whole person initial assessment and diagnostic checklist prototype, built on validated clinical instruments.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#08070A">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --purple:#AF2CFF;
+    --purple-dim: #7c1fc9;
+    --purple-glow: rgba(175,44,255,0.16);
+    --bg:#08070A;
+    --panel:#121016;
+    --panel-2:#17141C;
+    --line: rgba(255,255,255,0.10);
+    --ink:#F3F1F6;
+    --ink-dim: #A7A2B3;
+    --ink-faint:#716C7C;
+    --red:#FF4D5E;
+    --red-glow: rgba(255,77,94,0.14);
+    --amber:#F5B942;
+    --green:#3ED598;
+    --radius: 14px;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root:not([data-theme="dark"]){
+      --bg:#08070A; --ink:#F3F1F6;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: radial-gradient(120% 140% at 15% -10%, #1c1225 0%, var(--bg) 55%);
+    color:var(--ink);
+    font-family: var(--sans);
+    min-height:100vh;
+    line-height:1.5;
+  }
+  .shell{
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 20px 90px;
+  }
+  header.top{
+    display:flex; align-items:center; gap:12px;
+    margin-bottom: 30px;
+  }
+  .brainmark{ flex:none; }
+  .brand{
+    display:flex; flex-direction:column; line-height:1.15;
+  }
+  .brainmark-full{ height:40px; width:auto; display:block; }
+  .hero-logo{ display:block; height:110px; width:auto; margin:0 auto 18px; }
+  .progress-wrap{
+    position: sticky; top:0; z-index:5;
+    background: linear-gradient(to bottom, var(--bg) 70%, transparent);
+    padding: 10px 0 16px;
+    margin: -10px 0 20px;
+  }
+  .progress-track{
+    height:3px; background: var(--line); border-radius:3px; overflow:hidden;
+  }
+  .progress-fill{
+    height:100%; background: linear-gradient(90deg, var(--purple-dim), var(--purple));
+    transition: width .35s ease;
+  }
+  .progress-label{
+    font-size:11px; color:var(--ink-faint); margin-top:8px;
+    display:flex; justify-content:space-between;
+  }
+  .card{
+    background: var(--panel);
+    border:1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 26px 24px;
+    margin-bottom:16px;
+  }
+  .eyebrow{ font-size:12.5px; color:#c77dff; font-weight:700; margin-bottom:6px; }
+  h1.hero{
+    font-family: var(--serif);
+    font-weight:600;
+    font-size: 32px;
+    line-height:1.18;
+    margin: 4px 0 14px;
+  }
+  h2.module-title{
+    font-family: var(--serif);
+    font-weight:600;
+    font-size:23px;
+    margin: 0 0 4px;
+  }
+  p.lede{ color: var(--ink-dim); font-size:15px; margin: 0 0 18px; max-width:60ch; }
+  p.small{ font-size:13px; color:var(--ink-faint); }
+  .instrument-tag{
+    display:inline-block; font-size:11.5px; color:var(--ink-dim);
+    border:1px solid var(--line); padding:3px 10px; border-radius:20px;
+    margin-bottom:14px;
+  }
+  .license-note{
+    font-size:12.5px; color: var(--amber); background: rgba(245,185,66,0.08);
+    border:1px solid rgba(245,185,66,0.25); padding:8px 12px; border-radius:10px;
+    margin-bottom:16px;
+  }
+  .question{
+    padding:18px 0; border-top:1px solid var(--line);
+  }
+  .question:first-of-type{ border-top:none; padding-top:4px; }
+  .qtext{ font-size:15.5px; margin-bottom:12px; }
+  .options{ display:flex; flex-direction:column; gap:8px; }
+  .opt{
+    display:flex; align-items:center; gap:11px;
+    padding:11px 14px; border-radius:10px;
+    border:1px solid var(--line);
+    background: var(--panel-2);
+    cursor:pointer;
+    transition: border-color .15s, background .15s;
+    font-size:14.5px;
+  }
+  .opt:hover{ border-color: rgba(175,44,255,0.4); }
+  .opt.selected{
+    border-color: var(--purple);
+    background: var(--purple-glow);
+  }
+  .opt input{ accent-color: var(--purple); width:16px; height:16px; flex:none; }
+  .yn-row{ display:flex; gap:10px; }
+  .yn-row .opt{ flex:1; justify-content:center; }
+  .safety-q{
+    border:1px solid rgba(255,77,94,0.35);
+    background: var(--red-glow);
+    border-radius:12px; padding:16px;
+    margin: 6px 0 16px;
+  }
+  .safety-q .qtext{ font-weight:600; }
+  .actions{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top: 22px; gap:12px;
+  }
+  button{
+    font-family: var(--sans); font-weight:700; font-size:14.5px;
+    border-radius: 10px; border:none; cursor:pointer;
+    padding: 13px 22px;
+    transition: transform .1s, opacity .15s, background .15s;
+  }
+  button:active{ transform: scale(0.98); }
+  .btn-primary{ background: var(--purple); color:#000; }
+  .btn-primary:disabled{ opacity:0.35; cursor:not-allowed; }
+  .btn-primary:not(:disabled):hover{ background:#c14dff; }
+  .btn-ghost{
+    background:transparent; color:var(--ink-dim); border:1px solid var(--line);
+  }
+  .btn-ghost:hover{ color:var(--ink); border-color: var(--ink-dim); }
+  .btn-crisis{ background: var(--red); color:#fff; width:100%; }
+  .btn-crisis:hover{ background:#ff6675; }
+  a.link{ color: var(--purple); }
+  .stack{ display:flex; flex-direction:column; gap:14px; }
+  footer.disclaimer{
+    font-size:11.5px; color: var(--ink-faint); text-align:center; margin-top:34px; padding: 0 10px;
+  }
+  /* results */
+  .result-row{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap:16px; padding:16px 0; border-top:1px solid var(--line);
+  }
+  .result-row:first-child{ border-top:none; }
+  .result-name{ font-weight:700; font-size:14.5px; }
+  .result-instrument{ font-size:12px; color:var(--ink-faint); margin-top:2px;}
+  .result-band{ text-align:right; font-size:14px; font-weight:600; max-width: 46%; }
+  .badge{
+    display:inline-block; font-size:11px; font-weight:800; padding:3px 9px;
+    border-radius:20px; margin-left:8px; vertical-align:middle;
+  }
+  .badge-red{ background: rgba(255,77,94,0.18); color:var(--red); }
+  .badge-green{ background: rgba(62,213,152,0.15); color:var(--green); }
+  .badge-amber{ background: rgba(245,185,66,0.16); color:var(--amber); }
+  .allocation-step{
+    font-family: var(--serif); font-size:30px; font-weight:600; color:var(--purple);
+    margin: 2px 0 2px;
+  }
+  .reason-list{ margin:14px 0 0; padding-left:18px; font-size:14px; color:var(--ink-dim); }
+  .reason-list li{ margin-bottom:7px; }
+  .gap-note{
+    font-size:13px; color:var(--amber); background:rgba(245,185,66,0.07);
+    border:1px solid rgba(245,185,66,0.2); border-radius:10px; padding:10px 12px; margin-top:12px;
+  }
+  .crisis-box{
+    border:1px solid rgba(255,77,94,0.4); background: var(--red-glow);
+    border-radius: var(--radius); padding:22px; margin-bottom:16px;
+  }
+  .crisis-box h1{ color: var(--red); font-family:var(--serif); margin:6px 0 12px; font-size:26px;}
+  .resource{
+    display:flex; justify-content:space-between; padding:10px 0; border-top:1px solid rgba(255,255,255,0.08);
+    font-size:14.5px;
+  }
+  .resource:first-of-type{ border-top:none; }
+  .resource b{ color:var(--ink); }
+  .checklist{ margin-top: 8px; }
+  .flag-item{ font-size:13.5px; color:var(--ink-dim); padding:8px 0; border-top:1px solid var(--line); }
+  .flag-item:first-child{ border-top:none; }
+  code.pill{
+    font-family: var(--sans); font-size:11.5px; background:var(--panel-2); border:1px solid var(--line);
+    padding:2px 8px; border-radius: 8px; color:var(--ink-dim);
+  }
+  ::selection{ background: var(--purple-glow); }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+
+  :focus-visible{outline:2px solid var(--purple); outline-offset:3px;}
+  @media (max-width:560px){ .shell{padding-left:14px;padding-right:14px;} .card{padding:20px 17px;} .hero-logo{height:88px;} }
+</style>
+<meta name="application-name" content="STN Whole Person Assessment">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="STN Assessment">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<div class="shell" id="app" role="main"></div>
+
+<script src="/runtime-config.js"></script>
+<script>
+/* =========================================================================
+   STN CLINICAL CORE — engine ported from STN_Clinical_Core_v2 (v2.0.0)
+   Same catalog + scoring logic verified against the 25-check test suite.
+   ========================================================================= */
+const FREQ_4 = ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'];
+const SEVERITY_5 = ['Not at all', 'A little bit', 'Moderately', 'Quite a bit', 'Extremely'];
+const OFTEN_5 = ['Never', 'Rarely', 'Sometimes', 'Often', 'Very often'];
+const YESNO = ['No', 'Yes'];
+const SAFETY_ITEM_TEXT = 'In the past 2 weeks: thoughts that you would be better off dead, or of hurting yourself in some way.';
+const LOGO_FULL_DATAURI = "data:image/png;base64,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";
+
+const assessmentCatalog = [
+  { id:'core_intake', name:'Comprehensive Intake — Distress', instrument:'STN Comprehensive Intake (Section A)', scale:FREQ_4, mode:'sum',
+    bands:[[0,10,'Minimal Distress'],[11,20,'Mild Distress'],[21,30,'Moderate Distress'],[31,40,'Significant Distress'],[41,45,'Severe Distress']],
+    questions:[
+      {id:'core_intake_mood', text:'Feeling down, depressed, or hopeless.'},
+      {id:'core_intake_pleasure', text:'Loss of interest or enjoyment in activities.'},
+      {id:'core_intake_energy', text:'Feeling tired, exhausted, or lacking energy.'},
+      {id:'core_intake_worthless', text:'Feeling worthless, guilty, or like a burden.'},
+      {id:'core_intake_anxiety', text:'Feeling nervous, anxious, or on edge.'},
+      {id:'core_intake_worry', text:'Excessive worrying.'},
+      {id:'core_intake_worry_control', text:'Difficulty controlling worry.'},
+      {id:'core_intake_panic', text:'Panic symptoms, racing thoughts, or overwhelming anxiety.'},
+      {id:'core_intake_work', text:'Mental health affecting work, study, or responsibilities.'},
+      {id:'core_intake_relationships', text:'Mental health affecting relationships.'},
+      {id:'core_intake_sleep', text:'Difficulty sleeping.'},
+      {id:'core_intake_attention', text:'Difficulty concentrating or making decisions.'},
+      {id:'core_intake_overwhelm', text:'Feeling overwhelmed by emotions.'},
+      {id:'core_intake_coping', text:'Difficulty coping with stress.'},
+      {id:'core_intake_anger', text:'Frequent anger, irritability, or frustration.'},
+      {id:'core_intake_selfharm', text:SAFETY_ITEM_TEXT, safety:true},
+    ]},
+  { id:'phq9', name:'Depression (PHQ-9)', instrument:'Patient Health Questionnaire-9', scale:FREQ_4, mode:'sum',
+    bands:[[0,4,'Minimal depression'],[5,9,'Mild depression'],[10,14,'Moderate depression'],[15,19,'Moderately severe depression'],[20,27,'Severe depression']],
+    questions:[
+      {id:'phq9_1', text:'Little interest or pleasure in doing things.'},
+      {id:'phq9_2', text:'Feeling down, depressed, or hopeless.'},
+      {id:'phq9_3', text:'Trouble falling or staying asleep, or sleeping too much.'},
+      {id:'phq9_4', text:'Feeling tired or having little energy.'},
+      {id:'phq9_5', text:'Poor appetite or overeating.'},
+      {id:'phq9_6', text:'Feeling bad about yourself — or that you are a failure, or have let yourself or your family down.'},
+      {id:'phq9_7', text:'Trouble concentrating on things, such as reading the newspaper or watching television.'},
+      {id:'phq9_8', text:'Moving or speaking so slowly that other people could have noticed — or the opposite, being so fidgety or restless that you have been moving around a lot more than usual.'},
+      {id:'phq9_9', text:'Thoughts that you would be better off dead, or of hurting yourself in some way.', safety:true},
+    ]},
+  { id:'gad7', name:'Anxiety (GAD-7)', instrument:'Generalized Anxiety Disorder 7-item scale', scale:FREQ_4, mode:'sum',
+    bands:[[0,4,'Minimal anxiety'],[5,9,'Mild anxiety'],[10,14,'Moderate anxiety'],[15,21,'Severe anxiety']],
+    questions:[
+      {id:'gad7_1', text:'Feeling nervous, anxious, or on edge.'},
+      {id:'gad7_2', text:'Not being able to stop or control worrying.'},
+      {id:'gad7_3', text:'Worrying too much about different things.'},
+      {id:'gad7_4', text:'Trouble relaxing.'},
+      {id:'gad7_5', text:'Being so restless that it is hard to sit still.'},
+      {id:'gad7_6', text:'Becoming easily annoyed or irritable.'},
+      {id:'gad7_7', text:'Feeling afraid as if something awful might happen.'},
+      {id:'gad7_safety', text:SAFETY_ITEM_TEXT, safety:true},
+    ]},
+  { id:'pcl5', name:'PTSD / Trauma (PCL-5)', instrument:'PTSD Checklist for DSM-5', scale:SEVERITY_5, mode:'sum',
+    bands:[[0,32,'Below provisional PTSD screening cutoff'],[33,80,'At or above provisional cutoff — probable PTSD, clinical interview recommended']],
+    questions:[
+      {id:'pcl5_1', text:'Repeated, disturbing, and unwanted memories of the stressful experience.'},
+      {id:'pcl5_2', text:'Repeated, disturbing dreams of the stressful experience.'},
+      {id:'pcl5_3', text:'Suddenly feeling or acting as if the stressful experience were actually happening again.'},
+      {id:'pcl5_4', text:'Feeling very upset when something reminded you of the stressful experience.'},
+      {id:'pcl5_5', text:'Having strong physical reactions when something reminded you of the stressful experience.'},
+      {id:'pcl5_6', text:'Avoiding memories, thoughts, or feelings related to the stressful experience.'},
+      {id:'pcl5_7', text:'Avoiding external reminders of the stressful experience.'},
+      {id:'pcl5_8', text:'Trouble remembering important parts of the stressful experience.'},
+      {id:'pcl5_9', text:'Strong negative beliefs about yourself, other people, or the world.'},
+      {id:'pcl5_10', text:'Blaming yourself or someone else for the stressful experience or what happened after it.'},
+      {id:'pcl5_11', text:'Strong negative feelings such as fear, horror, anger, guilt, or shame.'},
+      {id:'pcl5_12', text:'Loss of interest in activities that you used to enjoy.'},
+      {id:'pcl5_13', text:'Feeling distant or cut off from other people.'},
+      {id:'pcl5_14', text:'Trouble experiencing positive feelings.'},
+      {id:'pcl5_15', text:'Irritable behaviour, angry outbursts, or acting aggressively.'},
+      {id:'pcl5_16', text:'Taking too many risks or doing things that could cause you harm.'},
+      {id:'pcl5_17', text:'Being superalert, watchful, or on guard.'},
+      {id:'pcl5_18', text:'Feeling jumpy or easily startled.'},
+      {id:'pcl5_19', text:'Having difficulty concentrating.'},
+      {id:'pcl5_20', text:'Trouble falling or staying asleep.'},
+      {id:'pcl5_safety', text:SAFETY_ITEM_TEXT, safety:true},
+    ]},
+  { id:'asrs_a', name:'ADHD Screener (ASRS v1.1 Part A)', instrument:'Adult ADHD Self-Report Scale v1.1, Part A', scale:OFTEN_5, mode:'countAboveThreshold',
+    licensing:'COPYRIGHTED — WHO/Kessler. Confirm terms before commercial use.',
+    bands:[[0,3,'Below screening threshold'],[4,6,'Positive screen — symptoms highly consistent with adult ADHD; further evaluation warranted']],
+    questions:[
+      {id:'asrs_a_1', text:'How often do you have trouble wrapping up the final details of a project, once the challenging parts have been done?', threshold:2},
+      {id:'asrs_a_2', text:'How often do you have difficulty getting things in order when you have to do a task that requires organisation?', threshold:2},
+      {id:'asrs_a_3', text:'How often do you have problems remembering appointments or obligations?', threshold:2},
+      {id:'asrs_a_4', text:'When you have a task that requires a lot of thought, how often do you avoid or delay getting started?', threshold:3},
+      {id:'asrs_a_5', text:'How often do you fidget or squirm with your hands or feet when you have to sit down for a long time?', threshold:3},
+      {id:'asrs_a_6', text:'How often do you feel overly active and compelled to do things, as if driven by a motor?', threshold:3},
+      {id:'asrs_a_safety', text:SAFETY_ITEM_TEXT, safety:true},
+    ]},
+  { id:'asrs_b', name:'ADHD Detail (ASRS v1.1 Part B)', instrument:'Adult ADHD Self-Report Scale v1.1, Part B', scale:OFTEN_5, mode:'sum',
+    licensing:'COPYRIGHTED — WHO/Kessler. Confirm terms before commercial use.',
+    bands:[[0,12,'Low additional symptom load'],[13,24,'Moderate additional symptom load'],[25,36,'High additional symptom load'],[37,48,'Very high additional symptom load']],
+    questions:[
+      {id:'asrs_b_1', text:'How often do you make careless mistakes when you have to work on a boring or difficult project?'},
+      {id:'asrs_b_2', text:'How often do you have difficulty keeping your attention when you are doing boring or repetitive work?'},
+      {id:'asrs_b_3', text:'How often do you have difficulty concentrating on what people say to you, even when they are speaking to you directly?'},
+      {id:'asrs_b_4', text:'How often do you misplace or have difficulty finding things at home or at work?'},
+      {id:'asrs_b_5', text:'How often are you distracted by activity or noise around you?'},
+      {id:'asrs_b_6', text:'How often do you have difficulty waiting your turn in situations when turn taking is required?'},
+      {id:'asrs_b_7', text:'How often do you leave your seat in meetings or other situations in which you are expected to remain seated?'},
+      {id:'asrs_b_8', text:'How often do you feel restless or fidgety?'},
+      {id:'asrs_b_9', text:'How often do you have difficulty unwinding and relaxing when you have time to yourself?'},
+      {id:'asrs_b_10', text:'How often do you find yourself talking too much when you are in social situations?'},
+      {id:'asrs_b_11', text:'How often do you find yourself finishing the sentences of the people you are talking to, before they can finish them themselves?'},
+      {id:'asrs_b_12', text:'How often do you interrupt others when they are busy?'},
+      {id:'asrs_b_safety', text:SAFETY_ITEM_TEXT, safety:true},
+    ]},
+  { id:'audit_c', name:'Alcohol Use (AUDIT-C)', instrument:'Alcohol Use Disorders Identification Test - Consumption', scale:FREQ_4, mode:'sum',
+    bands:[[0,2,'Low-risk range'],[3,12,'At or above hazardous-drinking cutoff (sensitive threshold of 3) — further assessment recommended']],
+    questions:[
+      {id:'audit_c_1', text:'How often do you have a drink containing alcohol?', scale:['Never','Monthly or less','2-4 times a month','2-3 times a week','4+ times a week']},
+      {id:'audit_c_2', text:'How many standard drinks containing alcohol do you have on a typical day when you are drinking?', scale:['1 or 2','3 or 4','5 or 6','7 to 9','10 or more']},
+      {id:'audit_c_3', text:'How often do you have six or more drinks on one occasion?', scale:['Never','Less than monthly','Monthly','Weekly','Daily or almost daily']},
+      {id:'audit_c_safety', text:SAFETY_ITEM_TEXT, safety:true},
+    ]},
+  { id:'dast10', name:'Drug Use (DAST-10)', instrument:'Drug Abuse Screening Test (10-item)', scale:YESNO, mode:'sum',
+    licensing:'COPYRIGHTED — Skinner/ARF. Confirm terms before commercial use.',
+    bands:[[0,2,'Low level of problems related to drug use'],[3,5,'Moderate level — further assessment suggested'],[6,8,'Substantial level — further assessment recommended'],[9,10,'Severe level — further assessment recommended']],
+    questions:[
+      {id:'dast10_1', text:'Have you used drugs other than those required for medical reasons?'},
+      {id:'dast10_2', text:'Do you abuse more than one drug at a time?'},
+      {id:'dast10_3', text:'Are you always able to stop using drugs when you want to?', reverse:true},
+      {id:'dast10_4', text:'Have you had blackouts or flashbacks as a result of drug use?'},
+      {id:'dast10_5', text:'Do you ever feel bad or guilty about your drug use?'},
+      {id:'dast10_6', text:'Does your spouse/partner or a parent ever complain about your involvement with drugs?'},
+      {id:'dast10_7', text:'Have you neglected your family because of your use of drugs?'},
+      {id:'dast10_8', text:'Have you engaged in illegal activities in order to obtain drugs?'},
+      {id:'dast10_9', text:'Have you had withdrawal symptoms as a result of heavy drug use?'},
+      {id:'dast10_10', text:'Have you had medical problems as a result of your drug use?'},
+    ]},
+  { id:'k10', name:'Psychological Distress (K10)', instrument:'Kessler Psychological Distress Scale',
+    scale:['None of the time','A little of the time','Some of the time','Most of the time','All of the time'], mode:'sum', offset:1,
+    bands:[[10,15,'Low distress — likely to be well'],[16,21,'Moderate distress'],[22,29,'High distress'],[30,50,'Very high distress']],
+    questions:[
+      {id:'k10_1', text:'In the last 30 days, about how often did you feel tired out for no good reason?'},
+      {id:'k10_2', text:'About how often did you feel nervous?'},
+      {id:'k10_3', text:'About how often did you feel so nervous that nothing could calm you down?'},
+      {id:'k10_4', text:'About how often did you feel hopeless?'},
+      {id:'k10_5', text:'About how often did you feel restless or fidgety?'},
+      {id:'k10_6', text:'About how often did you feel so restless you could not sit still?'},
+      {id:'k10_7', text:'About how often did you feel depressed?'},
+      {id:'k10_8', text:'About how often did you feel that everything was an effort?'},
+      {id:'k10_9', text:'About how often did you feel so sad that nothing could cheer you up?'},
+      {id:'k10_10', text:'About how often did you feel worthless?'},
+      {id:'k10_safety', text:SAFETY_ITEM_TEXT, safety:true},
+    ]},
+  { id:'whodas12', name:'Functioning (WHODAS 2.0)', instrument:'WHO Disability Assessment Schedule 2.0, 12-item', scale:['None','Mild','Moderate','Severe','Extreme / cannot do'], mode:'sum',
+    bands:[[0,4,'No meaningful functional impairment'],[5,12,'Mild functional impairment'],[13,24,'Moderate functional impairment'],[25,35,'Severe functional impairment'],[36,48,'Extreme functional impairment']],
+    questions:[
+      {id:'whodas12_1', text:'Standing for long periods, such as 30 minutes?'},
+      {id:'whodas12_2', text:'Taking care of your household responsibilities?'},
+      {id:'whodas12_3', text:'Learning a new task, for example, learning how to get to a new place?'},
+      {id:'whodas12_4', text:'How much of a problem did you have joining in community activities in the same way as anyone else can?'},
+      {id:'whodas12_5', text:'How much have you been emotionally affected by your health problems?'},
+      {id:'whodas12_6', text:'Concentrating on doing something for ten minutes?'},
+      {id:'whodas12_7', text:'Walking a long distance, such as a kilometre?'},
+      {id:'whodas12_8', text:'Washing your whole body?'},
+      {id:'whodas12_9', text:'Getting dressed?'},
+      {id:'whodas12_10', text:'Dealing with people you do not know?'},
+      {id:'whodas12_11', text:'Maintaining a friendship?'},
+      {id:'whodas12_12', text:'Your day-to-day work or school?'},
+      {id:'whodas12_safety', text:SAFETY_ITEM_TEXT, safety:true},
+    ]},
+  { id:'cssrs', name:'Safety Screening (C-SSRS)', instrument:'Columbia Suicide Severity Rating Scale — Screen Version', scale:YESNO, mode:'cssrs', bands:[],
+    questions:[
+      {id:'cssrs_1', text:'Have you wished you were dead or wished you could go to sleep and not wake up?'},
+      {id:'cssrs_2', text:'Have you actually had any thoughts of killing yourself?', dependsOn:'cssrs_1'},
+      {id:'cssrs_3', text:'Have you thought about how you might do this?', dependsOn:'cssrs_2'},
+      {id:'cssrs_4', text:'Have you had these thoughts and had some intention of acting on them?', dependsOn:'cssrs_2'},
+      {id:'cssrs_5', text:'Have you started to work out the details of how to kill yourself, and do you intend to carry out this plan?', dependsOn:'cssrs_4'},
+      {id:'cssrs_6', text:'Have you ever done anything, started to do anything, or prepared to do anything to end your life?'},
+      {id:'cssrs_7', text:'Right now, do you feel safe?', invertedSafety:true},
+    ]},
+];
+
+const wraparoundItems = [
+  {id:'wrap_trauma_history', text:'Have you experienced significant trauma?', domain:'trauma'},
+  {id:'wrap_trauma_ongoing', text:'Do traumatic memories continue to affect you?', domain:'trauma'},
+  {id:'wrap_substance_cope', text:'Do you use alcohol or drugs to cope with emotions?', domain:'substance'},
+  {id:'wrap_substance_problems', text:'Has alcohol or drug use caused problems in your life?', domain:'substance'},
+  {id:'wrap_housing', text:'Are you concerned about your housing situation?', domain:'social'},
+  {id:'wrap_food', text:'Are you experiencing food insecurity?', domain:'social'},
+  {id:'wrap_financial', text:'Are you struggling financially?', domain:'social'},
+  {id:'wrap_essentials', text:'Do you require clothing, footwear, or essential household items?', domain:'social'},
+  {id:'wrap_agency', text:'Do you require support navigating MSD, WINZ, ACC, Health NZ, Housing NZ, Corrections, Courts, or other agencies?', domain:'social'},
+  {id:'wrap_support_network', text:'Do you currently have adequate family, cultural, community, or social support?', domain:'social', protective:true},
+  {id:'wrap_gp', text:'Do you currently have a GP?', domain:'health', protective:true},
+  {id:'wrap_health_access', text:'Do you require assistance accessing healthcare services?', domain:'health'},
+  {id:'wrap_chronic', text:'Have these difficulties been present for six months or longer?', domain:'chronicity'},
+];
+
+const clampToScale = (raw, scaleLength) => {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 0;
+  return Math.min(scaleLength - 1, Math.max(0, Math.round(n)));
+};
+const scaleFor = (module, q) => q.scale || module.scale;
+function bandFor(module, total){
+  for (const [min,max,label] of module.bands || []) if (total>=min && total<=max) return label;
+  return 'Score outside expected range — review manually';
+}
+function scoreModule(module, answerMap={}){
+  if (module.mode === 'cssrs') throw new Error('Use classifyCssrs() for the C-SSRS.');
+  const itemScores=[]; const safetyItems=[]; let total=0; let secondary=null;
+  const scored = module.questions.filter(q=>!q.safety);
+  if (module.mode === 'countAboveThreshold'){
+    let raw=0;
+    for (const q of scored){
+      const value = clampToScale(answerMap[q.id], scaleFor(module,q).length);
+      const threshold = q.threshold ?? scaleFor(module,q).length-1;
+      const positive = value >= threshold;
+      if (positive) total += 1;
+      raw += value;
+      itemScores.push({questionId:q.id, value, screenPositive:positive, threshold});
+    }
+    secondary = {label:'Raw summed score (0-24; 14+ is an alternative published cutpoint)', value:raw};
+  } else {
+    for (const q of scored){
+      const scale = scaleFor(module,q);
+      const value = clampToScale(answerMap[q.id], scale.length);
+      const adjusted = q.reverse ? scale.length-1-value : value;
+      const withOffset = adjusted + (module.offset||0);
+      total += withOffset;
+      itemScores.push({questionId:q.id, value, scored:withOffset, reverse: !!q.reverse});
+    }
+  }
+  for (const q of module.questions.filter(q=>q.safety)){
+    const value = clampToScale(answerMap[q.id], scaleFor(module,q).length);
+    if (value>=1) safetyItems.push({questionId:q.id, value});
+    itemScores.push({questionId:q.id, value, safety:true});
+  }
+  const safetyFlag = safetyItems.length>0;
+  const max = module.mode==='countAboveThreshold' ? scored.length
+    : scored.reduce((s,q)=> s + (scaleFor(module,q).length-1) + (module.offset||0), 0);
+  return {
+    moduleId:module.id, moduleName:module.name, instrument:module.instrument,
+    total, max, band: bandFor(module,total), secondary, safetyFlag, safetyItems,
+    riskLevel: safetyFlag ? 'RED':'GREEN', itemScores,
+    interpretation: safetyFlag
+      ? 'SAFETY ITEM ENDORSED. Immediate safety response required. Complete the C-SSRS now. The symptom score must not delay human assessment.'
+      : `${bandFor(module,total)}. Screening result only — interpret with history, functional impact, cultural context and clinical judgement.`,
+  };
+}
+function classifyCssrs(answers={}){
+  const yes = id => answers[id]===true || answers[id]===1 || answers[id]==='yes';
+  const feelsSafe = answers.cssrs_7===true || answers.cssrs_7===1 || answers.cssrs_7==='yes';
+  let level;
+  if (yes('cssrs_5') || yes('cssrs_6') || !feelsSafe) level='crisis';
+  else if (yes('cssrs_4')) level='high';
+  else if (yes('cssrs_2') || yes('cssrs_3')) level='moderate';
+  else level='low';
+  const action = {
+    crisis:'CRISIS — follow the Safety Response Protocol now. Do not continue the assessment. Escalate immediately.',
+    high:'HIGH — follow the Safety Response Protocol now. Contact the on-call clinician.',
+    moderate:'MODERATE — same-day clinician review. Document a safety plan.',
+    low:'LOW — continue assessment. Document the result.',
+  }[level];
+  return { riskLevel:level, requiresImmediateEscalation: level==='crisis'||level==='high', action, answers };
+}
+const STEPS = [
+  {code:'STEP 1', title:'Self-management & community support', target:'Within 4 weeks'},
+  {code:'STEP 2', title:'Guided self-help / brief intervention', target:'Within 2 weeks'},
+  {code:'STEP 3', title:'Structured psychological therapy', target:'Within 1 week'},
+  {code:'STEP 4', title:'Specialist / complex care + case management', target:'Within 48 hours'},
+  {code:'STEP 5', title:'Acute crisis response', target:'Immediate — same session'},
+];
+function finalise(idx, reasons, dataGaps, socialCount){
+  const step = STEPS[idx];
+  const referrals = [
+    ['Digital self-help programme','Community/whānau supports','Reassess in 90 days'],
+    ['Brief intervention (4-6 sessions)','Psychoeducation','Reassess at session 4'],
+    ['Structured therapy with registered clinician','Outcome measures repeated at sessions 4 and 8'],
+    ['Specialist psychological input','Case management','Consider psychiatric review','GP notification'],
+    ['Crisis service','Emergency clinician review'],
+  ][idx].slice();
+  if (socialCount>0) referrals.push('Wraparound referrals as identified at intake');
+  return { recommendedStep:step.code, stepTitle:step.title, responseTarget:step.target, reasons, referrals, dataGaps,
+    requiresClinicianDecision:true,
+    note:'Recommendation only. STN does not hold referral authority into agency-controlled services. A registered clinician must accept or override, and record the reason.' };
+}
+function allocateCare({symptomSeverity=0, functionalImpairment=null, riskLevel=null, socialComplexityCount=0, chronic=false}={}){
+  const reasons=[]; const gaps=[];
+  if (riskLevel==='crisis') return finalise(4, ['Safety screening returned CRISIS — overrides all other factors.'], [], socialComplexityCount);
+  if (riskLevel==='high') return finalise(3, ['Safety screening returned HIGH — raised to specialist level regardless of symptom scores.'], [], socialComplexityCount);
+  if (riskLevel===null) gaps.push('C-SSRS not completed — allocation cannot be considered final.');
+  let idx = Math.min(3, Math.max(0, symptomSeverity<=1 ? 0 : symptomSeverity-1));
+  reasons.push(`Symptom severity band ${symptomSeverity}/4 sets a baseline of ${STEPS[idx].code}.`);
+  if (functionalImpairment===null){
+    gaps.push('WHODAS 2.0 not administered — allocation rests on symptoms alone, which under-detects people coping poorly with moderate symptoms.');
+  } else {
+    const fnIdx = Math.min(3, Math.max(0, functionalImpairment<=1 ? 0 : functionalImpairment-1));
+    if (fnIdx>idx){ reasons.push(`Functional impairment (band ${functionalImpairment}/4) exceeds what symptoms alone suggest — raised to ${STEPS[fnIdx].code}. This is the case symptom scales routinely miss.`); idx=fnIdx; }
+    else reasons.push(`Functional impairment (band ${functionalImpairment}/4) is consistent with the symptom-based step.`);
+  }
+  if (socialComplexityCount>=3 && idx<3){ reasons.push(`${socialComplexityCount} concurrent social needs — raised to Step 4, because therapy will not hold while housing, food or financial instability continues.`); idx=3; }
+  else if (socialComplexityCount>0) reasons.push(`${socialComplexityCount} social need(s) identified — wraparound referrals added alongside the clinical pathway.`);
+  if (chronic && idx<3){ idx+=1; reasons.push(`Duration beyond six months — raised one step to ${STEPS[idx].code}; brief intervention is less likely to suffice for chronic presentations.`); }
+  if (riskLevel==='moderate' && idx<2){ idx=2; reasons.push('Safety screening returned MODERATE — minimum of Step 3 with a documented safety plan.'); }
+  return finalise(idx, reasons, gaps, socialComplexityCount);
+}
+function socialComplexityFrom(wrapAnswers={}){
+  const socialIds = wraparoundItems.filter(i=>i.domain==='social' && !i.protective).map(i=>i.id);
+  let count = socialIds.filter(id => wrapAnswers[id]===true).length;
+  if (wrapAnswers.wrap_support_network===false) count += 1;
+  return count;
+}
+function severityBandIndex(instrumentId, total){
+  const module = assessmentCatalog.find(m=>m.id===instrumentId);
+  if (!module) return 0;
+  const i = (module.bands||[]).findIndex(([min,max])=> total>=min && total<=max);
+  if (i<0) return 0;
+  const n = module.bands.length;
+  return Math.round((i/Math.max(1,n-1))*4);
+}
+function moduleById(id){ return assessmentCatalog.find(m=>m.id===id); }
+
+/* =========================================================================
+   DIAGNOSTIC ASSESSMENT (Assessment 2) — DSM-5 criteria checklists
+   Decision support only. Wording below paraphrases published DSM-5 criteria
+   into plain-language checklist items; it is not a reproduction of APA's
+   text. Every module ends in a "clinician must confirm" gate — nothing
+   here outputs a diagnosis on its own authority.
+   ========================================================================= */
+const diagnosticModules = [
+  { id:'mdd', domain:'Depression', name:'Major Depressive Episode', dsm:'DSM-5 — Major Depressive Disorder',
+    linkedInstrument:'phq9',
+    autoFlag: r => !!(r.phq9 && (r.phq9.total>=10 || r.phq9.safetyFlag)),
+    groups:[
+      { id:'core', label:'Core symptoms — at least 1 required', minRequired:1, items:[
+        {id:'mdd_mood', text:'Depressed mood most of the day, nearly every day.'},
+        {id:'mdd_anhedonia', text:'Markedly diminished interest or pleasure in almost all activities, most of the day, nearly every day.'},
+      ]},
+      { id:'other', label:'Additional symptoms', items:[
+        {id:'mdd_appetite', text:'Significant change in appetite or weight, not explained by dieting.'},
+        {id:'mdd_sleep', text:'Insomnia, or sleeping much more than usual, nearly every day.'},
+        {id:'mdd_psychomotor', text:'Others have noticed unusually slow movement or speech, or unusual restlessness, nearly every day.'},
+        {id:'mdd_fatigue', text:'Fatigue or loss of energy nearly every day.'},
+        {id:'mdd_worthless', text:'Feelings of worthlessness, or excessive or inappropriate guilt.'},
+        {id:'mdd_concentration', text:'Diminished ability to think, concentrate, or make decisions, nearly every day.'},
+        {id:'mdd_death', text:'Recurrent thoughts of death, suicidal ideation, a plan, or an attempt.'},
+      ]},
+    ],
+    overallThreshold:5,
+    durationGate:{id:'mdd_duration', text:'These symptoms have been present for two weeks or more.'},
+    impairmentGate:{id:'mdd_impairment', text:'The symptoms cause clinically significant distress, or impair social, occupational, or other functioning.'},
+    exclusionGates:[
+      {id:'mdd_excl_medical', text:'The symptoms are better explained by a medical condition, medication, or substance use.'},
+      {id:'mdd_excl_manic', text:'There is a lifetime history of a manic or hypomanic episode.', note:'A "Yes" means bipolar disorder must be ruled out before confirming MDD.'},
+    ]},
+  { id:'gad', domain:'Anxiety', name:'Generalized Anxiety Disorder', dsm:'DSM-5 — Generalized Anxiety Disorder',
+    linkedInstrument:'gad7',
+    autoFlag: r => !!(r.gad7 && r.gad7.total>=10),
+    requiredGates:[
+      {id:'gad_a', text:'Excessive anxiety and worry, occurring more days than not, about a number of events or activities.'},
+      {id:'gad_b', text:'The worry is difficult to control.'},
+    ],
+    groups:[
+      { id:'assoc', label:'Associated symptoms', items:[
+        {id:'gad_restless', text:'Restlessness, or feeling keyed up or on edge.'},
+        {id:'gad_fatigue', text:'Being easily fatigued.'},
+        {id:'gad_concentration', text:'Difficulty concentrating, or mind going blank.'},
+        {id:'gad_irritable', text:'Irritability.'},
+        {id:'gad_tension', text:'Muscle tension.'},
+        {id:'gad_sleep', text:'Sleep disturbance (trouble falling or staying asleep, or unsatisfying sleep).'},
+      ]},
+    ],
+    overallThreshold:3,
+    durationGate:{id:'gad_duration', text:'The anxiety, worry, or associated symptoms have been present for six months or more.'},
+    impairmentGate:{id:'gad_impairment', text:'The symptoms cause clinically significant distress, or impair functioning.'},
+    exclusionGates:[
+      {id:'gad_excl_medical', text:'The symptoms are better explained by a medical condition or substance use.'},
+      {id:'gad_excl_other', text:'The symptoms are better explained by another mental disorder (e.g. panic disorder, social anxiety, OCD, PTSD).'},
+    ]},
+  { id:'ptsd', domain:'Trauma', name:'Post-Traumatic Stress Disorder', dsm:'DSM-5 — PTSD',
+    linkedInstrument:'pcl5',
+    autoFlag: r => !!(r.pcl5 && r.pcl5.total>=33),
+    requiredGates:[
+      {id:'ptsd_exposure', text:'Exposure to actual or threatened death, serious injury, or sexual violence — directly, as a witness, on learning it happened to someone close, or through repeated exposure to aversive details.'},
+    ],
+    groupLogic:'AND',
+    groups:[
+      { id:'intrusion', label:'Intrusion symptoms — at least 1 required', minRequired:1, items:[
+        {id:'ptsd_memories', text:'Recurrent, involuntary, distressing memories of the event.'},
+        {id:'ptsd_dreams', text:'Recurrent distressing dreams related to the event.'},
+        {id:'ptsd_flashback', text:'Dissociative reactions (e.g. flashbacks) where it feels or seems as if the event is recurring.'},
+        {id:'ptsd_cue_distress', text:'Intense distress at exposure to reminders of the event.'},
+        {id:'ptsd_cue_physio', text:'Marked physiological reactions to reminders of the event.'},
+      ]},
+      { id:'avoidance', label:'Avoidance — at least 1 required', minRequired:1, items:[
+        {id:'ptsd_avoid_internal', text:'Avoidance of distressing memories, thoughts, or feelings about the event.'},
+        {id:'ptsd_avoid_external', text:'Avoidance of external reminders (people, places, conversations, activities) that arouse memories of the event.'},
+      ]},
+      { id:'cognition', label:'Negative alterations in cognition/mood — at least 2 required', minRequired:2, items:[
+        {id:'ptsd_amnesia', text:'Inability to remember an important aspect of the event.'},
+        {id:'ptsd_beliefs', text:'Persistent, exaggerated negative beliefs about oneself, others, or the world.'},
+        {id:'ptsd_blame', text:'Distorted blame of self or others for the event or its consequences.'},
+        {id:'ptsd_negative_state', text:'Persistent negative emotional state (fear, horror, anger, guilt, shame).'},
+        {id:'ptsd_interest', text:'Markedly diminished interest in significant activities.'},
+        {id:'ptsd_detachment', text:'Feeling detached or estranged from others.'},
+        {id:'ptsd_positive', text:'Persistent inability to experience positive emotions.'},
+      ]},
+      { id:'arousal', label:'Alterations in arousal/reactivity — at least 2 required', minRequired:2, items:[
+        {id:'ptsd_irritable', text:'Irritable behaviour or angry outbursts.'},
+        {id:'ptsd_reckless', text:'Reckless or self-destructive behaviour.'},
+        {id:'ptsd_hypervigilant', text:'Hypervigilance.'},
+        {id:'ptsd_startle', text:'Exaggerated startle response.'},
+        {id:'ptsd_concentration2', text:'Difficulty concentrating.'},
+        {id:'ptsd_sleep', text:'Sleep disturbance.'},
+      ]},
+    ],
+    overallThreshold:null,
+    durationGate:{id:'ptsd_duration', text:'The disturbance has lasted more than one month.'},
+    impairmentGate:{id:'ptsd_impairment', text:'Causes clinically significant distress or impairment.'},
+    exclusionGates:[
+      {id:'ptsd_excl_medical', text:'The disturbance is better explained by a medical condition or substance use.'},
+    ]},
+  { id:'adhd', domain:'ADHD', name:'Attention-Deficit/Hyperactivity Disorder (Adult)', dsm:'DSM-5 — ADHD',
+    linkedInstrument:'asrs_a',
+    autoFlag: r => !!(r.asrs_a && r.asrs_a.total>=4),
+    requiredGates:[
+      {id:'adhd_onset', text:'Several symptoms were present before age 12.'},
+      {id:'adhd_settings', text:'Several symptoms are present in two or more settings (e.g. home, work, with friends or family).'},
+    ],
+    groupLogic:'OR',
+    groups:[
+      { id:'inattentive', label:'Inattentive presentation — 5 or more required', minRequired:5, items:[
+        {id:'adhd_i1', text:'Fails to give close attention to detail, or makes careless mistakes.'},
+        {id:'adhd_i2', text:'Difficulty sustaining attention in tasks or activities.'},
+        {id:'adhd_i3', text:'Does not seem to listen when spoken to directly.'},
+        {id:'adhd_i4', text:'Does not follow through on instructions; fails to finish tasks.'},
+        {id:'adhd_i5', text:'Difficulty organising tasks and activities.'},
+        {id:'adhd_i6', text:'Avoids or dislikes tasks requiring sustained mental effort.'},
+        {id:'adhd_i7', text:'Loses things necessary for tasks or activities.'},
+        {id:'adhd_i8', text:'Easily distracted by extraneous stimuli.'},
+        {id:'adhd_i9', text:'Forgetful in daily activities.'},
+      ]},
+      { id:'hyperactive', label:'Hyperactive-impulsive presentation — 5 or more required', minRequired:5, items:[
+        {id:'adhd_h1', text:'Fidgets, taps hands or feet, or squirms in seat.'},
+        {id:'adhd_h2', text:'Leaves seat when remaining seated is expected.'},
+        {id:'adhd_h3', text:'Feels restless (in adults, this may be an internal sense of restlessness).'},
+        {id:'adhd_h4', text:'Unable to engage in leisure activities quietly.'},
+        {id:'adhd_h5', text:'"On the go", as if driven by a motor.'},
+        {id:'adhd_h6', text:'Talks excessively.'},
+        {id:'adhd_h7', text:'Blurts out answers before a question is completed.'},
+        {id:'adhd_h8', text:'Difficulty waiting their turn.'},
+        {id:'adhd_h9', text:'Interrupts or intrudes on others.'},
+      ]},
+    ],
+    overallThreshold:null,
+    durationGate:{id:'adhd_duration', text:'Several of the above symptoms have persisted for at least six months.'},
+    impairmentGate:{id:'adhd_impairment', text:'Clear evidence the symptoms interfere with, or reduce the quality of, social, academic, or occupational functioning.'},
+    exclusionGates:[
+      {id:'adhd_excl_other', text:'The symptoms occur exclusively during a psychotic disorder, or are better explained by another mental disorder.'},
+    ]},
+  { id:'aud', domain:'Alcohol', name:'Alcohol Use Disorder', dsm:'DSM-5 — Alcohol Use Disorder',
+    linkedInstrument:'audit_c', isCountBased:true,
+    autoFlag: r => !!(r.audit_c && r.audit_c.total>=3),
+    groups:[
+      { id:'criteria', label:'In the past 12 months', items:[
+        {id:'aud_1', text:'Alcohol often taken in larger amounts or over a longer period than intended.'},
+        {id:'aud_2', text:'Persistent desire, or unsuccessful efforts, to cut down or control use.'},
+        {id:'aud_3', text:'A great deal of time spent obtaining, using, or recovering from alcohol.'},
+        {id:'aud_4', text:'Craving, or a strong desire or urge to drink.'},
+        {id:'aud_5', text:'Recurrent use resulting in failure to fulfil major role obligations.'},
+        {id:'aud_6', text:'Continued use despite recurrent social or interpersonal problems caused by drinking.'},
+        {id:'aud_7', text:'Important social, occupational, or recreational activities given up or reduced because of drinking.'},
+        {id:'aud_8', text:'Recurrent use in situations where it is physically hazardous.'},
+        {id:'aud_9', text:'Continued use despite knowing of a physical or psychological problem caused or worsened by alcohol.'},
+        {id:'aud_10', text:'Tolerance — needing markedly more to achieve the same effect.'},
+        {id:'aud_11', text:'Withdrawal symptoms, or drinking to relieve or avoid withdrawal.'},
+      ]},
+    ]},
+  { id:'sud', domain:'Drugs', name:'Substance Use Disorder', dsm:'DSM-5 — Substance Use Disorder',
+    linkedInstrument:'dast10', isCountBased:true,
+    autoFlag: r => !!(r.dast10 && r.dast10.total>=3),
+    groups:[
+      { id:'criteria', label:'In the past 12 months', items:[
+        {id:'sud_1', text:'The substance often taken in larger amounts or over a longer period than intended.'},
+        {id:'sud_2', text:'Persistent desire, or unsuccessful efforts, to cut down or control use.'},
+        {id:'sud_3', text:'A great deal of time spent obtaining, using, or recovering from the substance.'},
+        {id:'sud_4', text:'Craving, or a strong desire or urge to use.'},
+        {id:'sud_5', text:'Recurrent use resulting in failure to fulfil major role obligations.'},
+        {id:'sud_6', text:'Continued use despite recurrent social or interpersonal problems caused by use.'},
+        {id:'sud_7', text:'Important social, occupational, or recreational activities given up or reduced because of use.'},
+        {id:'sud_8', text:'Recurrent use in situations where it is physically hazardous.'},
+        {id:'sud_9', text:'Continued use despite knowing of a physical or psychological problem caused or worsened by use.'},
+        {id:'sud_10', text:'Tolerance — needing markedly more to achieve the same effect.'},
+        {id:'sud_11', text:'Withdrawal symptoms, or using to relieve or avoid withdrawal.'},
+      ]},
+    ]},
+];
+
+function scoreDiagnostic(mod, answers={}){
+  const yes = id => answers[id] === 1;
+  if (mod.isCountBased){
+    const items = mod.groups[0].items;
+    const count = items.filter(i=>yes(i.id)).length;
+    let severity = 'No disorder indicated (0-1 criteria)';
+    if (count>=2 && count<=3) severity='Mild (2-3 criteria)';
+    else if (count>=4 && count<=5) severity='Moderate (4-5 criteria)';
+    else if (count>=6) severity='Severe (6+ criteria)';
+    return { moduleId:mod.id, isCountBased:true, count, max:items.length, severity, met: count>=2 };
+  }
+  const requiredGatesOk = (mod.requiredGates||[]).every(g=>yes(g.id));
+  let totalCount = 0;
+  const groupResults = (mod.groups||[]).map(g=>{
+    const c = g.items.filter(i=>yes(i.id)).length;
+    totalCount += c;
+    const ok = g.minRequired ? c>=g.minRequired : true;
+    return { id:g.id, label:g.label, count:c, minRequired:g.minRequired||null, ok };
+  });
+  const groupsOk = mod.groupLogic==='OR' ? groupResults.some(g=>g.ok) : groupResults.every(g=>g.ok);
+  const overallOk = mod.overallThreshold ? totalCount>=mod.overallThreshold : true;
+  const durationOk = mod.durationGate ? yes(mod.durationGate.id) : true;
+  const impairmentOk = mod.impairmentGate ? yes(mod.impairmentGate.id) : true;
+  const exclusionFlags = (mod.exclusionGates||[]).filter(e=>yes(e.id));
+  const met = requiredGatesOk && groupsOk && overallOk && durationOk && impairmentOk && exclusionFlags.length===0;
+  const subthreshold = !met && totalCount>0 && exclusionFlags.length===0;
+  return { moduleId:mod.id, isCountBased:false, requiredGatesOk, groupResults, totalCount, overallOk, durationOk, impairmentOk, exclusionFlags, met, subthreshold };
+}
+function diagModuleById(id){ return diagnosticModules.find(m=>m.id===id); }
+
+/* =========================================================================
+   APP STATE + FLOW
+   ========================================================================= */
+const state = {
+  sessionId: (globalThis.crypto?.randomUUID ? crypto.randomUUID() : 'stn-' + Date.now()),
+  startedAt: new Date().toISOString(),
+  screen: 'home',             // home | wrap | module | crisis | safety-note | results | diag-select | diag-module | diag-results | review | client
+  wrapAnswers: {},
+  answers: {},                // per-module answer maps, keyed by moduleId -> {qid: val}
+  moduleResults: {},           // moduleId -> scoreModule() result
+  cssrsResult: null,
+  queue: [],                   // remaining module ids to administer after core_intake+cssrs
+  currentModuleId: null,
+  safetyNotes: [],             // re-endorsements after cssrs already resolved
+  pendingSafetyModule: null,   // module id whose safety item just fired, awaiting acknowledgement
+  // --- Diagnostic Assessment (Assessment 2) ---
+  diagSelected: [],            // domain ids chosen to assess
+  diagQueue: [],
+  diagAnswers: {},             // moduleId -> {qid: 0/1}
+  diagResults: {},             // moduleId -> scoreDiagnostic() result
+  diagCurrentId: null,
+  diagFromScreening: false,    // true if entered via "Continue to Diagnostic Assessment"
+  selectedAssessmentId: null,
+  selectedClientId: null,
+  reviewDraft: {},
+  carePlanDraft: {},
+};
+
+function buildQueueAfterCore(){
+  const a = state.answers.core_intake || {};
+  const v = id => clampToScale(a[id], 4);
+  const routes = new Set();
+  if (v('core_intake_mood')>=2 || v('core_intake_pleasure')>=2) routes.add('phq9');
+  if (v('core_intake_anxiety')>=2 || v('core_intake_worry')>=2 || v('core_intake_worry_control')>=2) routes.add('gad7');
+  if (v('core_intake_attention')>=2) routes.add('asrs_a');
+  const q = [...routes];
+  const w = state.wrapAnswers;
+  if (w.wrap_trauma_history===true || w.wrap_trauma_ongoing===true) q.push('pcl5');
+  q.push('audit_c');
+  if (w.wrap_substance_cope===true || w.wrap_substance_problems===true) q.push('dast10');
+  q.push('k10');
+  q.push('whodas12');
+  return q;
+}
+
+function allAnswered(module){
+  const a = state.answers[module.id] || {};
+  if (module.id==='cssrs'){
+    for (const q of module.questions){
+      if (q.dependsOn){
+        const parentYes = a[q.dependsOn]===1;
+        if (!parentYes) continue; // not required if parent not endorsed
+      }
+      if (a[q.id]===undefined) return false;
+    }
+    return true;
+  }
+  return module.questions.every(q => a[q.id] !== undefined);
+}
+
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  app.appendChild(header());
+  const barScreens = ['wrap','module','safety-note','results'];
+  if (barScreens.includes(state.screen)) app.appendChild(progressBar());
+  if (['diag-select','diag-module','diag-results'].includes(state.screen)) app.appendChild(diagProgressBar());
+
+  if (state.screen==='home') app.appendChild(screenHome());
+  else if (state.screen==='wrap') app.appendChild(screenWrap());
+  else if (state.screen==='module') app.appendChild(screenModule());
+  else if (state.screen==='safety-note') app.appendChild(screenSafetyNote());
+  else if (state.screen==='crisis') app.appendChild(screenCrisis());
+  else if (state.screen==='results') app.appendChild(screenResults());
+  else if (state.screen==='diag-select') app.appendChild(screenDiagSelect());
+  else if (state.screen==='diag-module') app.appendChild(screenDiagModule());
+  else if (state.screen==='diag-results') app.appendChild(screenDiagResults());
+  else if (state.screen==='dashboard') app.appendChild(screenDashboard());
+  else if (state.screen==='review') app.appendChild(screenClinicalReview());
+  else if (state.screen==='client') app.appendChild(screenClient());
+
+  app.appendChild(footerDisclaimer());
+}
+
+function header(){
+  const h = document.createElement('header');
+  h.className = 'top';
+  h.innerHTML = `<img class="brainmark-full" src="${LOGO_FULL_DATAURI}" alt="Supportive Therapy Network Ltd — Rehab . Right" /><span class="small" style="margin-left:auto;">STN v2.6</span>`;
+  return h;
+}
+
+function footerDisclaimer(){
+  const f = document.createElement('footer');
+  f.className = 'disclaimer';
+  f.textContent = 'STN Whole Person Assessment v2.5 • Clinical decision-support build. Screening and diagnostic checklist outputs require registered clinician review; this browser build is not a production clinical record system.';
+  return f;
+}
+
+const TOTAL_STEPS_ESTIMATE = 6; // wrap, core, cssrs, routed batch, audit/whodas, results
+function stepIndexEstimate(){
+  const order = ['wrap','core_intake','cssrs','routed','results'];
+  if (state.screen==='wrap') return 1;
+  if (state.screen==='module' && state.currentModuleId==='core_intake') return 2;
+  if (state.screen==='module' && state.currentModuleId==='cssrs') return 3;
+  if (state.screen==='module') return 4;
+  if (state.screen==='safety-note') return 4;
+  if (state.screen==='results') return 5;
+  return 0;
+}
+function progressBar(){
+  const wrap = document.createElement('div');
+  wrap.className = 'progress-wrap';
+  const pct = Math.min(100, Math.round((stepIndexEstimate()/5)*100));
+  wrap.innerHTML = `
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="progress-label"><span>Whole Person Initial Assessment</span><span>${pct}%</span></div>
+  `;
+  return wrap;
+}
+function diagProgressBar(){
+  const total = Math.max(1, state.diagSelected.length);
+  const done = total - (state.diagQueue.length + (state.diagCurrentId ? 1 : 0));
+  const pct = state.screen==='diag-results' ? 100 : Math.min(100, Math.round((Math.max(0,done)/total)*100));
+  const wrap = document.createElement('div');
+  wrap.className = 'progress-wrap';
+  wrap.innerHTML = `
+    <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    <div class="progress-label"><span>Diagnostic Assessment</span><span>${pct}%</span></div>
+  `;
+  return wrap;
+}
+
+/* ---------- HOME ---------- */
+function screenHome(){
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <div class="card" style="text-align:center;">
+      <img class="hero-logo" src="${LOGO_FULL_DATAURI}" alt="Supportive Therapy Network Ltd — Rehab . Right" />
+      <div class="eyebrow">Digital prototype</div>
+      <h1 class="hero">Two assessments, one intake</h1>
+      <p class="lede" style="margin-left:auto;margin-right:auto;">Run the complete STN pathway in one application. The Whole Person Initial Assessment feeds directly into the Diagnostic Assessment, with clinician review before any diagnosis is recorded.</p>
+    </div>
+    <div class="card" style="padding:18px 20px;">
+      <div class="eyebrow">Unified clinical pathway</div>
+      <div class="small" style="line-height:1.8;">Consent & client context → Whole Person Initial Assessment → Safety Gate → Adaptive Screening → Integrated Results → Diagnostic Assessment → Clinician Review → Formulation & Care Plan → Finalise</div>
+    </div>
+    <div class="card" style="display:grid;gap:10px;">
+      <div class="eyebrow">Clinical workspace</div>
+      <h2 class="module-title">Clinician Dashboard</h2>
+      <p class="lede" style="margin-bottom:4px;">Open the dashboard shell for client and assessment workflow. Demo mode uses no clinical records; a configured STN API switches this to authenticated server data.</p>
+      <button class="btn-ghost" id="dashboardBtn" style="width:100%;">Open Clinician Dashboard</button>
+    </div>
+    <div class="card" id="startInitial" style="cursor:pointer;">
+      <div class="eyebrow">Assessment 1 → Assessment 2</div>
+      <h2 class="module-title">Whole Person Initial Assessment + Diagnostic Assessment</h2>
+      <p class="lede" style="margin-bottom:6px;">The full screening battery — wraparound social screening, Comprehensive
+      Intake, PHQ-9, GAD-7, PCL-5, ASRS-5, AUDIT-C, DAST-10, K10, WHODAS 2.0 and C-SSRS — ending in a stepped-care
+      recommendation. Matches the paper pilot pack in full.</p>
+      <button class="btn-primary" id="startInitialBtn" style="width:100%;">Start Full STN Assessment Pathway</button>
+    </div>
+    <div class="card" id="startDiag" style="cursor:pointer;">
+      <div class="eyebrow">Assessment 2</div>
+      <h2 class="module-title">Diagnostic Assessment</h2>
+      <p class="lede" style="margin-bottom:6px;">DSM-5 criteria checklists for the domains a screen flagged — depression,
+      anxiety, PTSD, ADHD, alcohol and drug use. Decision support only: every output requires clinician confirmation
+      before it becomes a diagnosis.</p>
+      <button class="btn-ghost" id="startDiagBtn" style="width:100%;">Start Diagnostic Assessment</button>
+    </div>
+    <p class="small" style="text-align:center;">Demo mode uses an isolated in-memory API when enabled by the local server. Do not enter real client information. Production deployment requires authenticated hosting, encrypted persistence, audit logging and clinical governance.</p>
+  `;
+  const go = () => { state.screen='wrap'; render(); };
+  c.querySelector('#dashboardBtn').onclick = () => { state.screen='dashboard'; render(); };
+  c.querySelector('#startInitialBtn').onclick = go;
+  c.querySelector('#startInitial').onclick = go;
+  const goDiag = () => { openDiagSelect(false); };
+  c.querySelector('#startDiagBtn').onclick = goDiag;
+  c.querySelector('#startDiag').onclick = goDiag;
+  return c;
+}
+
+function openDiagSelect(fromScreening){
+  state.diagFromScreening = !!fromScreening;
+  state.diagSelected = diagnosticModules.filter(m => m.autoFlag(state.moduleResults)).map(m=>m.id);
+  state.screen = 'diag-select';
+  render();
+}
+
+/* ---------- CLINICIAN DASHBOARD ---------- */
+function screenDashboard(){
+  const c=document.createElement('div');
+  const cfg=stnApiConfig();
+  c.innerHTML=`
+    <div class="card">
+      <div class="eyebrow">STN clinical workspace</div>
+      <h1 class="hero">Clinician Dashboard</h1>
+      <p class="lede">Clients, assessment history, safety review and clinician-led follow-up in one workspace.</p>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+        <div class="card" style="margin:0;padding:16px;"><div class="small">Connection</div><strong>${cfg.demoMode?'Demo API':cfg.apiBaseUrl?'Configured API':'Not connected'}</strong></div>
+        <div class="card" style="margin:0;padding:16px;"><div class="small">Clinical records</div><strong>${cfg.demoMode?'In-memory demo':cfg.apiBaseUrl?'Server-backed':'Unavailable'}</strong></div>
+      </div>
+    </div>
+    <div class="card"><div class="eyebrow">Clients</div><div id="dash-clients" class="small">Loading…</div></div>
+    <div class="card"><div class="eyebrow">Assessment queue</div><div id="dash-list" class="small">Loading…</div></div>
+    <div class="actions" style="justify-content:space-between;"><button class="btn-ghost" id="dash-back">Back to home</button><button class="btn-primary" id="dash-new">New Whole Person Assessment</button></div>`;
+  c.querySelector('#dash-back').onclick=()=>{state.screen='home';render();};
+  c.querySelector('#dash-new').onclick=()=>{state.screen='wrap';render();};
+  const clients=c.querySelector('#dash-clients'), list=c.querySelector('#dash-list');
+  if(!cfg.apiBaseUrl){clients.innerHTML='<div class="resource"><span>Demo workspace</span><b>No real clients</b></div><p class="small" style="color:var(--amber);margin-top:10px">Demo mode deliberately contains no real clinical records.</p>';list.innerHTML='<div class="resource"><span>Assessment queue</span><b>Ready</b></div>';return c;}
+  stnApi('/api/clients').then(r=>{
+    if(!r.clients.length){clients.textContent='No clients found.';return;}
+    clients.innerHTML=r.clients.map(x=>`<button class="resource" style="width:100%;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);color:var(--ink);cursor:pointer" data-client="${x.id}"><span>${escapeHtml(x.client_ref)}${x.preferred_name?' · '+escapeHtml(x.preferred_name):''}</span><b>Open</b></button>`).join('');
+    clients.querySelectorAll('[data-client]').forEach(b=>b.onclick=()=>openClient(b.dataset.client));
+  }).catch(e=>clients.innerHTML=`<span style="color:var(--red)">${escapeHtml(e.message)}</span>`);
+  stnApi('/api/assessments').then(r=>{
+    if(!r.assessments.length){list.textContent='No assessments found.';return;}
+    list.innerHTML=r.assessments.map(a=>`<button class="resource" style="width:100%;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);color:var(--ink);cursor:pointer" data-assessment="${a.id}"><span>${escapeHtml(a.client_ref)} · ${escapeHtml(a.assessment_type)}<br><span class="small">${escapeHtml(a.safety_status||'not assessed')} · ${new Date(a.updated_at).toLocaleString()}</span></span><b>${escapeHtml(a.status)}</b></button>`).join('');
+    list.querySelectorAll('[data-assessment]').forEach(b=>b.onclick=()=>openReview(b.dataset.assessment));
+  }).catch(e=>list.innerHTML=`<span style="color:var(--red)">${escapeHtml(e.message)}</span>`);
+  return c;
+}
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
+async function openClient(id){ state.selectedClientId=id; state.screen='client'; render(); }
+async function openReview(id){ state.selectedAssessmentId=id; state.screen='review'; render(); }
+function field(label,id,value=''){return `<label class="small" style="display:grid;gap:6px"><span>${label}</span><textarea id="${id}" class="text-input" rows="4">${escapeHtml(value)}</textarea></label>`;}
+function screenClient(){
+  const c=document.createElement('div'); c.innerHTML='<div class="card"><div class="eyebrow">Client record</div><div id="client-body">Loading…</div></div><div class="actions"><button class="btn-ghost" id="back">Back to dashboard</button></div>';
+  c.querySelector('#back').onclick=()=>{state.screen='dashboard';render();};
+  stnApi(`/api/clients/${state.selectedClientId}`).then(async r=>{
+    const q=await stnApi('/api/assessments'); const rows=q.assessments.filter(a=>a.client_id===state.selectedClientId);
+    c.querySelector('#client-body').innerHTML=`<h2 class="module-title">${escapeHtml(r.client.preferred_name||r.client.client_ref)}</h2><p class="small">Reference: ${escapeHtml(r.client.client_ref)} · Consent: ${escapeHtml(r.client.consent_status)}</p><div style="margin-top:16px"><div class="eyebrow">Assessment history</div>${rows.length?rows.map(a=>`<button class="resource" style="width:100%;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);color:var(--ink);cursor:pointer" data-a="${a.id}"><span>${escapeHtml(a.assessment_type)}<br><span class="small">${new Date(a.updated_at).toLocaleString()}</span></span><b>${escapeHtml(a.status)}</b></button>`).join(''):'<p class="small">No assessments yet.</p>'}</div>`;
+    c.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>openReview(b.dataset.a));
+  }).catch(e=>c.querySelector('#client-body').innerHTML=`<span style="color:var(--red)">${escapeHtml(e.message)}</span>`);
+  return c;
+}
+function screenClinicalReview(){
+  const c=document.createElement('div'); c.innerHTML='<div class="card"><div class="eyebrow">Clinical Review</div><div id="review-body">Loading assessment…</div></div><div class="actions"><button class="btn-ghost" id="back">Back to dashboard</button></div>';
+  c.querySelector('#back').onclick=()=>{state.screen='dashboard';render();};
+  stnApi(`/api/assessments/${state.selectedAssessmentId}`).then(r=>{
+    const a=r.assessment; const cr=a.clinical_review||{}; const cp=a.care_plan||{};
+    c.querySelector('#review-body').innerHTML=`<div class="gap-note">Status: <b>${escapeHtml(a.status)}</b> · Safety: <b>${escapeHtml(a.safety_status||'not assessed')}</b></div>
+      <div class="card" style="margin-top:14px"><div class="eyebrow">Clinical formulation</div><div style="display:grid;gap:12px">${field('Presenting concerns','cr-presenting',cr.presenting_concerns)}${field('Mental status examination / observations','cr-mse',cr.mental_status)}${field('Risk formulation','cr-risk',cr.risk_formulation)}${field('Protective factors','cr-protective',cr.protective_factors)}${field('Differential considerations','cr-diff',cr.differential_considerations)}${field('Clinical formulation','cr-formulation',cr.clinical_formulation)}${field('Diagnostic indication','cr-diagnostic',cr.diagnostic_indication)}${field('Treatment considerations','cr-treatment',cr.treatment_considerations)}${field('Referrals','cr-referrals',cr.referrals)}<button class="btn-primary" id="save-review">Save Clinical Review</button></div></div>
+      <div class="card"><div class="eyebrow">Whole-Person Care Plan</div><div style="display:grid;gap:12px">${field('Goals','cp-goals',cp.goals)}${field('Interventions','cp-interventions',cp.interventions)}${field('Referrals','cp-referrals',cp.referrals)}${field('Supports / practical needs','cp-supports',cp.supports)}${field('Review arrangements','cp-review',cp.review_arrangements)}${field('Crisis / safety plan','cp-safety',cp.crisis_safety_plan)}<button class="btn-primary" id="save-plan">Save Care Plan</button></div></div>
+      <div class="card"><div class="eyebrow">Controlled finalisation</div><p class="small">Finalisation requires clinician review of the complete record. The software does not independently diagnose or make autonomous crisis decisions.</p><div style="display:grid;gap:10px"><textarea id="sign-note" class="text-input" rows="3" placeholder="Clinician sign-off note"></textarea><button class="btn-ghost" id="submit-review">Submit for clinician review</button><button class="btn-primary" id="signoff">Confirm clinician sign-off & finalise</button><button class="btn-ghost" id="report">Generate report data</button><div id="review-status" class="small" aria-live="polite"></div></div></div>`;
+    const val=id=>c.querySelector('#'+id).value;
+    c.querySelector('#save-review').onclick=async()=>{const b={presenting_concerns:val('cr-presenting'),mental_status:val('cr-mse'),risk_formulation:val('cr-risk'),protective_factors:val('cr-protective'),differential_considerations:val('cr-diff'),clinical_formulation:val('cr-formulation'),diagnostic_indication:val('cr-diagnostic'),treatment_considerations:val('cr-treatment'),referrals:val('cr-referrals')};await saveReview(b,c)};
+    c.querySelector('#save-plan').onclick=async()=>{const b={goals:val('cp-goals'),interventions:val('cp-interventions'),referrals:val('cp-referrals'),supports:val('cp-supports'),review_arrangements:val('cp-review'),crisis_safety_plan:val('cp-safety')};await savePlan(b,c)};
+    c.querySelector('#submit-review').onclick=async()=>{try{await stnApi(`/api/assessments/${a.id}/submit-review`,{method:'POST',body:'{}'});c.querySelector('#review-status').textContent='Submitted for clinician review.';c.querySelector('#review-status').style.color='var(--green)';}catch(e){setReviewStatus(c,e.message)}};
+    c.querySelector('#signoff').onclick=async()=>{try{await stnApi(`/api/assessments/${a.id}/signoff`,{method:'POST',body:JSON.stringify({confirmed:true,note:val('sign-note')})});c.querySelector('#review-status').textContent='Clinician sign-off recorded; assessment finalised.';c.querySelector('#review-status').style.color='var(--green)';}catch(e){setReviewStatus(c,e.message)}};
+    c.querySelector('#report').onclick=async()=>{try{const x=await stnApi(`/api/assessments/${a.id}/report`);const blob=new Blob([JSON.stringify(x.report,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download=`STN-${a.id}-report.json`;link.click();URL.revokeObjectURL(url);setReviewStatus(c,'Report data generated.')}catch(e){setReviewStatus(c,e.message)}};
+  }).catch(e=>c.querySelector('#review-body').innerHTML=`<span style="color:var(--red)">${escapeHtml(e.message)}</span>`);
+  return c;
+}
+async function saveReview(b,c){try{await stnApi(`/api/assessments/${state.selectedAssessmentId}/clinical-review`,{method:'PATCH',body:JSON.stringify(b)});setReviewStatus(c,'Clinical review saved.')}catch(e){setReviewStatus(c,e.message)}}
+async function savePlan(b,c){try{await stnApi(`/api/assessments/${state.selectedAssessmentId}/care-plan`,{method:'PATCH',body:JSON.stringify(b)});setReviewStatus(c,'Care plan saved.')}catch(e){setReviewStatus(c,e.message)}}
+function setReviewStatus(c,msg){const x=c.querySelector('#review-status');if(x){x.textContent=msg;x.style.color=msg.includes('saved')||msg.includes('generated')||msg.includes('recorded')?'var(--green)':'var(--red)';}}
+
+/* ---------- WRAPAROUND ---------- */
+function screenWrap(){
+  const c = document.createElement('div');
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<div class="eyebrow">Section 1</div><h2 class="module-title">Wraparound & Social Screening</h2>
+    <p class="lede">These questions shape referrals alongside the clinical pathway — housing, income, whānau support and access to a GP all change what "step 1" looks like for someone.</p>`;
+  wraparoundItems.forEach(item=>{
+    const q = document.createElement('div');
+    q.className = 'question';
+    const cur = state.wrapAnswers[item.id];
+    q.innerHTML = `<div class="qtext">${item.text}</div>
+      <div class="yn-row">
+        <label class="opt ${cur===true?'selected':''}"><input type="radio" name="${item.id}" ${cur===true?'checked':''}/> Yes</label>
+        <label class="opt ${cur===false?'selected':''}"><input type="radio" name="${item.id}" ${cur===false?'checked':''}/> No</label>
+      </div>`;
+    const [yesLbl,noLbl] = q.querySelectorAll('.opt');
+    yesLbl.onclick = ()=>{ state.wrapAnswers[item.id]=true; render(); };
+    noLbl.onclick = ()=>{ state.wrapAnswers[item.id]=false; render(); };
+    card.appendChild(q);
+  });
+  c.appendChild(card);
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  const done = wraparoundItems.every(i => state.wrapAnswers[i.id] !== undefined);
+  actions.innerHTML = `<button class="btn-ghost" id="back">Back</button><button class="btn-primary" id="next" ${done?'':'disabled'}>Continue</button>`;
+  actions.querySelector('#back').onclick = ()=>{ state.screen='home'; render(); };
+  actions.querySelector('#next').onclick = ()=>{
+    state.screen='module';
+    state.currentModuleId='core_intake';
+    state.answers.core_intake = state.answers.core_intake || {};
+    render();
+  };
+  c.appendChild(actions);
+  return c;
+}
+
+/* ---------- GENERIC MODULE SCREEN ---------- */
+function screenModule(){
+  const module = moduleById(state.currentModuleId);
+  state.answers[module.id] = state.answers[module.id] || {};
+  const a = state.answers[module.id];
+  const c = document.createElement('div');
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  let head = `<h2 class="module-title">${module.name}</h2><div class="instrument-tag">${module.instrument}</div>`;
+  if (module.licensing) head += `<div class="license-note">${module.licensing}</div>`;
+  card.innerHTML = head;
+
+  module.questions.forEach(q=>{
+    if (q.dependsOn){
+      const parentVal = a[q.dependsOn];
+      if (parentVal !== 1) return; // only shown if parent answered "Yes"
+    }
+    const scale = scaleFor(module, q);
+    const box = document.createElement('div');
+    box.className = 'question' + (q.safety || q.invertedSafety ? '' : '');
+    const wrapper = document.createElement('div');
+    wrapper.className = q.safety ? 'safety-q' : '';
+    const qDiv = document.createElement('div');
+    qDiv.innerHTML = `<div class="qtext">${q.text}</div>`;
+    const optsDiv = document.createElement('div');
+    optsDiv.className = scale.length<=2 ? 'yn-row' : 'options';
+    scale.forEach((label, idx)=>{
+      const opt = document.createElement('label');
+      opt.className = 'opt' + (a[q.id]===idx ? ' selected':'');
+      opt.innerHTML = `<input type="radio" name="${q.id}" ${a[q.id]===idx?'checked':''}/> ${label}`;
+      opt.onclick = ()=>{
+        a[q.id] = idx;
+        // if a cssrs parent question flips to "No", clear dependent answers
+        if (module.id==='cssrs'){
+          // Clear the whole dependency chain (recursive), not just direct children.
+          const clearDescendants = (pid) => module.questions.filter(dq=>dq.dependsOn===pid).forEach(dq=>{ delete a[dq.id]; clearDescendants(dq.id); });
+          if (idx !== 1) clearDescendants(q.id);
+        }
+        render();
+      };
+      optsDiv.appendChild(opt);
+    });
+    qDiv.appendChild(optsDiv);
+    if (q.safety || q.invertedSafety){ wrapper.appendChild(qDiv); box.appendChild(wrapper); }
+    else box.appendChild(qDiv);
+    card.appendChild(box);
+  });
+
+  c.appendChild(card);
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  const ready = allAnswered(module);
+  actions.innerHTML = `<button class="btn-ghost" id="back">Back</button><button class="btn-primary" id="next" ${ready?'':'disabled'}>Continue</button>`;
+  actions.querySelector('#back').onclick = handleBack;
+  actions.querySelector('#next').onclick = ()=> advanceFrom(module);
+  c.appendChild(actions);
+  return c;
+}
+
+function handleBack(){
+  if (state.currentModuleId==='core_intake'){ state.screen='wrap'; render(); return; }
+  state.screen='wrap'; render(); // simple linear back-stop for the prototype
+}
+
+function advanceFrom(module){
+  if (module.id === 'cssrs'){
+    const result = classifyCssrs(state.answers.cssrs);
+    state.cssrsResult = result;
+    if (result.requiresImmediateEscalation){
+      state.screen = 'crisis';
+      render();
+      return;
+    }
+    goToNextInQueue();
+    return;
+  }
+
+  const result = scoreModule(module, state.answers[module.id]);
+  state.moduleResults[module.id] = result;
+
+  if (module.id === 'core_intake'){
+    // Safety item on core intake, OR a general trigger, routes to C-SSRS immediately.
+    state.queue = buildQueueAfterCore();
+    state.screen = 'module';
+    state.currentModuleId = 'cssrs';
+    state.answers.cssrs = state.answers.cssrs || {};
+    render();
+    return;
+  }
+
+  // Any other module's embedded safety item firing again, after C-SSRS
+  // has already returned low/moderate, surfaces immediately rather than
+  // being silently absorbed into the total.
+  if (result.safetyFlag && state.cssrsResult && !state.cssrsResult.requiresImmediateEscalation){
+    state.safetyNotes.push({ moduleId: module.id, moduleName: module.name });
+    state.pendingSafetyModule = module.id;
+    state.screen = 'safety-note';
+    render();
+    return;
+  }
+
+  // ASRS Part A positive screen queues Part B immediately after.
+  if (module.id === 'asrs_a' && result.total >= 4 && !state.queue.includes('asrs_b')){
+    state.queue.unshift('asrs_b');
+  }
+
+  goToNextInQueue();
+}
+
+function goToNextInQueue(){
+  if (state.queue.length === 0){
+    state.screen = 'results';
+    render();
+    return;
+  }
+  const nextId = state.queue.shift();
+  state.currentModuleId = nextId;
+  state.answers[nextId] = state.answers[nextId] || {};
+  state.screen = 'module';
+  render();
+}
+
+/* ---------- SAFETY RE-ENDORSEMENT INTERSTITIAL ---------- */
+function screenSafetyNote(){
+  const c = document.createElement('div');
+  c.innerHTML = `
+    <div class="crisis-box">
+      <div class="eyebrow" style="color:var(--red)">Flagged for follow-up</div>
+      <h1>This response needs a closer look</h1>
+      <p class="lede" style="color:var(--ink);">A safety-related item on this section was endorsed. The C-SSRS already
+      completed in this session returned <b>${state.cssrsResult.riskLevel.toUpperCase()}</b>, so the assessment continues —
+      but this will be highlighted for the reviewing clinician, and is not something the score should quietly absorb.</p>
+    </div>
+    <div class="card">
+      <p class="small" style="margin-bottom:16px;">If you are the person completing this assessment and you're having
+      thoughts of harming yourself right now, please use one of these before continuing:</p>
+      <div class="resource"><span>Emergency</span><b>111</b></div>
+      <div class="resource"><span>Need to talk? (free call/text, 24/7)</span><b>1737</b></div>
+      <div class="resource"><span>Lifeline Aotearoa</span><b>0800 543 354</b></div>
+    </div>
+    <div class="actions" style="justify-content:flex-end;">
+      <button class="btn-primary" id="continue">Continue assessment</button>
+    </div>
+  `;
+  c.querySelector('#continue').onclick = ()=>{ state.pendingSafetyModule=null; goToNextInQueue(); };
+  return c;
+}
+
+/* ---------- CRISIS (TERMINAL) ---------- */
+function screenCrisis(){
+  const c = document.createElement('div');
+  const r = state.cssrsResult;
+  c.innerHTML = `
+    <div class="crisis-box">
+      <div class="eyebrow" style="color:var(--red)">C-SSRS result: ${r.riskLevel.toUpperCase()}</div>
+      <h1>Assessment paused — safety comes first</h1>
+      <p class="lede" style="color:var(--ink);">${r.action}</p>
+      <p class="small">This build does not send any automatic alert or escalation. A clinician or on-call person must be contacted now. The assessment has stopped and no further questions are administered.</p>
+    </div>
+    <div class="card">
+      <h2 class="module-title" style="font-size:18px;">Right now</h2>
+      <div class="resource"><span>If you or someone else is in immediate danger</span><b>111</b></div>
+      <div class="resource"><span>Need to talk? (free call or text, 24/7)</span><b>1737</b></div>
+      <div class="resource"><span>Lifeline Aotearoa</span><b>0800 543 354</b></div>
+      <div class="resource"><span>Youthline</span><b>0800 376 633</b></div>
+    </div>
+    <button class="btn-crisis" id="restart">Start a new assessment</button>
+  `;
+  c.querySelector('#restart').onclick = resetAll;
+  return c;
+}
+
+/* ---------- RESULTS ---------- */
+function stnApiConfig(){
+  return {apiBaseUrl:location.origin, accessToken:'', ...(globalThis.STN_CONFIG || {})};
+}
+async function stnApi(path, options={}){
+  const cfg=stnApiConfig();
+  const base=(cfg.apiBaseUrl || '').replace(/\/$/,'');
+  if(!base) throw new Error('STN API is not configured for this browser build.');
+  const headers={'content-type':'application/json', ...(options.headers||{})};
+  const token=cfg.accessToken || globalThis.STN_API_TOKEN;
+  if(token) headers.authorization=`Bearer ${token}`;
+  const r=await fetch(base+path,{...options,headers});
+  let body={}; try{ body=await r.json(); }catch{}
+  if(!r.ok) throw new Error(body.error || `API request failed (${r.status})`);
+  return body;
+}
+function assessmentPayload(){
+  return {
+    assessment_type:'whole_person_initial',
+    assessment_version:'STN-v2.6',
+    responses:{wrapAnswers:state.wrapAnswers, answers:state.answers},
+    results:{moduleResults:state.moduleResults, cssrsResult:state.cssrsResult, safetyNotes:state.safetyNotes, sessionId:state.sessionId, startedAt:state.startedAt},
+    safety_status:state.cssrsResult?.riskLevel || 'not_assessed'
+  };
+}
+function addPersistenceCard(c){
+  const cfg=stnApiConfig();
+  const card=document.createElement('div'); card.className='card';
+  card.innerHTML=`<div class="eyebrow">Secure clinical record</div>
+    <h2 class="module-title" style="margin-bottom:8px;">Save this assessment</h2>
+    <p class="small">This button only connects when an authenticated STN API is configured. The browser demo does not silently upload clinical information.</p>
+    <div style="display:grid;gap:10px;margin-top:14px;">
+      <input id="stn-client-ref" class="text-input" placeholder="Client reference (required)" autocomplete="off">
+      <input id="stn-client-name" class="text-input" placeholder="Preferred/client name (optional)" autocomplete="off">
+      <button class="btn-primary" id="stn-save">${cfg.apiBaseUrl ? 'Save securely to STN' : 'API not configured'}</button>
+      <div id="stn-save-status" class="small" aria-live="polite"></div>
+    </div>`;
+  const btn=card.querySelector('#stn-save');
+  if(!cfg.apiBaseUrl){btn.disabled=true; btn.style.opacity='.55';}
+  btn.onclick=async()=>{
+    const status=card.querySelector('#stn-save-status');
+    const clientRef=card.querySelector('#stn-client-ref').value.trim();
+    const preferredName=card.querySelector('#stn-client-name').value.trim();
+    if(!clientRef){status.textContent='Client reference is required.';return;}
+    btn.disabled=true; status.textContent='Saving…';
+    try{
+      const client=await stnApi('/api/clients',{method:'POST',body:JSON.stringify({client_ref:clientRef,preferred_name:preferredName||null})});
+      const saved=await stnApi('/api/assessments',{method:'POST',body:JSON.stringify({...assessmentPayload(),client_id:client.client.id})});
+      status.textContent=`Saved securely. Assessment ID: ${saved.assessment.id}`;
+      status.style.color='var(--green)';
+    }catch(err){
+      status.textContent=`Not saved: ${err.message}`; status.style.color='var(--red)'; btn.disabled=false;
+    }
+  };
+  c.appendChild(card);
+}
+
+function screenResults(){
+  const c = document.createElement('div');
+
+  const symptomModules = ['core_intake','phq9','gad7','pcl5'].filter(id=>state.moduleResults[id]);
+  let symptomSeverity = 0;
+  symptomModules.forEach(id=>{
+    const idx = severityBandIndex(id, state.moduleResults[id].total);
+    if (idx > symptomSeverity) symptomSeverity = idx;
+  });
+  const functionalImpairment = state.moduleResults.whodas12
+    ? severityBandIndex('whodas12', state.moduleResults.whodas12.total) : null;
+  const riskLevel = state.cssrsResult ? state.cssrsResult.riskLevel : null;
+  const socialComplexityCount = socialComplexityFrom(state.wrapAnswers);
+  const chronic = state.wrapAnswers.wrap_chronic === true;
+
+  const allocation = allocateCare({ symptomSeverity, functionalImpairment, riskLevel, socialComplexityCount, chronic });
+  const stepIdx = STEPS.findIndex(s=>s.code===allocation.recommendedStep);
+
+  const summaryCard = document.createElement('div');
+  summaryCard.className = 'card';
+  summaryCard.innerHTML = `
+    <div class="eyebrow">Stepped-care recommendation</div>
+    <div class="allocation-step">${allocation.recommendedStep} — ${allocation.stepTitle}</div>
+    <p class="small" style="margin-top:2px;">Response target: ${allocation.responseTarget}</p>
+    <ul class="reason-list">${allocation.reasons.map(r=>`<li>${r}</li>`).join('')}</ul>
+    ${allocation.dataGaps.length ? `<div class="gap-note">${allocation.dataGaps.map(g=>`⚠ ${g}`).join('<br>')}</div>` : ''}
+    <p class="small" style="margin-top:16px;"><b style="color:var(--ink-dim);">Referrals:</b> ${allocation.referrals.join(', ')}</p>
+    <p class="small" style="margin-top:10px; color:var(--amber);">${allocation.note}</p>
+  `;
+  c.appendChild(summaryCard);
+
+  if (state.safetyNotes.length){
+    const noteCard = document.createElement('div');
+    noteCard.className = 'card';
+    noteCard.innerHTML = `<div class="eyebrow" style="color:var(--red);">Clinician review required</div>
+      <p class="small">Safety items were re-endorsed after the C-SSRS on: ${state.safetyNotes.map(n=>n.moduleName).join(', ')}.
+      This assessment cannot be finalised without clinician sign-off on current risk.</p>`;
+    c.appendChild(noteCard);
+  }
+
+  const instrumentsCard = document.createElement('div');
+  instrumentsCard.className = 'card';
+  instrumentsCard.innerHTML = `<div class="eyebrow">Instrument results</div>`;
+  if (state.cssrsResult){
+    const row = document.createElement('div');
+    row.className = 'result-row';
+    const badgeClass = state.cssrsResult.riskLevel==='low' ? 'badge-green' : (state.cssrsResult.riskLevel==='moderate' ? 'badge-amber':'badge-red');
+    row.innerHTML = `<div><div class="result-name">C-SSRS<span class="badge ${badgeClass}">${state.cssrsResult.riskLevel.toUpperCase()}</span></div>
+      <div class="result-instrument">Columbia Suicide Severity Rating Scale</div></div>
+      <div class="result-band">${state.cssrsResult.action}</div>`;
+    instrumentsCard.appendChild(row);
+  }
+  Object.values(state.moduleResults).filter(r=>r.moduleId!=='core_intake' || true).forEach(r=>{
+    const row = document.createElement('div');
+    row.className = 'result-row';
+    const badge = r.safetyFlag ? '<span class="badge badge-red">SAFETY</span>' : '';
+    row.innerHTML = `<div><div class="result-name">${r.moduleName}${badge}</div>
+      <div class="result-instrument">${r.instrument}</div></div>
+      <div class="result-band">${r.total}${r.max?`/${r.max}`:''} — ${r.band}${r.secondary?`<br><span class="small" style="color:var(--ink-faint);">${r.secondary.label}: ${r.secondary.value}</span>`:''}</div>`;
+    instrumentsCard.appendChild(row);
+  });
+  c.appendChild(instrumentsCard);
+
+  const socialCard = document.createElement('div');
+  socialCard.className = 'card';
+  socialCard.innerHTML = `<div class="eyebrow">Wraparound flags</div>
+    <p class="small">${socialComplexityCount} concurrent social need(s) identified. Duration: ${chronic ? '6 months or longer' : 'under 6 months'}.</p>`;
+  const flagged = wraparoundItems.filter(i => state.wrapAnswers[i.id] === (i.protective ? false : true));
+  if (flagged.length){
+    flagged.forEach(f=>{
+      const d = document.createElement('div');
+      d.className = 'flag-item';
+      d.textContent = f.text;
+      socialCard.appendChild(d);
+    });
+  } else {
+    const d = document.createElement('div'); d.className='flag-item'; d.textContent='No wraparound needs flagged.';
+    socialCard.appendChild(d);
+  }
+  c.appendChild(socialCard);
+
+  const flaggedDomains = diagnosticModules.filter(m => m.autoFlag(state.moduleResults));
+  addPersistenceCard(c);
+
+  const diagBtn = document.createElement('button');
+  diagBtn.className = 'btn-primary';
+  diagBtn.style.width = '100%';
+  diagBtn.style.marginBottom = '10px';
+  diagBtn.textContent = flaggedDomains.length
+    ? `Continue to Diagnostic Assessment (${flaggedDomains.length} domain${flaggedDomains.length===1?'':'s'} flagged)`
+    : 'Continue to Diagnostic Assessment';
+  diagBtn.onclick = () => openDiagSelect(true);
+  c.appendChild(diagBtn);
+
+  const handoff = document.createElement('div');
+  handoff.className = 'card';
+  handoff.innerHTML = `<div class="eyebrow">Clinician finalisation</div>
+    <p class="small">Before a diagnosis or care decision is recorded, review the full assessment, risk information, differential considerations, cultural formulation and clinical interview findings. The digital checklist does not independently diagnose.</p>
+    <div class="gap-note">Session ID: ${state.sessionId}<br>Started: ${new Date(state.startedAt).toLocaleString()}</div>`;
+  c.appendChild(handoff);
+
+  const restart = document.createElement('button');
+  restart.className = 'btn-ghost';
+  restart.style.width = '100%';
+  restart.textContent = 'Start a new assessment';
+  restart.onclick = resetAll;
+  c.appendChild(restart);
+
+  return c;
+}
+
+/* ---------- DIAGNOSTIC: DOMAIN SELECT ---------- */
+function screenDiagSelect(){
+  const c = document.createElement('div');
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<div class="eyebrow">Assessment 2</div><h2 class="module-title">Diagnostic Assessment</h2>
+    <p class="lede">${state.diagFromScreening
+      ? 'Domains the Whole Person Initial Assessment flagged are pre-selected. Add or remove any before continuing.'
+      : 'No prior screening data in this session — select which domains to assess.'}</p>`;
+  diagnosticModules.forEach(m=>{
+    const flaggedByScreen = m.autoFlag(state.moduleResults);
+    const checked = state.diagSelected.includes(m.id);
+    const row = document.createElement('label');
+    row.className = 'opt' + (checked ? ' selected' : '');
+    row.style.marginBottom = '8px';
+    row.innerHTML = `<input type="checkbox" ${checked?'checked':''}/> ${m.name} <span class="small" style="margin-left:auto;">${m.domain}${flaggedByScreen?' · flagged':''}</span>`;
+    row.style.justifyContent = 'space-between';
+    row.onclick = (e)=>{
+      e.preventDefault();
+      if (state.diagSelected.includes(m.id)) state.diagSelected = state.diagSelected.filter(id=>id!==m.id);
+      else state.diagSelected = [...state.diagSelected, m.id];
+      render();
+    };
+    card.appendChild(row);
+  });
+  c.appendChild(card);
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  const ready = state.diagSelected.length>0;
+  actions.innerHTML = `<button class="btn-ghost" id="back">Back</button><button class="btn-primary" id="next" ${ready?'':'disabled'}>Begin diagnostic checklist</button>`;
+  actions.querySelector('#back').onclick = ()=>{ state.screen = state.diagFromScreening ? 'results' : 'home'; render(); };
+  actions.querySelector('#next').onclick = ()=>{
+    state.diagQueue = [...state.diagSelected];
+    goToNextInDiagQueue();
+  };
+  c.appendChild(actions);
+  return c;
+}
+
+/* ---------- DIAGNOSTIC: MODULE SCREEN ---------- */
+function screenDiagModule(){
+  const mod = diagModuleById(state.diagCurrentId);
+  state.diagAnswers[mod.id] = state.diagAnswers[mod.id] || {};
+  const a = state.diagAnswers[mod.id];
+  const c = document.createElement('div');
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `<div class="instrument-tag">${mod.dsm}</div><h2 class="module-title">${mod.name}</h2>
+    <p class="small" style="margin-bottom:14px;">Decision support only — a registered clinician must confirm any diagnosis.</p>`;
+
+  const yn = (q)=>{
+    const box = document.createElement('div');
+    box.className = 'question';
+    box.innerHTML = `<div class="qtext">${q.text}</div>`;
+    const row = document.createElement('div');
+    row.className = 'yn-row';
+    ['No','Yes'].forEach((label,idx)=>{
+      const opt = document.createElement('label');
+      opt.className = 'opt' + (a[q.id]===idx ? ' selected':'');
+      opt.innerHTML = `<input type="radio" name="${q.id}" ${a[q.id]===idx?'checked':''}/> ${label}`;
+      opt.onclick = ()=>{ a[q.id]=idx; render(); };
+      row.appendChild(opt);
+    });
+    box.appendChild(row);
+    return box;
+  };
+
+  (mod.requiredGates||[]).forEach(g=> card.appendChild(yn(g)));
+  (mod.groups||[]).forEach(g=>{
+    const h = document.createElement('p');
+    h.className = 'small';
+    h.style.cssText = 'margin:18px 0 2px; color:var(--ink-dim); font-weight:700;';
+    h.textContent = g.label;
+    card.appendChild(h);
+    g.items.forEach(item=> card.appendChild(yn(item)));
+  });
+  if (mod.durationGate) card.appendChild(yn(mod.durationGate));
+  if (mod.impairmentGate) card.appendChild(yn(mod.impairmentGate));
+  (mod.exclusionGates||[]).forEach(g=> card.appendChild(yn(g)));
+
+  c.appendChild(card);
+
+  const requiredIds = []
+    .concat((mod.requiredGates||[]).map(g=>g.id))
+    .concat(...(mod.groups||[]).map(g=>g.items.map(i=>i.id)))
+    .concat(mod.durationGate?[mod.durationGate.id]:[])
+    .concat(mod.impairmentGate?[mod.impairmentGate.id]:[])
+    .concat((mod.exclusionGates||[]).map(g=>g.id));
+  const ready = requiredIds.every(id => a[id] !== undefined);
+
+  const actions = document.createElement('div');
+  actions.className = 'actions';
+  actions.innerHTML = `<button class="btn-ghost" id="back">Back</button><button class="btn-primary" id="next" ${ready?'':'disabled'}>Continue</button>`;
+  actions.querySelector('#back').onclick = ()=>{ state.screen='diag-select'; render(); };
+  actions.querySelector('#next').onclick = ()=>{
+    state.diagResults[mod.id] = scoreDiagnostic(mod, a);
+    state.diagCurrentId = null;
+    goToNextInDiagQueue();
+  };
+  c.appendChild(actions);
+  return c;
+}
+
+function goToNextInDiagQueue(){
+  if (state.diagQueue.length===0){
+    state.screen = 'diag-results';
+    render();
+    return;
+  }
+  const nextId = state.diagQueue.shift();
+  state.diagCurrentId = nextId;
+  state.diagAnswers[nextId] = state.diagAnswers[nextId] || {};
+  state.screen = 'diag-module';
+  render();
+}
+
+/* ---------- DIAGNOSTIC: RESULTS ---------- */
+function screenDiagResults(){
+  const c = document.createElement('div');
+  const intro = document.createElement('div');
+  intro.className = 'card';
+  intro.innerHTML = `<div class="eyebrow">Diagnostic Assessment — summary</div>
+    <h2 class="module-title" style="margin-bottom:10px;">DSM-5 criteria checklist results</h2>
+    <p class="small" style="color:var(--amber);">Decision support only. These checklists indicate which published criteria
+    were endorsed — they do not constitute a diagnosis. A registered clinician must confirm diagnosis via full clinical
+    interview, differential diagnosis and cultural formulation before this is recorded.</p>`;
+  c.appendChild(intro);
+
+  state.diagSelected.forEach(id=>{
+    const mod = diagModuleById(id);
+    const r = state.diagResults[id];
+    if (!r) return;
+    const card = document.createElement('div');
+    card.className = 'card';
+    let badge, statusLine;
+    if (r.isCountBased){
+      badge = r.count>=2 ? '<span class="badge badge-amber">CRITERIA MET</span>' : '<span class="badge badge-green">BELOW THRESHOLD</span>';
+      statusLine = `${r.count}/${r.max} criteria endorsed — ${r.severity}`;
+    } else {
+      badge = r.met ? '<span class="badge badge-amber">CRITERIA MET</span>' : (r.subthreshold ? '<span class="badge badge-amber">SUBTHRESHOLD</span>' : '<span class="badge badge-green">CRITERIA NOT MET</span>');
+      statusLine = r.met ? 'Full criteria endorsed on this checklist.' : (r.subthreshold ? 'Some criteria endorsed, but the full pattern required was not met.' : 'Criteria not met.');
+    }
+    card.innerHTML = `<div class="result-name">${mod.name}${badge}</div>
+      <div class="result-instrument">${mod.dsm}</div>
+      <p class="small" style="margin-top:10px;">${statusLine}</p>`;
+    if (!r.isCountBased){
+      const list = document.createElement('ul');
+      list.className = 'reason-list';
+      r.groupResults.forEach(g=>{
+        const li = document.createElement('li');
+        li.textContent = `${g.label}: ${g.count}${g.minRequired?`/${g.minRequired} required`:' endorsed'} ${g.ok?'✓':'— not met'}`;
+        list.appendChild(li);
+      });
+      if (mod.overallThreshold){
+        const li = document.createElement('li');
+        li.textContent = `Total symptom count: ${r.totalCount} (need ${mod.overallThreshold}+) ${r.overallOk?'✓':'— not met'}`;
+        list.appendChild(li);
+      }
+      if (mod.durationGate){ const li=document.createElement('li'); li.textContent = `Duration criterion: ${r.durationOk?'met':'not met'}`; list.appendChild(li); }
+      if (mod.impairmentGate){ const li=document.createElement('li'); li.textContent = `Impairment criterion: ${r.impairmentOk?'met':'not met'}`; list.appendChild(li); }
+      card.appendChild(list);
+      if (r.exclusionFlags.length){
+        const gap = document.createElement('div');
+        gap.className = 'gap-note';
+        gap.innerHTML = r.exclusionFlags.map(e=>`⚠ ${e.text}${e.note?` <i>${e.note}</i>`:''}`).join('<br>');
+        card.appendChild(gap);
+      }
+    }
+    c.appendChild(card);
+  });
+
+  const handoff = document.createElement('div');
+  handoff.className = 'card';
+  handoff.innerHTML = `<div class="eyebrow">Clinician finalisation</div>
+    <p class="small">Before a diagnosis or care decision is recorded, review the full assessment, risk information, differential considerations, cultural formulation and clinical interview findings. The digital checklist does not independently diagnose.</p>
+    <div class="gap-note">Session ID: ${state.sessionId}<br>Started: ${new Date(state.startedAt).toLocaleString()}</div>`;
+  c.appendChild(handoff);
+
+  const restart = document.createElement('button');
+  restart.className = 'btn-ghost';
+  restart.style.width = '100%';
+  restart.textContent = 'Back to home';
+  restart.onclick = ()=>{ state.screen='home'; render(); };
+  c.appendChild(restart);
+
+  return c;
+}
+
+function resetAll(){
+  state.screen='home'; state.wrapAnswers={}; state.answers={}; state.moduleResults={};
+  state.cssrsResult=null; state.queue=[]; state.currentModuleId=null; state.safetyNotes=[];
+  state.pendingSafetyModule=null;
+  state.diagSelected=[]; state.diagQueue=[]; state.diagAnswers={}; state.diagResults={};
+  state.diagCurrentId=null; state.diagFromScreening=false;
+  render();
+}
+
+render();
+
+if ('serviceWorker' in navigator) { window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js').catch(()=>{})); }
+</script>
+</body>
+</html>
