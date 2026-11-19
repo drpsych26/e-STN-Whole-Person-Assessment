@@ -20,3 +20,4 @@ Canonical v2.6 source is undetermined (STN-H04). This file is a review copy, not
 - H02: PCL-5 0–4 severity mapping removed from allocation; raw total and provisional threshold (33) shown; severity left to clinician.
 - M07: AUDIT-C single threshold labelled as a general screening threshold, not sex-specific.
 - C06: NOT changed. Per-instrument licence status not supplied. Item text for each instrument stays unpublished until confirmed.
+- Added `manifest.webmanifest` and `runtime-config.js` (STN-M05). The config sets no escalation endpoint; the build sends no automatic alerts. Service worker (`sw.js`) is still not provided, so no offline claim is made.
