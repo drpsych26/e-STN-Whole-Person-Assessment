@@ -342,7 +342,7 @@ const assessmentCatalog = [
       {id:'asrs_b_safety', text:SAFETY_ITEM_TEXT, safety:true},
     ]},
   { id:'audit_c', name:'Alcohol Use (AUDIT-C)', instrument:'Alcohol Use Disorders Identification Test - Consumption', scale:FREQ_4, mode:'sum',
-    bands:[[0,2,'Low-risk range'],[3,12,'At or above hazardous-drinking cutoff (sensitive threshold of 3) — further assessment recommended']],
+    bands:[[0,2,'Low-risk range'],[3,12,'At or above general screening threshold of 3 (not sex-specific; sex-specific cut-offs not applied) — further assessment recommended']],
     questions:[
       {id:'audit_c_1', text:'How often do you have a drink containing alcohol?', scale:['Never','Monthly or less','2-4 times a month','2-3 times a week','4+ times a week']},
       {id:'audit_c_2', text:'How many standard drinks containing alcohol do you have on a typical day when you are drinking?', scale:['1 or 2','3 or 4','5 or 6','7 to 9','10 or more']},
@@ -518,7 +518,7 @@ function finalise(idx, reasons, dataGaps, socialCount){
 function allocateCare({symptomSeverity=0, functionalImpairment=null, riskLevel=null, socialComplexityCount=0, chronic=false}={}){
   const reasons=[]; const gaps=[];
   if (riskLevel==='crisis') return finalise(4, ['Safety screening returned CRISIS — overrides all other factors.'], [], socialComplexityCount);
-  if (riskLevel==='high') return finalise(3, ['Safety screening returned HIGH — raised to specialist level regardless of symptom scores.'], [], socialComplexityCount);
+  if (riskLevel==='high'){ const r = finalise(3, ['Safety screening returned HIGH — same-day on-call clinician contact and a documented safety plan required, regardless of symptom scores.'], [], socialComplexityCount); r.responseTarget='Same day — contact the on-call clinician now; documented safety plan required'; return r; }
   if (riskLevel===null) gaps.push('C-SSRS not completed — allocation cannot be considered final.');
   let idx = Math.min(3, Math.max(0, symptomSeverity<=1 ? 0 : symptomSeverity-1));
   reasons.push(`Symptom severity band ${symptomSeverity}/4 sets a baseline of ${STEPS[idx].code}.`);
@@ -1287,7 +1287,7 @@ function screenResults(){
 
   const symptomModules = ['core_intake','phq9','gad7','pcl5'].filter(id=>state.moduleResults[id]);
   let symptomSeverity = 0;
-  symptomModules.forEach(id=>{
+  symptomModules.filter(id=>id!=='pcl5').forEach(id=>{
     const idx = severityBandIndex(id, state.moduleResults[id].total);
     if (idx > symptomSeverity) symptomSeverity = idx;
   });
@@ -1299,6 +1299,9 @@ function screenResults(){
 
   const allocation = allocateCare({ symptomSeverity, functionalImpairment, riskLevel, socialComplexityCount, chronic });
   const stepIdx = STEPS.findIndex(s=>s.code===allocation.recommendedStep);
+
+  const pcl = state.moduleResults.pcl5;
+  if (pcl) allocation.reasons.push(`PCL-5 raw total ${pcl.total} (provisional screening threshold 33: ${pcl.total>=33?'at or above':'below'}). Severity is not assigned by this tool; the clinician determines it.`);
 
   const summaryCard = document.createElement('div');
   summaryCard.className = 'card';
