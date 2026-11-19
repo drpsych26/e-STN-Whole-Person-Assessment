@@ -1,7 +1,9 @@
 import "package:flutter/material.dart";
+
 import "module_screen.dart";
 import "results_screen.dart";
 import "profiles_screen.dart";
+import "whole_person_initial_assessment_screen.dart";
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -10,35 +12,72 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Semantics(
-          label: "Supportive Therapy Network Ltd, Rehab. Right. Diagnostic tool",
-          child: Image.asset(
-            "assets/brand/stn-logo-original.png",
-            height: 44,
-            fit: BoxFit.contain,
-            alignment: Alignment.centerLeft,
-            excludeFromSemantics: true,
-          ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              "assets/brand/stn-logo-original.png",
+              height: 40,
+              fit: BoxFit.contain,
+              semanticLabel: "Supportive Therapy Network Ltd, Rehab. Right.",
+            ),
+            const SizedBox(width: 12),
+            const Flexible(child: Text("STN Whole Person Assessment — Flutter MVP", overflow: TextOverflow.ellipsis)),
+          ],
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
             tooltip: "Profiles",
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilesScreen())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ProfilesScreen()),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: "Results History",
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ResultsScreen())),
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ResultsScreen()),
+            ),
           ),
         ],
       ),
       body: ListView(
+        padding: const EdgeInsets.all(12),
         children: [
-          _tile(context, "MDD", "Major Depressive Disorder (DSM gating)"),
-          _tile(context, "GAD", "Generalised Anxiety Disorder"),
-          _tile(context, "PTSD", "PTSD / Trauma"),
-          _tile(context, "ADHD", "ADHD"),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                "Development MVP only. This application does not establish "
+                "a diagnosis, validated score, or clinical risk disposition. "
+                "Use synthetic data only until clinical, privacy, security, "
+                "and governance approvals are complete.",
+              ),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.assignment_outlined),
+              title: const Text("Whole Person Initial Assessment"),
+              subtitle: const Text(
+                "Part A — 25 core intake items · synthetic-data simulation",
+              ),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WholePersonInitialAssessmentScreen(),
+                ),
+              ),
+            ),
+          ),
+          _tile(context, "MDD", "Depression symptom review"),
+          _tile(context, "GAD", "Anxiety symptom review"),
+          _tile(context, "PTSD", "Trauma symptom review"),
+          _tile(context, "ADHD", "Attention and impulsivity review"),
         ],
       ),
     );
@@ -47,10 +86,12 @@ class HomeScreen extends StatelessWidget {
   ListTile _tile(BuildContext context, String moduleId, String title) {
     return ListTile(
       title: Text(title),
-      subtitle: const Text("Score + criteria gating + encrypted save"),
+      subtitle: const Text("Interim structured screening module"),
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => ModuleScreen(moduleId: moduleId, title: title)),
+        MaterialPageRoute(
+          builder: (_) => ModuleScreen(moduleId: moduleId, title: title),
+        ),
       ),
     );
   }
