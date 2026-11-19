@@ -21,3 +21,7 @@ Canonical v2.6 source is undetermined (STN-H04). This file is a review copy, not
 - M07: AUDIT-C single threshold labelled as a general screening threshold, not sex-specific.
 - C06: NOT changed. Per-instrument licence status not supplied. Item text for each instrument stays unpublished until confirmed.
 - Added `manifest.webmanifest` and `runtime-config.js` (STN-M05). The config sets no escalation endpoint; the build sends no automatic alerts. Service worker (`sw.js`) is still not provided, so no offline claim is made.
+
+## STN-M05 follow-up: service worker
+
+`sw.js` is now supplied. It caches only the static shell (the page, `manifest.webmanifest` and `runtime-config.js`). It does not cache or store responses for client data, forms or any cross-origin or non-GET request, and it does not add an offline clinical claim. Offline use is limited to opening the shell. Client data is held in page memory only in this review copy. The worker has not been tested on a device.
