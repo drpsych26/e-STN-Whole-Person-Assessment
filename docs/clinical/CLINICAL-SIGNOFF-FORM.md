@@ -22,3 +22,15 @@ Date: ____________
 Clinical conditions for release (if any): ____________________________
 
 Signature: ____________________   Date: ____________
+
+---
+
+## Record of governance decisions
+
+**Senior management sign-off for clinical rollout and deployment:** reference ID270993, dated 19 November 2026, 21:24 (NZ time). Recorded as provided by the owner-operator.
+
+**What this record is:** management approval to proceed with rollout and deployment.
+
+**What this record is not:** clinical sign-off. It does not close any item in the table above. The clinical items (C03, C04, C05, H02, M07, C06, H10, H09) remain open until a registered clinician records a decision for each item.
+
+**Current status:** NOT CLINICALLY SIGNED OFF. NOT CLIENT READY.
