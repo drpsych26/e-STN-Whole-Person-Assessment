@@ -79,6 +79,25 @@ class HomeScreen extends StatelessWidget {
           _tile(context, "GAD", "Anxiety symptom review"),
           _tile(context, "PTSD", "Trauma symptom review"),
           _tile(context, "ADHD", "Attention and impulsivity review"),
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("About STN", style: TextStyle(fontFamily: "SourceSerif4", fontSize: 20, fontWeight: FontWeight.w600)),
+                  SizedBox(height: 8),
+                  Text(
+                    "Supportive Therapy Network Limited (STN) is developing an integrated digital mental-health infrastructure platform designed to transform how individuals are assessed, clinically understood, supported, connected with appropriate services and monitored throughout their mental-health and recovery journeys.",
+                  ),
+                  SizedBox(height: 8),
+                  Text("Technology should strengthen professional practice, not replace it. Diagnostic decisions, clinical formulation, risk management and treatment recommendations remain subject to appropriate professional judgement, clinical governance and applicable standards."),
+                  SizedBox(height: 8),
+                  Text("One person. One connected pathway. A more comprehensive approach to care.", style: TextStyle(fontStyle: FontStyle.italic)),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
