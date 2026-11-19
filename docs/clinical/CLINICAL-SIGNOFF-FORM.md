@@ -2,6 +2,8 @@
 
 Status until completed: **NOT CLINICALLY SIGNED OFF. NOT CLIENT READY.**
 
+Record status (updated 19 November 2026): a clinical sign-off is reported as held privately under a reference ID (CR-01), available on written request. The decision values for items C05, H02, M07 and C06 have NOT been received in this repository. Until those values are recorded here, no clinical item is closed and the assessment remains not client ready.
+
 Complete one decision per item. Attach the signed copy to the repository record. Registration details and signature are kept in the private governance file, not in public documents.
 
 Clinician name / role / registration body and number: ____________________________
