@@ -20,6 +20,7 @@ class HomeScreen extends StatelessWidget {
               height: 40,
               fit: BoxFit.contain,
               semanticLabel: "Supportive Therapy Network Ltd, Rehab. Right.",
+              errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
             ),
             const SizedBox(width: 12),
             const Flexible(child: Text("STN Whole Person Assessment — Flutter MVP", overflow: TextOverflow.ellipsis)),
