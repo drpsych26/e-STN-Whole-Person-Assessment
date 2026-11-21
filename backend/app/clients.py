@@ -12,8 +12,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from . import store
-from .auth import require_identity
 from .crypto import DataKeyError, RecordIntegrityError
+from .rbac import require_permission
 
 router = APIRouter(prefix="/v1/clients", tags=["client-records"])
 
@@ -42,7 +42,7 @@ def _map_errors(exc: Exception) -> HTTPException:
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-async def create_client_record(request: Request, identity: dict = Depends(require_identity)) -> dict:
+async def create_client_record(request: Request, identity: dict = Depends(require_permission("client:create"))) -> dict:
     payload = await _payload(request)
     try:
         record_id = store.create_record(identity["sub"], payload)
@@ -52,7 +52,7 @@ async def create_client_record(request: Request, identity: dict = Depends(requir
 
 
 @router.get("/{record_id}")
-def read_client_record(record_id: str, identity: dict = Depends(require_identity)) -> dict:
+def read_client_record(record_id: str, identity: dict = Depends(require_permission("clinical:read_assigned"))) -> dict:
     try:
         payload = store.read_record(identity["sub"], record_id)
     except store.RecordNotFound as exc:
@@ -64,7 +64,7 @@ def read_client_record(record_id: str, identity: dict = Depends(require_identity
 
 @router.put("/{record_id}")
 async def update_client_record(
-    record_id: str, request: Request, identity: dict = Depends(require_identity)
+    record_id: str, request: Request, identity: dict = Depends(require_permission("clinical:write_assigned"))
 ) -> dict:
     payload = await _payload(request)
     try:

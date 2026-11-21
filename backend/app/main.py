@@ -3,6 +3,8 @@ from fastapi import Depends, FastAPI
 
 from .auth import require_identity
 from .clients import router as clients_router
+from .onboarding import router as onboarding_router
+from .rbac import router as admin_router
 
 app = FastAPI(
     title="STN API",
@@ -25,3 +27,5 @@ def current_identity(identity: dict = Depends(require_identity)) -> dict:
     return {"subject": identity["sub"], "authenticated": True}
 
 app.include_router(clients_router)
+app.include_router(onboarding_router)
+app.include_router(admin_router)

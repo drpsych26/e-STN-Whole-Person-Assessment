@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from typing import Any, Iterator
 
+from . import schemas
 from .crypto import decrypt_payload, encrypt_payload
 
 DB_ENV = "STN_DATA_DB"
@@ -65,6 +66,7 @@ def _connect() -> Iterator[sqlite3.Connection]:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA)
+    schemas.apply(conn)
     try:
         yield conn
     finally:
