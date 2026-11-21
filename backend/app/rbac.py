@@ -46,6 +46,20 @@ class PermissionDenied(PermissionError):
     """Raised when an actor lacks the permission for an administrative action."""
 
 
+class ProvisionalRestriction(PermissionError):
+    """Raised when a provisional (not yet onboarded) account is granted a non-customer role."""
+
+
+CUSTOMER_PERMISSIONS = PERMISSIONS[Role.CUSTOMER]
+
+
+def is_provisional(conn: sqlite3.Connection, subject: str) -> bool:
+    """An account with any onboarding case not yet complete is provisional."""
+    return conn.execute(
+        "SELECT 1 FROM onboarding_cases WHERE subject = ? AND stage != 'complete' LIMIT 1", (subject,)
+    ).fetchone() is not None
+
+
 def permissions_for(roles: Iterable[Role]) -> frozenset[str]:
     granted: set[str] = set()
     for role in roles:
@@ -65,6 +79,10 @@ def roles_for(conn: sqlite3.Connection, subject: str) -> frozenset[Role]:
 
 
 def _grant_in_tx(conn: sqlite3.Connection, actor: str, subject: str, role: Role) -> bool:
+    if role is not Role.CUSTOMER and is_provisional(conn, subject):
+        audit.append_in_tx(conn, actor, "rbac.denied_provisional", f"subject:{subject}", {"role": role.value})
+        conn.execute("COMMIT")
+        raise ProvisionalRestriction("Provisional accounts cannot be granted clinical or administrative roles.")
     active = conn.execute(
         "SELECT 1 FROM role_assignments WHERE subject = ? AND role = ? AND revoked_at IS NULL",
         (subject, role.value),
@@ -137,10 +155,13 @@ def require_permission(permission: str):
         try:
             with store._connect() as conn:
                 granted = permissions_for(roles_for(conn, identity["sub"]))
-                if permission in granted:
+                provisional = is_provisional(conn, identity["sub"])
+                allowed = permission in granted and (not provisional or permission in CUSTOMER_PERMISSIONS)
+                if allowed:
                     return identity
                 conn.execute("BEGIN IMMEDIATE")
-                audit.append_in_tx(conn, identity["sub"], "access.denied", f"permission:{permission}", {})
+                reason = "access.denied_provisional" if provisional and permission in granted else "access.denied"
+                audit.append_in_tx(conn, identity["sub"], reason, f"permission:{permission}", {})
                 conn.execute("COMMIT")
         except store.StoreNotConfigured as exc:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Access control is not available.") from exc

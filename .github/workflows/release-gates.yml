@@ -1,0 +1,46 @@
+name: STN release gates (G01-G13)
+
+# Runs on demand against a release candidate commit and evidence file. Fails unless every
+# mandatory gate has a passing evidence record for that exact commit. Never auto-passes a gate.
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Release candidate commit SHA (40 hex characters)"
+        required: true
+        type: string
+      evidence:
+        description: "Path to the evidence JSON file under release/evidence/"
+        required: true
+        default: "release/evidence/empty.json"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install backend
+        working-directory: backend
+        run: python -m pip install -e ".[test]"
+      - name: Backend test suite
+        working-directory: backend
+        run: python -m pytest -o addopts="" -q
+      - name: Validate commit input
+        run: |
+          if ! echo "${{ inputs.commit }}" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "Commit must be a 40-character lowercase SHA." >&2
+            exit 2
+          fi
+          test -f "${{ inputs.evidence }}" || { echo "Evidence file not found." >&2; exit 2; }
+      - name: Evaluate G01-G13
+        working-directory: backend
+        run: python -m app.release_gates "${{ inputs.commit }}" "../${{ inputs.evidence }}"
