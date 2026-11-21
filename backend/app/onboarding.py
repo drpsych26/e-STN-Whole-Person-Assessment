@@ -23,6 +23,7 @@ from pydantic import BaseModel
 
 from . import audit, store
 from .auth import require_identity
+from .ratelimit import limit_by_subject
 from .rbac import Role, grant_system_role, require_permission, roles_for
 from .verification import has_verification
 
@@ -39,6 +40,21 @@ ATTESTATION_ROLES = {
     "screening": {Role.CLINICAL_SUPERVISOR, Role.AUTHORISED_CLINICIAN},
     "allocation": {Role.INTAKE_COORDINATOR},
     "team_assignment": {Role.INTAKE_COORDINATOR},
+}
+
+# Each attestation kind cites a platform record of the matching type (see migration 0004).
+RECORD_TYPE_FOR_KIND = {
+    "eligibility": "eligibility_review",
+    "screening": "screening_review",
+    "allocation": "allocation",
+    "team_assignment": "team_assignment",
+}
+# Who may create each record type. The creator becomes the record's responsible staff member.
+RECORD_ROLES = {
+    "eligibility_review": ATTESTATION_ROLES["eligibility"],
+    "screening_review": ATTESTATION_ROLES["screening"],
+    "allocation": ATTESTATION_ROLES["allocation"],
+    "team_assignment": ATTESTATION_ROLES["team_assignment"],
 }
 
 
@@ -163,8 +179,17 @@ def _check_requirement(conn, actor: str, row, to_stage: str) -> None:
             raise RequirementNotMet("The attester cannot also advance the case (separation of duties).")
         if att["attested_by"] == subject:
             raise RequirementNotMet("A customer cannot attest their own onboarding stage.")
+        record = conn.execute(
+            "SELECT * FROM platform_records WHERE id = ?", (att["reference"],),
+        ).fetchone()
+        if (record is None or record["record_type"] != RECORD_TYPE_FOR_KIND[kind]
+                or record["case_id"] != case_id or record["subject"] != subject
+                or record["status"] != "active" or record["responsible_sub"] != att["attested_by"]):
+            raise RequirementNotMet("The attestation does not cite a valid active platform record for this case.")
         if to_stage == "team_assigned":
-            assignee = att["reference"]
+            assignee = record["assignee_sub"]
+            if not assignee:
+                raise RequirementNotMet("The team assignment record names no assignee.")
             with store._connect() as c2:
                 if Role.AUTHORISED_CLINICIAN not in roles_for(c2, assignee):
                     raise RequirementNotMet("Assigned clinician does not hold the authorised clinician role.")
@@ -209,11 +234,48 @@ def record_acknowledgement(subject: str, kind: str, version: str) -> dict[str, A
     return _tx(_do)
 
 
-def record_attestation(actor: str, case_id: str, kind: str, reference: str) -> dict[str, Any]:
+def create_platform_record(actor: str, case_id: str, record_type: str,
+                           assignee_sub: str | None = None) -> dict[str, Any]:
+    """Create a platform record. The actor must hold the authorised role for its type."""
+    if record_type not in RECORD_ROLES:
+        raise InvalidTransition("Unknown record type.")
+    if record_type == "team_assignment" and not assignee_sub:
+        raise RequirementNotMet("A team assignment record must name the assignee.")
+    if assignee_sub and assignee_sub == actor:
+        raise RequirementNotMet("A staff member cannot assign a team to themselves.")
+    record_id = str(uuid.uuid4())
+
+    def _do(conn: sqlite3.Connection):
+        case = _load(conn, case_id)
+        roles = roles_for(conn, actor)
+        matched = roles & RECORD_ROLES[record_type]
+        if not matched:
+            audit.append_in_tx(conn, actor, "platform_record.denied", f"case:{case_id}",
+                               {"record_type": record_type})
+            conn.execute("COMMIT")
+            raise PermissionError("Not permitted to create this record.")
+        if case["subject"] == actor:
+            raise RequirementNotMet("A customer cannot create a record about their own case.")
+        if assignee_sub is not None and not assignee_sub.strip():
+            raise RequirementNotMet("Assignee is invalid.")
+        conn.execute(
+            "INSERT INTO platform_records (id, record_type, case_id, subject, responsible_sub, assignee_sub, "
+            "authorised_role, status, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)",
+            (record_id, record_type, case_id, case["subject"], actor, assignee_sub,
+             sorted(r.value for r in matched)[0], actor, _now()),
+        )
+        audit.append_in_tx(conn, actor, "platform_record.created", f"case:{case_id}",
+                           {"record_type": record_type, "record_id": record_id})
+        return {"record_id": record_id, "record_type": record_type}
+
+    return _tx(_do)
+
+
+def record_attestation(actor: str, case_id: str, kind: str, record_id: str) -> dict[str, Any]:
     if kind not in ATTESTATION_ROLES:
         raise InvalidTransition("Unknown attestation kind.")
-    if not reference.strip():
-        raise RequirementNotMet("A reference is required.")
+    if not record_id.strip():
+        raise RequirementNotMet("A platform record identifier is required.")
 
     def _do(conn):
         _load(conn, case_id)
@@ -222,16 +284,20 @@ def record_attestation(actor: str, case_id: str, kind: str, reference: str) -> d
             audit.append_in_tx(conn, actor, "attestation.denied", f"case:{case_id}", {"kind": kind})
             conn.execute("COMMIT")
             raise PermissionError("Not permitted to attest this stage.")
+        record = conn.execute("SELECT * FROM platform_records WHERE id = ?", (record_id,)).fetchone()
+        if record is None or record["case_id"] != case_id or record["record_type"] != RECORD_TYPE_FOR_KIND[kind]:
+            raise RequirementNotMet("The cited record does not exist for this case and stage.")
+        if record["status"] != "active":
+            raise RequirementNotMet("The cited record is withdrawn.")
+        if record["responsible_sub"] != actor:
+            raise RequirementNotMet("Only the record's responsible staff member can attest it.")
         conn.execute("INSERT INTO attestations (case_id, kind, reference, attested_by, recorded_at) "
-                     "VALUES (?, ?, ?, ?, ?)", (case_id, kind, reference, actor, _now()))
+                     "VALUES (?, ?, ?, ?, ?)", (case_id, kind, record_id, actor, _now()))
         audit.append_in_tx(conn, actor, "attestation.recorded", f"case:{case_id}",
-                           {"kind": kind, "reference": reference})
-        return {"case_id": case_id, "kind": kind}
+                           {"kind": kind, "record_id": record_id})
+        return {"case_id": case_id, "kind": kind, "record_id": record_id}
 
-    try:
-        return _tx(_do)
-    except PermissionError:
-        raise
+    return _tx(_do)
 
 
 def suspend(actor: str, case_id: str) -> dict[str, Any]:
@@ -273,11 +339,16 @@ class AcknowledgementBody(BaseModel):
 
 class AttestationBody(BaseModel):
     kind: str
-    reference: str
+    record_id: str
+
+
+class PlatformRecordBody(BaseModel):
+    record_type: str
+    assignee_sub: str | None = None
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
-def open_case(identity: dict = Depends(require_identity)) -> dict:
+def open_case(identity: dict = Depends(limit_by_subject("onboarding-open", 5, 3600))) -> dict:
     try:
         return create_case(identity["sub"])
     except OnboardingError as exc:
@@ -295,7 +366,8 @@ def my_case(identity: dict = Depends(require_permission("customer:read_own"))) -
 
 
 @router.post("/me/acknowledgements", status_code=status.HTTP_201_CREATED)
-def acknowledge(body: AcknowledgementBody, identity: dict = Depends(require_permission("customer:update_own"))) -> dict:
+def acknowledge(body: AcknowledgementBody, identity: dict = Depends(require_permission("customer:update_own")),
+                _limit: dict = Depends(limit_by_subject("ack", 30))) -> dict:
     try:
         return record_acknowledgement(identity["sub"], body.kind, body.version)
     except OnboardingError as exc:
@@ -304,7 +376,8 @@ def acknowledge(body: AcknowledgementBody, identity: dict = Depends(require_perm
 
 @router.post("/{case_id}/advance")
 def advance_route(case_id: str, body: AdvanceBody,
-                  identity: dict = Depends(require_permission("intake:manage"))) -> dict:
+                  identity: dict = Depends(require_permission("intake:manage")),
+                  _limit: dict = Depends(limit_by_subject("advance", 60))) -> dict:
     try:
         return advance(identity["sub"], case_id, body.to_stage)
     except OnboardingError as exc:
@@ -312,9 +385,19 @@ def advance_route(case_id: str, body: AdvanceBody,
 
 
 @router.post("/{case_id}/attestations", status_code=status.HTTP_201_CREATED)
-def attest_route(case_id: str, body: AttestationBody, identity: dict = Depends(require_identity)) -> dict:
+def attest_route(case_id: str, body: AttestationBody, identity: dict = Depends(limit_by_subject("attest", 60))) -> dict:
     try:
-        return record_attestation(identity["sub"], case_id, body.kind, body.reference)
+        return record_attestation(identity["sub"], case_id, body.kind, body.record_id)
+    except OnboardingError as exc:
+        raise _map(exc) from exc
+    except PermissionError as exc:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Not permitted.") from exc
+
+
+@router.post("/{case_id}/records", status_code=status.HTTP_201_CREATED)
+def record_route(case_id: str, body: PlatformRecordBody, identity: dict = Depends(limit_by_subject("records", 60))) -> dict:
+    try:
+        return create_platform_record(identity["sub"], case_id, body.record_type, body.assignee_sub)
     except OnboardingError as exc:
         raise _map(exc) from exc
     except PermissionError as exc:

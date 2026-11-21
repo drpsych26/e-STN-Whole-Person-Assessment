@@ -172,15 +172,15 @@ def test_eligibility_needs_clinician_attestation_not_intake(env):
     with pytest.raises(onboarding.RequirementNotMet, match="No eligibility attestation"):
         onboarding.advance(INTAKE, case["id"], "intake_eligible")
     with pytest.raises(PermissionError):
-        onboarding.record_attestation(INTAKE, case["id"], "eligibility", "checked")
-    onboarding.record_attestation(SUPERVISOR, case["id"], "eligibility", "checked")
+        onboarding.record_attestation(INTAKE, case["id"], "eligibility", "not-a-record")
+    _att(SUPERVISOR, case["id"], "eligibility")
     onboarding.advance(INTAKE, case["id"], "intake_eligible")
 
 
 def test_attester_cannot_advance_same_stage(env):
     case = onboarding.create_case(CUSTOMER)
     _prepare_to_intake(case["id"])
-    onboarding.record_attestation(SUPERVISOR, case["id"], "eligibility", "checked")
+    _att(SUPERVISOR, case["id"], "eligibility")
     with pytest.raises(onboarding.RequirementNotMet, match="separation of duties"):
         onboarding.advance(SUPERVISOR, case["id"], "intake_eligible")
 
@@ -188,21 +188,28 @@ def test_attester_cannot_advance_same_stage(env):
 def test_customer_cannot_attest_own_stage(env):
     case = onboarding.create_case(CUSTOMER)
     with pytest.raises(PermissionError):
-        onboarding.record_attestation(CUSTOMER, case["id"], "eligibility", "checked")
+        onboarding.record_attestation(CUSTOMER, case["id"], "eligibility", "not-a-record")
 
 
 def test_team_assignment_requires_authorised_clinician(env):
     case = onboarding.create_case(CUSTOMER)
     _prepare_to_intake(case["id"])
-    onboarding.record_attestation(SUPERVISOR, case["id"], "eligibility", "checked")
+    _att(SUPERVISOR, case["id"], "eligibility")
     onboarding.advance(INTAKE, case["id"], "intake_eligible")
-    onboarding.record_attestation(SUPERVISOR, case["id"], "screening", "screen-1")
+    _att(SUPERVISOR, case["id"], "screening")
     onboarding.advance(INTAKE, case["id"], "screened")
-    onboarding.record_attestation(INTAKE, case["id"], "allocation", "alloc-1")
+    _att(INTAKE, case["id"], "allocation")
     onboarding.advance(SUPERVISOR, case["id"], "allocated")
-    onboarding.record_attestation(INTAKE, case["id"], "team_assignment", SUPERVISOR)
+    _att(INTAKE, case["id"], "team_assignment", SUPERVISOR)
     with pytest.raises(onboarding.RequirementNotMet, match="authorised clinician"):
         onboarding.advance(SUPERVISOR, case["id"], "team_assigned")
+
+
+def _att(actor: str, case_id: str, kind: str, assignee: str | None = None) -> dict:
+    """Create the platform record for a stage, then attest it as its responsible staff member."""
+    record_type = onboarding.RECORD_TYPE_FOR_KIND[kind]
+    record = onboarding.create_platform_record(actor, case_id, record_type, assignee)
+    return onboarding.record_attestation(actor, case_id, kind, record["record_id"])
 
 
 def _prepare_to_intake(case_id: str) -> None:
@@ -242,13 +249,13 @@ def test_provisional_account_is_denied_clinical_routes_even_if_role_held(env):
 def test_completed_account_is_no_longer_provisional(env):
     case = onboarding.create_case(CUSTOMER)
     _prepare_to_intake(case["id"])
-    onboarding.record_attestation(SUPERVISOR, case["id"], "eligibility", "checked")
+    _att(SUPERVISOR, case["id"], "eligibility")
     onboarding.advance(INTAKE, case["id"], "intake_eligible")
-    onboarding.record_attestation(SUPERVISOR, case["id"], "screening", "screen-1")
+    _att(SUPERVISOR, case["id"], "screening")
     onboarding.advance(INTAKE, case["id"], "screened")
-    onboarding.record_attestation(INTAKE, case["id"], "allocation", "alloc-1")
+    _att(INTAKE, case["id"], "allocation")
     onboarding.advance(SUPERVISOR, case["id"], "allocated")
-    onboarding.record_attestation(INTAKE, case["id"], "team_assignment", CLINICIAN)
+    _att(INTAKE, case["id"], "team_assignment", CLINICIAN)
     onboarding.advance(SUPERVISOR, case["id"], "team_assigned")
     onboarding.advance(INTAKE, case["id"], "complete")
     with store._connect() as conn:
@@ -273,7 +280,7 @@ PROTECTED = [
     ("post", "/v1/onboarding/abc/advance", {"json": {"to_stage": "contact_verified"}}),
     ("post", "/v1/onboarding/abc/suspend", {}),
     ("post", "/v1/onboarding/me/acknowledgements", {"json": {"kind": "terms", "version": "x"}}),
-    ("post", "/v1/onboarding/abc/attestations", {"json": {"kind": "eligibility", "reference": "r"}}),
+    ("post", "/v1/onboarding/abc/attestations", {"json": {"kind": "eligibility", "record_id": "r"}}),
     ("post", "/v1/admin/roles", {"json": {"subject": "x", "role": "auditor"}}),
 ]
 
@@ -308,3 +315,86 @@ def test_admin_grant_denied_for_customer_identity(env):
         assert client.post("/v1/admin/roles", json={"subject": "x", "role": "auditor"}).status_code == 403
     finally:
         app.dependency_overrides.pop(auth.require_identity, None)
+
+
+# ---------- attestations must cite real platform records (migration 0004) ----------
+
+def _case_at_intake(env_case_subject: str = CUSTOMER) -> str:
+    case = onboarding.create_case(env_case_subject)
+    _prepare_to_intake(case["id"])
+    return case["id"]
+
+
+def test_attestation_citing_nonexistent_record_is_refused(env):
+    case_id = _case_at_intake()
+    with pytest.raises(onboarding.RequirementNotMet, match="does not exist"):
+        onboarding.record_attestation(SUPERVISOR, case_id, "eligibility", "11111111-1111-1111-1111-111111111111")
+
+
+def test_free_text_reference_does_not_satisfy_a_stage(env):
+    case_id = _case_at_intake()
+    # Legacy-style row written directly: a free-text reference is not a platform record.
+    with store._connect() as conn:
+        conn.execute("INSERT INTO attestations (case_id, kind, reference, attested_by, recorded_at) "
+                     "VALUES (?, 'eligibility', 'checked', ?, '2026-11-21')", (case_id, SUPERVISOR))
+    with pytest.raises(onboarding.RequirementNotMet, match="valid active platform record"):
+        onboarding.advance(INTAKE, case_id, "intake_eligible")
+
+
+def test_record_citing_another_staff_members_record_is_refused(env):
+    case_id = _case_at_intake()
+    record = onboarding.create_platform_record(SUPERVISOR, case_id, "eligibility_review")
+    with pytest.raises(onboarding.RequirementNotMet, match="responsible staff member"):
+        onboarding.record_attestation(CLINICIAN, case_id, "eligibility", record["record_id"])
+
+
+def test_record_of_wrong_type_is_refused(env):
+    case_id = _case_at_intake()
+    record = onboarding.create_platform_record(SUPERVISOR, case_id, "screening_review")
+    with pytest.raises(onboarding.RequirementNotMet, match="does not exist for this case and stage"):
+        onboarding.record_attestation(SUPERVISOR, case_id, "eligibility", record["record_id"])
+
+
+def test_withdrawn_record_cannot_be_attested_or_advance_a_stage(env):
+    case_id = _case_at_intake()
+    record = onboarding.create_platform_record(SUPERVISOR, case_id, "eligibility_review")
+    onboarding.record_attestation(SUPERVISOR, case_id, "eligibility", record["record_id"])
+    with store._connect() as conn:
+        conn.execute("UPDATE platform_records SET status = 'withdrawn' WHERE id = ?", (record["record_id"],))
+    with pytest.raises(onboarding.RequirementNotMet, match="valid active platform record"):
+        onboarding.advance(INTAKE, case_id, "intake_eligible")
+
+
+def test_platform_record_fields_cannot_be_changed_or_deleted(env):
+    case_id = _case_at_intake()
+    record = onboarding.create_platform_record(SUPERVISOR, case_id, "eligibility_review")
+    with store._connect() as conn:
+        with pytest.raises(Exception, match="fields are fixed"):
+            conn.execute("UPDATE platform_records SET responsible_sub = ? WHERE id = ?", (CLINICIAN, record["record_id"]))
+        with pytest.raises(Exception, match="append-only"):
+            conn.execute("DELETE FROM platform_records WHERE id = ?", (record["record_id"],))
+
+
+def test_only_the_authorised_role_can_create_a_record_type(env):
+    case_id = _case_at_intake()
+    with pytest.raises(PermissionError):
+        onboarding.create_platform_record(INTAKE, case_id, "screening_review")
+    with pytest.raises(PermissionError):
+        onboarding.create_platform_record(CUSTOMER, case_id, "eligibility_review")
+
+
+def test_team_assignment_record_must_name_an_assignee(env):
+    case_id = _case_at_intake()
+    with pytest.raises(onboarding.RequirementNotMet, match="must name the assignee"):
+        onboarding.create_platform_record(INTAKE, case_id, "team_assignment")
+
+
+def test_record_creation_and_attestation_are_audited(env):
+    case_id = _case_at_intake()
+    record = onboarding.create_platform_record(SUPERVISOR, case_id, "eligibility_review")
+    onboarding.record_attestation(SUPERVISOR, case_id, "eligibility", record["record_id"])
+    with store._connect() as conn:
+        actions = [r["action"] for r in conn.execute("SELECT action FROM audit_chain ORDER BY seq")]
+    assert "platform_record.created" in actions
+    assert "attestation.recorded" in actions
+    assert audit.verify() == (True, None)

@@ -19,14 +19,14 @@ def env(tmp_path, monkeypatch):
 
 def test_migrations_are_discovered_in_order():
     versions = [v for v, _, _ in migrate.discover()]
-    assert versions == sorted(versions) == ["0001", "0002", "0003"]
+    assert versions == sorted(versions) == ["0001", "0002", "0003", "0004", "0005"]
 
 
 def test_apply_is_idempotent(env):
     with store._connect() as conn:
         assert migrate.apply(conn) == []  # already applied on connect
         count = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()[0]
-    assert count == 3
+    assert count == 5
 
 
 def test_legacy_audit_log_is_dropped_and_chain_is_the_only_trail(env):
@@ -67,8 +67,8 @@ def test_invalid_migration_filename_is_refused(tmp_path, monkeypatch):
 
 
 def test_export_segment_verifies_independently(env, tmp_path):
-    audit.append("a", "one", "case:1", {"stage": "x"})
-    audit.append("a", "two", "case:1", {"stage": "y"})
+    audit.append("a", "onboarding.create", "case:1", {"stage": "registered"})
+    audit.append("a", "onboarding.create", "case:1", {"stage": "contact_verified"})
     out = tmp_path / "exports"
     manifest = audit_export.export_segment(out)
     assert manifest["row_count"] == 2
@@ -76,8 +76,8 @@ def test_export_segment_verifies_independently(env, tmp_path):
 
 
 def test_tampered_export_fails_verification(env, tmp_path):
-    audit.append("a", "one", "case:1", {})
-    audit.append("a", "two", "case:1", {})
+    audit.append("a", "onboarding.suspend", "case:1", {})
+    audit.append("a", "onboarding.suspend", "case:1", {})
     out = tmp_path / "exports"
     manifest = audit_export.export_segment(out)
     manifest_name = f"{manifest['segment'].removesuffix('.jsonl')}.manifest.json"

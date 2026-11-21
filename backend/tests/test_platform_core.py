@@ -117,13 +117,13 @@ def _audit_rows():
 
 
 def test_audit_chain_verifies_when_intact(env):
-    audit.append("a", "test.one", "case:1", {"stage": "x"})
-    audit.append("a", "test.two", "case:1", {"stage": "y"})
+    audit.append("a", "onboarding.create", "case:1", {"stage": "registered"})
+    audit.append("a", "onboarding.create", "case:1", {"stage": "contact_verified"})
     assert audit.verify() == (True, None)
 
 
 def test_audit_rows_cannot_be_updated_or_deleted(env):
-    audit.append("a", "test.one", "case:1", {})
+    audit.append("a", "onboarding.suspend", "case:1", {})
     with store._connect() as conn:
         with pytest.raises(sqlite3.DatabaseError, match="append-only"):
             conn.execute("UPDATE audit_chain SET actor = 'mallory'")
@@ -132,8 +132,8 @@ def test_audit_rows_cannot_be_updated_or_deleted(env):
 
 
 def test_tampering_is_detected_by_chain_verification(env):
-    audit.append("a", "test.one", "case:1", {})
-    audit.append("a", "test.two", "case:1", {})
+    audit.append("a", "onboarding.suspend", "case:1", {})
+    audit.append("a", "onboarding.suspend", "case:1", {})
     with store._connect() as conn:
         conn.execute("DROP TRIGGER audit_chain_no_update")
         conn.execute("UPDATE audit_chain SET actor = 'mallory' WHERE seq = 1")
@@ -141,7 +141,7 @@ def test_tampering_is_detected_by_chain_verification(env):
 
 
 def test_audit_detail_is_stored_as_given(env):
-    audit.append("a", "test.detail", "case:1", {"from": "registered", "to": "contact_verified"})
+    audit.append("a", "onboarding.advance", "case:1", {"from": "registered", "to": "contact_verified"})
     row = _audit_rows()[-1]
     assert '"from":"registered"' in row["detail"]
 

@@ -13,8 +13,8 @@ jobs:
   flutter-web-validation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           flutter-version: '3.47.9'
           cache: true
@@ -84,7 +84,7 @@ jobs:
         working-directory: flutter/source/supportive_therapy_network_v4
         run: flutter build web --release
       - name: Upload internal web build artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         # Keep build/test result independent from GitHub artifact-storage quota.
         continue-on-error: true
         with:

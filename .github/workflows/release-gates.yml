@@ -1,16 +1,24 @@
 name: STN release gates (G01-G13)
 
-# Runs on demand against a release candidate commit and evidence file. Fails unless every
-# mandatory gate has a passing evidence record for that exact commit. Never auto-passes a gate.
+# Two entry points, neither of which can approve clinical release:
+#  - pull_request: validation only (backend tests). No release evidence is read.
+#  - workflow_dispatch: evaluates G01-G13 for one release-candidate commit against one
+#    evidence file. It fails unless every mandatory gate has a passing record for that
+#    exact commit. Gates are never set by this workflow; the result is a report only.
+#
+# Inputs are never interpolated into a `run:` script. They reach the shell only through
+# `env:` and are validated against strict patterns before any checkout or command uses them.
+
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       commit:
-        description: "Release candidate commit SHA (40 hex characters)"
+        description: "Release candidate commit SHA (40 lowercase hex characters)"
         required: true
         type: string
       evidence:
-        description: "Path to the evidence JSON file under release/evidence/"
+        description: "Evidence file path: release/evidence/<name>.json"
         required: true
         default: "release/evidence/empty.json"
         type: string
@@ -18,14 +26,20 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: release-gates-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  gates:
+  backend-tests:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          ref: ${{ inputs.commit }}
-      - uses: actions/setup-python@v5
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
       - name: Install backend
@@ -34,13 +48,73 @@ jobs:
       - name: Backend test suite
         working-directory: backend
         run: python -m pytest -o addopts="" -q
-      - name: Validate commit input
+
+  gates:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      INPUT_COMMIT: ${{ inputs.commit }}
+      INPUT_EVIDENCE: ${{ inputs.evidence }}
+    steps:
+      - name: Validate inputs before any checkout
+        shell: bash
         run: |
-          if ! echo "${{ inputs.commit }}" | grep -Eq '^[0-9a-f]{40}$'; then
-            echo "Commit must be a 40-character lowercase SHA." >&2
+          set -euo pipefail
+          if [[ ! "$INPUT_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Commit must be 40 lowercase hexadecimal characters." >&2
             exit 2
           fi
-          test -f "${{ inputs.evidence }}" || { echo "Evidence file not found." >&2; exit 2; }
-      - name: Evaluate G01-G13
+          if [[ ! "$INPUT_EVIDENCE" =~ ^release/evidence/[A-Za-z0-9._-]+\.json$ ]]; then
+            echo "Evidence must be release/evidence/<name>.json with no path traversal." >&2
+            exit 2
+          fi
+          if [[ "$INPUT_EVIDENCE" == *..* ]]; then
+            echo "Evidence path may not contain '..'." >&2
+            exit 2
+          fi
+          echo "Inputs validated."
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.commit }}
+          persist-credentials: false
+
+      - name: Confirm evidence is committed at this commit and record its digest
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f "$INPUT_EVIDENCE" ]]; then
+            echo "Evidence file is not present at commit $INPUT_COMMIT." >&2
+            exit 2
+          fi
+          if ! git ls-files --error-unmatch -- "$INPUT_EVIDENCE" >/dev/null 2>&1; then
+            echo "Evidence file is not tracked at this commit." >&2
+            exit 2
+          fi
+          digest=$(sha256sum -- "$INPUT_EVIDENCE" | cut -d' ' -f1)
+          {
+            echo "### Release-candidate evidence"
+            echo "- Commit: \`$INPUT_COMMIT\`"
+            echo "- Evidence file: \`$INPUT_EVIDENCE\`"
+            echo "- SHA-256: \`$digest\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend
         working-directory: backend
-        run: python -m app.release_gates "${{ inputs.commit }}" "../${{ inputs.evidence }}"
+        run: python -m pip install -e ".[test]"
+
+      - name: Backend test suite
+        working-directory: backend
+        run: python -m pytest -o addopts="" -q
+
+      - name: Evaluate G01-G13 (report only; does not set any gate)
+        working-directory: backend
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m app.release_gates "$INPUT_COMMIT" "$GITHUB_WORKSPACE/$INPUT_EVIDENCE"

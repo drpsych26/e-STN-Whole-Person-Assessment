@@ -7,13 +7,16 @@ unique event id, and only then records the verification. Replayed event ids are 
 """
 from __future__ import annotations
 
+import hashlib
+
 import os
 from datetime import datetime, timezone
 
 import jwt
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from . import audit, store
+from .ratelimit import limit_by_address
 from .auth import _jwks_client
 
 EVENT_KINDS = {
@@ -69,7 +72,7 @@ def ingest_event(token: str) -> dict:
             "VALUES (?, ?, ?, ?, ?, ?)",
             (event_id, subject, kind, issuer, issued, now),
         )
-        audit.append_in_tx(conn, f"idp:{issuer}", "verification.recorded", f"subject:{subject}",
+        audit.append_in_tx(conn, "idp:" + hashlib.sha256(issuer.encode("utf-8")).hexdigest()[:16], "verification.recorded", f"subject:{subject}",
                            {"kind": kind, "event_id": event_id})
         return {"subject": subject, "kind": kind}
 
@@ -95,7 +98,7 @@ router = APIRouter(prefix="/v1/verification", tags=["verification"])
 
 
 @router.post("/events", status_code=status.HTTP_202_ACCEPTED)
-async def receive_event(request: Request) -> dict:
+async def receive_event(request: Request, _limit: None = Depends(limit_by_address("verification-events", 60))) -> dict:
     """Webhook for identity-provider events. Authenticated by the event's own signature."""
     try:
         body = await request.json()
