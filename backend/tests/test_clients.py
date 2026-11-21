@@ -9,7 +9,7 @@ import sqlite3
 import pytest
 from fastapi.testclient import TestClient
 
-from app import auth, store
+from app import auth, rbac, store
 from app.main import app
 
 MARKER = "SYNTHETIC-MARKER-7F3A"
@@ -22,6 +22,8 @@ def db_path(tmp_path, monkeypatch):
     path = tmp_path / "records.sqlite3"
     monkeypatch.setenv(store.DB_ENV, str(path))
     monkeypatch.setenv("STN_DATA_KEY", base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())
+    rbac.grant_system_role(OWNER, rbac.Role.AUTHORISED_CLINICIAN)
+    rbac.grant_system_role(OTHER, rbac.Role.AUTHORISED_CLINICIAN)
     return path
 
 
@@ -90,7 +92,8 @@ def test_missing_key_fails_closed_without_storing(db_path, as_user, monkeypatch)
     monkeypatch.delenv("STN_DATA_KEY", raising=False)
     response = client.post("/v1/clients", json={"note": MARKER})
     assert response.status_code == 503
-    assert not db_path.exists(), "no database file may be created when the key is missing"
+    with sqlite3.connect(db_path) as conn:
+        assert conn.execute("SELECT COUNT(*) FROM client_records").fetchone()[0] == 0
 
 
 def test_malformed_key_is_rejected(db_path, as_user, monkeypatch):
@@ -135,6 +138,16 @@ def test_oversized_payload_rejected(db_path, as_user):
 
 def test_non_object_body_rejected(db_path, as_user):
     assert client.post("/v1/clients", json=["not", "an", "object"]).status_code == 422
+
+
+def test_customer_role_cannot_access_clinical_records(db_path, as_user):
+    record_id = client.post("/v1/clients", json={"note": MARKER}).json()["id"]
+    customer = "customer-001"
+    rbac.grant_system_role(customer, rbac.Role.CUSTOMER)
+    as_user(customer)
+    assert client.post("/v1/clients", json={"x": 1}).status_code == 403
+    assert client.get(f"/v1/clients/{record_id}").status_code == 403
+    assert client.put(f"/v1/clients/{record_id}", json={"x": 1}).status_code == 403
 
 
 def test_client_routes_require_identity(db_path):
