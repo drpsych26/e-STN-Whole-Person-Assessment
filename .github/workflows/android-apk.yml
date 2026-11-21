@@ -54,6 +54,44 @@ jobs:
           cp "$patch_root/test/whole_person_intake_rules_test.dart" test/whole_person_intake_rules_test.dart
           cp "$patch_root/test/widget_test.dart" test/widget_test.dart
 
+      - name: Apply STN Android identity, launcher icon and signing config
+        working-directory: flutter/source/supportive_therapy_network_v4
+        shell: bash
+        run: |
+          set -euo pipefail
+          # App ID network.supportivetherapy.app, label "STN", STN launcher
+          # icon, and release signing read from android/key.properties.
+          cp -R ../../../implementation-patches/flutter-v4/android/. android/
+          rm -rf android/app/src/main/kotlin/com/example
+          if grep -rq "com.example" android/app/build.gradle.kts android/app/src/main; then
+            echo "Placeholder com.example identifiers remain" >&2
+            exit 1
+          fi
+
+      - name: Configure STN release signing key
+        working-directory: flutter/source/supportive_therapy_network_v4
+        shell: bash
+        env:
+          STN_ANDROID_KEYSTORE_BASE64: ${{ secrets.STN_ANDROID_KEYSTORE_BASE64 }}
+          STN_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.STN_ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "${STN_ANDROID_KEYSTORE_BASE64}" ] || [ -z "${STN_ANDROID_KEYSTORE_PASSWORD}" ]; then
+            echo "STN signing secrets are not set (STN_ANDROID_KEYSTORE_BASE64, STN_ANDROID_KEYSTORE_PASSWORD)." >&2
+            echo "Refusing to build: the APK must be signed with the STN key, never the debug key." >&2
+            exit 1
+          fi
+          keystore="${RUNNER_TEMP}/stn-upload-keystore.p12"
+          printf '%s' "${STN_ANDROID_KEYSTORE_BASE64}" | base64 --decode > "$keystore"
+          chmod 600 "$keystore"
+          umask 077
+          {
+            echo "storePassword=${STN_ANDROID_KEYSTORE_PASSWORD}"
+            echo "keyPassword=${STN_ANDROID_KEYSTORE_PASSWORD}"
+            echo "keyAlias=stn-upload"
+            echo "storeFile=${keystore}"
+          } > android/key.properties
+
       - name: Resolve dependencies
         working-directory: flutter/source/supportive_therapy_network_v4
         run: flutter pub get
@@ -77,9 +115,22 @@ jobs:
       - name: Verify APK output
         working-directory: flutter/source/supportive_therapy_network_v4
         run: |
-          test -s build/app/outputs/flutter-apk/app-release.apk
-          file build/app/outputs/flutter-apk/app-release.apk
-          sha256sum build/app/outputs/flutter-apk/app-release.apk
+          set -euo pipefail
+          apk=build/app/outputs/flutter-apk/app-release.apk
+          test -s "$apk"
+          file "$apk"
+          sha256sum "$apk"
+          build_tools="$(ls -d "${ANDROID_HOME}"/build-tools/* | sort -V | tail -1)"
+          # Must be signed by the STN upload key (certificate SHA-256 pinned).
+          expected="6c5b57ada0570b2a34c83711e527ca673d09534e481be0adb62e01c3342d6bb7"
+          "$build_tools/apksigner" verify --print-certs "$apk" | tee /tmp/apk-certs.txt
+          grep -q "Signer #1 certificate SHA-256 digest: ${expected}" /tmp/apk-certs.txt
+          "$build_tools/aapt" dump badging "$apk" | grep -q "package: name='network.supportivetherapy.app'"
+
+      - name: Remove signing material from runner
+        if: always()
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: rm -f android/key.properties "${RUNNER_TEMP}/stn-upload-keystore.p12"
 
       - name: Publish installable APK as a controlled testing release asset
         working-directory: flutter/source/supportive_therapy_network_v4
@@ -91,4 +142,4 @@ jobs:
             --draft \
             --repo "$GITHUB_REPOSITORY" \
             --title "STN Android APK build ${GITHUB_RUN_NUMBER}" \
-            --notes "Automated Android release build from commit ${GITHUB_SHA}. Flutter static analysis and automated tests passed. Install for controlled testing only; this build is not clinical-production approved."
+            --notes "Automated Android release build from commit ${GITHUB_SHA}. Flutter static analysis and automated tests passed. Signed with the STN upload key; app ID network.supportivetherapy.app. Install for controlled testing only; this build is not clinical-production approved."
