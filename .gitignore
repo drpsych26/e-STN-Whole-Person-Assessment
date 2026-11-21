@@ -22,3 +22,9 @@ build/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Android signing material (never commit)
+key.properties
+*.jks
+*.p12
+*.keystore
