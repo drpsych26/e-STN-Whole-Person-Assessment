@@ -47,3 +47,16 @@
 
 Recorded from the GitHub REST API at the time of writing. Each check is listed as reported by GitHub for the head commit. Anything not yet complete is shown as such.
 
+Head commit `1e4407b` (this report's commit; the code is `c287e9e`). Results from GitHub check runs:
+
+| Check | Status |
+|---|---|
+| `backend-tests` (new pull-request job) | success |
+| `api-tests` | success |
+| `static-quality` | success |
+| `prototype-static-checks` | success |
+| `flutter-build-tests` | success |
+| `flutter-web-validation` | success |
+| `gates` (workflow_dispatch only) | skipped on pull requests, as designed |
+
+The `gates` job runs only on manual dispatch. It was not dispatched in this pass, because dispatching it would produce a report against a release candidate, which has not been chosen.
