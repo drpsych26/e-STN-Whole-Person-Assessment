@@ -2,13 +2,14 @@
 from fastapi import Depends, FastAPI
 
 from .auth import require_identity
+from .clients import router as clients_router
 
 app = FastAPI(
     title="STN API",
     version="0.1.0",
     description=(
-        "Non-live integration foundation. No client records, assessment responses, "
-        "clinical decisions, or crisis workflows are exposed."
+        "Integration API. Client records are encrypted at rest and owner-scoped; "
+        "clinical decisions and crisis workflows are not exposed."
     ),
 )
 
@@ -22,3 +23,5 @@ def liveness() -> dict[str, str]:
 def current_identity(identity: dict = Depends(require_identity)) -> dict:
     """Return only verified token identity; permissions are not yet implemented."""
     return {"subject": identity["sub"], "authenticated": True}
+
+app.include_router(clients_router)
