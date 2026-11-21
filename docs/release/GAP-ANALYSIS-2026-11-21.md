@@ -2,6 +2,10 @@
 
 **Date:** 21 November 2026
 **Scope:** repository `drpsych26/e-STN-Whole-Person-Assessment` at commit 68b95a2 (branch `feature/backend-release-gate-engine`), plus the STN-Website repository.
+**Correction (21 November 2026):** an earlier version of this report said crisis numbers were absent from all builds. That was wrong; see section 3.1.
+
+**Open pull requests on the public repository, not reviewed by this work:** #41 (`release/harden-testing-apk-and-dossier`) and #16 (`release/brand-copyright-polish-2026-11-04`), both targeting `main`.
+
 **Release status:** NOT CLINICALLY SIGNED OFF. NOT CLIENT READY. PRODUCTION GO-LIVE NOT AUTHORISED.
 
 This analysis states what the repository contains and what it does. Each finding cites the file or check it came from. Items marked UNVERIFIED have not been tested.
@@ -13,7 +17,7 @@ This analysis states what the repository contains and what it does. Each finding
 | Web assessment prototype | `prototype/STN-Whole-Person-Assessment-Standalone.html`, `prototype/index.html` | Static HTML. No calls to any backend endpoint (search for `fetch(`, `XMLHttpRequest`, `/v1/` returns 0). Stores data in `localStorage`. |
 | Follow-up assessment prototype | `prototype/follow-up-assessment.html` | Static HTML, `localStorage` only. |
 | Flutter v4 app | `flutter/source-archives/` and `implementation-patches/flutter-v4/` (14 Dart files) | The archive reassembles from parts 1, 2 and 4 and matches its recorded SHA-256. The full project is not checked in; CI extracts it at build time. Patched scoring and report files are partial. |
-| Backend API | `backend/app/` | FastAPI. Modules: auth (token verification), encrypted client-record store, RBAC, hash-chained audit trail, onboarding state machine, release gate engine. 67 tests pass locally. |
+| Backend API | `backend/app/` | FastAPI. Modules: auth (token verification), encrypted client-record store, RBAC, hash-chained audit trail, onboarding state machine, release gate engine. 67 tests pass locally on commit 68b95a2 (`pytest -o addopts=""`). |
 | Website | `STN-Website` (public) | Static `index.html`, `legal.html`, draft privacy notice. Deployed to GitHub Pages. |
 | CI | `.github/workflows/` (5 workflows) | Prototype static checks, API tests, static quality, Flutter web validation, Flutter build tests. |
 
@@ -32,7 +36,7 @@ This analysis states what the repository contains and what it does. Each finding
 
 ## 3. Broken or incomplete functionality
 
-1. **Crisis information is not found in the standalone prototype.** A search for `111` and `Lifeline` in `STN-Whole-Person-Assessment-Standalone.html` and `reference/source-html/stn-whole-person-assessment-v2.6.html` returns no matches. The earlier clinician-review artifact did include them. This must be confirmed in the rendered build. It is a release-blocking safety item (H10).
+1. **Crisis numbers are missing from the prototypes and the Flutter source.** Checked with a precise search for `111` and `0800 543 354`: `reference/source-html/assessment-demo.REVIEW-CORRECTED.html` contains the 111 emergency line, Lifeline 0800 543 354 and 1737. `prototype/STN-Whole-Person-Assessment-Standalone.html`, `prototype/index.html`, `prototype/follow-up-assessment.html` and the Flutter screens and scoring logic contain none. The prototypes contain the word "crisis" but no numbers. The release candidate must be chosen and its crisis panel verified (H10). This is release-blocking.
 2. **The safety route is display-only.** The prototypes show a crisis screen. Nothing records the escalation, notifies a clinician, timestamps acknowledgement or tracks resolution.
 3. **Two prototypes differ.** `STN-Whole-Person-Assessment-Standalone.html` and the v2.6 source are not the same build. Which one is authoritative has not been recorded.
 4. **Flutter build not verified in this session.** The CI workflow is designed to build the APK, but it has not been run here.
