@@ -54,6 +54,28 @@ jobs:
           cp "$patch_root/test/whole_person_intake_rules_test.dart" test/whole_person_intake_rules_test.dart
           cp "$patch_root/test/widget_test.dart" test/widget_test.dart
 
+      - name: Apply STN brand fonts and logo asset
+        working-directory: flutter/source/supportive_therapy_network_v4
+        shell: bash
+        run: |
+          set -euo pipefail
+          patch_root="../../../implementation-patches/flutter-v4"
+          mkdir -p assets/brand assets/fonts
+          cp "$patch_root/assets/brand/stn-logo-original.png" assets/brand/
+          cp "$patch_root/assets/fonts/"*.ttf assets/fonts/
+          cp "$patch_root/assets/fonts/"OFL-*.txt assets/fonts/
+          python3 - "$patch_root/brand-pubspec-fonts.yaml" <<'PY'
+          import re, sys
+          path = "pubspec.yaml"
+          text = open(path).read()
+          # flutter: must be the last top-level key so the fragment can be appended under it.
+          top = [l for l in text.splitlines() if re.match(r"^[A-Za-z_]+:", l)]
+          assert top and top[-1] == "flutter:", f"flutter: is not the last top-level key: {top[-1:]}"
+          open(path, "a").write("\n" + open(sys.argv[1]).read())
+          PY
+          test -s assets/brand/stn-logo-original.png
+          test "$(ls assets/fonts/*.ttf | wc -l)" -eq 8
+
       - name: Apply STN Android identity, launcher icon and signing config
         working-directory: flutter/source/supportive_therapy_network_v4
         shell: bash
