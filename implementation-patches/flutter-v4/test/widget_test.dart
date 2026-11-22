@@ -12,9 +12,15 @@ void main() {
       find.text('Supportive Therapy Network'),
       findsOneWidget,
     );
+    // The v2.6 hero card sits above the module list, and ListView builds only
+    // visible children, so each module tile is scrolled into view first.
+    await tester.scrollUntilVisible(find.text('Depression symptom review'), 200);
     expect(find.text('Depression symptom review'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Anxiety symptom review'), 200);
     expect(find.text('Anxiety symptom review'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Trauma symptom review'), 200);
     expect(find.text('Trauma symptom review'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Attention and impulsivity review'), 200);
     expect(find.text('Attention and impulsivity review'), findsOneWidget);
   });
 
