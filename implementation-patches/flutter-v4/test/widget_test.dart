@@ -9,7 +9,7 @@ void main() {
     await tester.pumpWidget(const STNApp());
 
     expect(
-      find.text('STN Whole Person Assessment — Flutter MVP'),
+      find.text('Supportive Therapy Network'),
       findsOneWidget,
     );
     expect(find.text('Depression symptom review'), findsOneWidget);
