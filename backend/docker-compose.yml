@@ -1,0 +1,22 @@
+# Local, synthetic-data-only PostgreSQL for STN API development and tests.
+# Not a production configuration: production uses Azure Database for PostgreSQL
+# (see docs/infrastructure/AZURE-PRODUCTION-SUBSCRIPTION-AND-DEPLOYMENT.md).
+# The password below is a throwaway local value, not a secret.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: stn_local
+      POSTGRES_PASSWORD: stn_local_only
+      POSTGRES_DB: stn_local
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stn_local -d stn_local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+# Run the API against it:
+#   export STN_DATABASE_URL=postgresql://stn_local:stn_local_only@127.0.0.1:5432/stn_local
+# Run the PostgreSQL test pass (the database is wiped by the tests):
+#   STN_TEST_DATABASE_URL=$STN_DATABASE_URL STN_REQUIRE_PG_TESTS=1 pytest

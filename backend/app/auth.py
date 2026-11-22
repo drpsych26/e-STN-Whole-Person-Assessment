@@ -64,4 +64,12 @@ def require_identity(
             detail="Access token has no valid subject.",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    return {"sub": subject, "issuer": issuer, "audience": audience}
+    from .rbac import mfa_from_claims, roles_from_claims
+
+    return {
+        "sub": subject,
+        "issuer": issuer,
+        "audience": audience,
+        "roles": roles_from_claims(claims),
+        "mfa": mfa_from_claims(claims),
+    }
