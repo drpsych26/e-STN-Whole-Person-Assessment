@@ -25,12 +25,15 @@ This document separates successful engineering builds from approval to operate a
 - [ ] Produce release checksum and retain the signed artifact and signing-certificate fingerprint in the controlled release record.
 
 ### Clinical service backend
-- [ ] Replace staging/demo authentication with an approved OIDC/JWT verifier.
-- [ ] Replace in-memory demo storage with managed PostgreSQL or an equivalent approved clinical record store.
-- [ ] Implement authenticated clinician access, MFA and role-based access control.
+
+> **Engineering evidence, 22 November 2026 (not gate approval).** Draft PR #54 (`backend-clinician-review`) implements server-side roles (clinician, reviewer, admin), MFA enforcement, encrypted assessment records, the human review and sign-off workflow with separation of duties, safety-flag acknowledgement gating, immutable signed-off records with versioned amendments, a hash-chained append-only audit, and a PostgreSQL store with migrations. CI on its head passed: API tests on SQLite and on a PostgreSQL 16 service container (130 passed, none skipped), static quality, verification and Flutter web validation. The PR is unmerged, undeployed and not configured against an approved identity provider or managed database, so no box below is ticked. Each item still needs production configuration, independent verification and sign-off. Export auditing, consent, retention and disposal, backups and restore remain unimplemented.
+
+- [ ] Replace staging/demo authentication with an approved OIDC/JWT verifier. *(Verifier code exists; identity provider not yet selected or approved.)*
+- [ ] Replace in-memory demo storage with managed PostgreSQL or an equivalent approved clinical record store. *(PostgreSQL support in PR #54; no managed database provisioned.)*
+- [ ] Implement authenticated clinician access, MFA and role-based access control. *(Engineering in PR #54, CI green; unmerged and unverified in production.)*
 - [ ] Implement encrypted transport and storage, secure secret management and controlled backups.
 - [ ] Implement client/assessment persistence, server-side validation and scoring.
-- [ ] Implement immutable audit events for access, edits, exports and sign-off.
+- [ ] Implement immutable audit events for access, edits, exports and sign-off. *(Access, edit, transition and sign-off events in PR #54; exports not yet implemented.)*
 - [ ] Implement consent, privacy notice, access/correction, retention and secure disposal workflows.
 - [ ] Test backup restoration, failure recovery and data migration.
 
@@ -52,6 +55,23 @@ This document separates successful engineering builds from approval to operate a
 - [ ] Confirm actual services, referral eligibility, operating regions and availability before advertising them.
 - [ ] Review terms, accessibility and all public claims.
 - [ ] Connect the registered custom domain only after the exact domain and DNS control are confirmed.
+
+## Owner-only actions
+
+These cannot be completed by engineering changes. Each needs the STN owner or an accountable third party.
+
+1. **Android release signing:** generate the production keystore offline, store it under STN control, and add the `STN_ANDROID_KEYSTORE_BASE64` and `STN_ANDROID_KEYSTORE_PASSWORD` repository secrets. Never share them in chat or commit them.
+2. **Website domain:** set `supportivetherapy.network` in the STN-Website Pages settings, add the GitHub Pages DNS records at the registrar, then enable Enforce HTTPS.
+3. **Website content:** confirm the public phone, email, head office address and privacy officer before PR #9 (STN-Website) is merged and published.
+4. **Azure:** create the STN-owned tenant and production subscription (New Zealand North), Azure Database for PostgreSQL, Key Vault and App Service, following `docs/infrastructure/AZURE-PRODUCTION-SUBSCRIPTION-AND-DEPLOYMENT.md`.
+5. **Identity provider:** register the API and app in the STN tenant, define the app roles, and enforce MFA through Conditional Access.
+6. **Privacy:** complete and approve the Privacy Impact Assessment, appoint a privacy officer, and publish an approved privacy notice.
+7. **Instrument licences:** obtain written digital reproduction, scoring and reporting permissions for every instrument.
+8. **Security:** commission an independent penetration test and remediate its findings.
+9. **Clinical safety:** approve the clinical safety case, the hazard log, the safety-flag acknowledgement and escalation SOP, and clinician scope and sign-off authority.
+10. **Insurance:** professional indemnity, cyber and public liability cover appropriate to the service.
+11. **Repository visibility:** `drpsych26/e-STN-Whole-Person-Assessment` is currently **public**, while repository records state it should remain private. Decide whether to make it private.
+12. **Final release approval:** formal go-live sign-off for the exact release version.
 
 ## Data-use restriction
 
