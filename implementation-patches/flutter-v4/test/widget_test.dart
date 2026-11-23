@@ -6,12 +6,17 @@ import 'package:supportive_therapy_network/screens/whole_person_initial_assessme
 
 void main() {
   testWidgets('STN app opens the assessment dashboard', (tester) async {
+    // The v2.6 hero card sits above the module list, and ListView builds only
+    // visible children. A taller test surface builds every tile without scrolling.
+    tester.view.physicalSize = const Size(800, 2000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
     await tester.pumpWidget(const STNApp());
-
-    expect(
-      find.text('STN Whole Person Assessment — Flutter MVP'),
-      findsOneWidget,
-    );
+    await tester.pumpAndSettle();
+    expect(find.text('Supportive Therapy Network'), findsOneWidget);
     expect(find.text('Depression symptom review'), findsOneWidget);
     expect(find.text('Anxiety symptom review'), findsOneWidget);
     expect(find.text('Trauma symptom review'), findsOneWidget);
