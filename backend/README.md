@@ -101,7 +101,7 @@ CI runs both passes. The PostgreSQL job fails rather than skips if the database 
 
 ## Backup and restore drill
 
-`scripts/backup_restore_drill.sh` dumps the database named by `STN_DATABASE_URL`, restores it into a scratch database, compares row counts for every table, recomputes the audit chain on the restored copy and, when a data key is configured, decrypts every record (`python -m app.rekey --verify-decrypt`). CI seeds synthetic data (`scripts/seed_synthetic_data.py --reset`, which refuses to run without `STN_ALLOW_SCHEMA_RESET=1`) and runs the drill on every change. The production procedure is in `docs/operations/BACKUP-AND-RESTORE-RUNBOOK.md`.
+`scripts/backup_restore_drill.sh` dumps the database named by `STN_DATABASE_URL`, restores it into a scratch database, compares row counts for every table, recomputes the audit chain on the restored copy and, when a data key is configured, decrypts every record (`python -m app.rekey --verify-decrypt`). Client tools must match the server's major version; the script checks this and stops on a mismatch. Set `STN_PG_CLIENT_IMAGE=postgres:16` to run them from the server image (CI does this), or `STN_PG_BIN` to a local install. CI seeds synthetic data (`scripts/seed_synthetic_data.py --reset`, which refuses to run without `STN_ALLOW_SCHEMA_RESET=1`) and runs the drill on every change. The production procedure is in `docs/operations/BACKUP-AND-RESTORE-RUNBOOK.md`.
 
 ## Not in this increment (required before any real client data)
 

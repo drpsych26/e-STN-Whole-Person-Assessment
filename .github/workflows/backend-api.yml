@@ -67,19 +67,13 @@ jobs:
         run: python -m pip install -e ".[test,postgres]"
       - name: Run API tests (SQLite and PostgreSQL)
         run: python -m pytest -rs
-      - name: Install the PostgreSQL client matching the service major version
-        run: |
-          # The runner's default pg_dump can be newer than the postgres:16 service;
-          # a newer dump writes settings (e.g. transaction_timeout) that 16 rejects.
-          if [ ! -x /usr/lib/postgresql/16/bin/pg_dump ]; then
-            sudo apt-get update -qq
-            sudo apt-get install -y -qq postgresql-client-16
-          fi
-          /usr/lib/postgresql/16/bin/pg_dump --version
       - name: Backup and restore drill (synthetic data)
         env:
           STN_DATABASE_URL: postgresql://stn_ci:stn_ci_only@localhost:5432/stn_ci
-          STN_PG_BIN: /usr/lib/postgresql/16/bin
+          # Client tools from the same image as the service, so pg_dump/pg_restore
+          # match the server's major version (a newer runner pg_dump writes
+          # settings such as transaction_timeout that PostgreSQL 16 rejects).
+          STN_PG_CLIENT_IMAGE: postgres:16
           # The seed script may wipe only this throwaway CI database.
           STN_ALLOW_SCHEMA_RESET: "1"
         run: |

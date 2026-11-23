@@ -10,10 +10,14 @@
 # The scratch database is dropped afterwards unless STN_DRILL_KEEP=1.
 #
 # Required:  STN_DATABASE_URL   source database (postgresql://user:pass@host:port/db)
-# Optional:  STN_PG_BIN           directory holding pg_dump/pg_restore/psql. Default: the
+# Optional:  STN_PG_CLIENT_IMAGE  run psql/pg_dump/pg_restore from this container image
+#                                 (e.g. postgres:16, the same image as the server) with
+#                                 `docker run --network host`. Used by CI.
+#            STN_PG_BIN           otherwise, directory holding the client tools. Default: the
 #                                 /usr/lib/postgresql/<server major>/bin install when present,
-#                                 otherwise PATH. Client and server major versions must match:
-#                                 a newer pg_dump writes settings an older server rejects on restore.
+#                                 otherwise PATH.
+#            Client and server major versions must match: a newer pg_dump writes settings
+#            (e.g. transaction_timeout) that an older server rejects on restore.
 #            STN_DRILL_SCRATCH_DB  scratch database name (default stn_restore_drill)
 #            STN_DRILL_DUMP_DIR    where to write the dump (default: a temp dir, removed)
 #            STN_DATA_KEY / STN_DATA_KEYS + STN_DATA_ACTIVE_KEY_ID  enable the decrypt check
@@ -41,55 +45,69 @@ ADMIN_URL="$(url_with_db "$STN_DATABASE_URL" postgres)"
 SCRATCH_URL="$(url_with_db "$STN_DATABASE_URL" "$SCRATCH_DB")"
 
 WORK="${STN_DRILL_DUMP_DIR:-$(mktemp -d)}"
+WORK="$(cd "$WORK" && pwd)"
+PG_IMAGE="${STN_PG_CLIENT_IMAGE:-}"
+PG_BIN=""
+# pgtool <tool> <args...>: run a PostgreSQL client tool from the image or the selected bin dir.
+pgtool() {
+  local tool="$1"; shift
+  if [[ -n "$PG_IMAGE" ]]; then
+    docker run --rm --network host -v "$WORK:$WORK" -w "$WORK" "$PG_IMAGE" "$tool" "$@"
+  else
+    "${PG_BIN}${tool}" "$@"
+  fi
+}
 cleanup() {
   if [[ "${STN_DRILL_KEEP:-0}" != "1" ]]; then
-    psql "$ADMIN_URL" -q -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS $SCRATCH_DB" >/dev/null 2>&1 || true
+    pgtool psql "$ADMIN_URL" -q -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS $SCRATCH_DB" >/dev/null 2>&1 || true
   fi
   if [[ -z "${STN_DRILL_DUMP_DIR:-}" ]]; then rm -rf "$WORK"; fi
 }
 trap cleanup EXIT
 
 echo "== tools"
-server_num="$(psql "$STN_DATABASE_URL" -At -c "SHOW server_version_num")"
-server_major=$((server_num / 10000))
-if [[ -n "${STN_PG_BIN:-}" ]]; then
-  PG_BIN="${STN_PG_BIN%/}/"
-elif [[ -x "/usr/lib/postgresql/${server_major}/bin/pg_dump" ]]; then
-  PG_BIN="/usr/lib/postgresql/${server_major}/bin/"
-else
-  PG_BIN=""
+if [[ -z "$PG_IMAGE" ]]; then
+  server_num="$(psql "$STN_DATABASE_URL" -At -c "SHOW server_version_num")"
+  if [[ -n "${STN_PG_BIN:-}" ]]; then
+    PG_BIN="${STN_PG_BIN%/}/"
+  elif [[ -x "/usr/lib/postgresql/$((server_num / 10000))/bin/pg_dump" ]]; then
+    PG_BIN="/usr/lib/postgresql/$((server_num / 10000))/bin/"
+  fi
 fi
-client_major() { "${PG_BIN}$1" --version | sed -E 's/^[^0-9]*([0-9]+).*/\1/'; }
+server_num="$(pgtool psql "$STN_DATABASE_URL" -At -c "SHOW server_version_num")"
+server_major=$((server_num / 10000))
+client_major() { pgtool "$1" --version | sed -E 's/^[^0-9]*([0-9]+).*/\1/'; }
 dump_major="$(client_major pg_dump)"
 restore_major="$(client_major pg_restore)"
 echo "server: PostgreSQL ${server_major} (${server_num})"
-echo "pg_dump: $("${PG_BIN}pg_dump" --version)  [${PG_BIN:-PATH}]"
-echo "pg_restore: $("${PG_BIN}pg_restore" --version)"
+if [[ -n "$PG_IMAGE" ]]; then echo "client: image $PG_IMAGE"; else echo "client: ${PG_BIN:-PATH}"; fi
+echo "pg_dump: $(pgtool pg_dump --version)"
+echo "pg_restore: $(pgtool pg_restore --version)"
 if [[ "$dump_major" != "$server_major" || "$restore_major" != "$server_major" ]]; then
   echo "Client/server major version mismatch: pg_dump ${dump_major}, pg_restore ${restore_major}, server ${server_major}." >&2
-  echo "Install postgresql-client-${server_major} or set STN_PG_BIN to its bin directory." >&2
+  echo "Use STN_PG_CLIENT_IMAGE=postgres:${server_major}, install postgresql-client-${server_major}, or set STN_PG_BIN." >&2
   exit 2
 fi
 
 echo "== 1/4 dump source (custom format)"
 DUMP="$WORK/stn-$(date -u +%Y%m%dT%H%M%SZ).dump"
-"${PG_BIN}pg_dump" --format=custom --no-owner --no-privileges --file "$DUMP" "$STN_DATABASE_URL"
+pgtool pg_dump --format=custom --no-owner --no-privileges --file "$DUMP" "$STN_DATABASE_URL"
 sha256sum "$DUMP"
 
 echo "== 2/4 restore into scratch database $SCRATCH_DB"
-psql "$ADMIN_URL" -q -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS $SCRATCH_DB" -c "CREATE DATABASE $SCRATCH_DB"
-"${PG_BIN}pg_restore" --no-owner --no-privileges --exit-on-error --dbname "$SCRATCH_URL" "$DUMP"
+pgtool psql "$ADMIN_URL" -q -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS $SCRATCH_DB" -c "CREATE DATABASE $SCRATCH_DB"
+pgtool pg_restore --no-owner --no-privileges --exit-on-error --dbname "$SCRATCH_URL" "$DUMP"
 
 echo "== 3/4 compare row counts"
 mismatch=0
-tables="$(psql "$STN_DATABASE_URL" -At -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY 1")"
+tables="$(pgtool psql "$STN_DATABASE_URL" -At -c "SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY 1")"
 if [[ -z "$tables" ]]; then
   echo "Source database has no tables; nothing to verify" >&2
   exit 1
 fi
 for table in $tables; do
-  src="$(psql "$STN_DATABASE_URL" -At -c "SELECT count(*) FROM \"$table\"")"
-  dst="$(psql "$SCRATCH_URL" -At -c "SELECT count(*) FROM \"$table\"")"
+  src="$(pgtool psql "$STN_DATABASE_URL" -At -c "SELECT count(*) FROM \"$table\"")"
+  dst="$(pgtool psql "$SCRATCH_URL" -At -c "SELECT count(*) FROM \"$table\"")"
   printf '%-22s source=%-6s restored=%-6s %s\n' "$table" "$src" "$dst" "$([[ "$src" == "$dst" ]] && echo ok || echo MISMATCH)"
   [[ "$src" == "$dst" ]] || mismatch=1
 done
