@@ -1,15 +1,26 @@
 import "package:flutter/material.dart";
 
+import "../api/api_config.dart";
+import "clinician/clinician_services.dart";
+import "clinician/clinician_sign_in_screen.dart";
 import "module_screen.dart";
 import "results_screen.dart";
 import "profiles_screen.dart";
 import "whole_person_initial_assessment_screen.dart";
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.apiConfig, this.clinicianServices});
+
+  /// Defaults to the build's dart-defines. With STN_API_ENABLED off (the
+  /// default) no clinician sign-in entry is shown and nothing uses the network.
+  final ApiConfig? apiConfig;
+
+  /// Test hook; defaults to the platform services for the build.
+  final ClinicianServices Function(ApiConfig config)? clinicianServices;
 
   @override
   Widget build(BuildContext context) {
+    final config = apiConfig ?? const ApiConfig.fromEnvironment();
     return Scaffold(
       appBar: AppBar(
         title: Row(
@@ -74,6 +85,28 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
+          if (config.enabled)
+            Card(
+              key: const ValueKey("clinician-sign-in-entry"),
+              child: ListTile(
+                leading: const Icon(Icons.verified_user_outlined),
+                title: const Text("Clinician sign-in"),
+                subtitle: Text(
+                  config.ready
+                      ? "Review queue, safety-flag acknowledgement and sign-off · synthetic data only"
+                      : "Not configured in this build",
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ClinicianSignInScreen(
+                      services: (clinicianServices ?? ClinicianServices.platform)(config),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           Card(
             child: ListTile(
               leading: const Icon(Icons.assignment_outlined),

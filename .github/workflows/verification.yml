@@ -152,6 +152,8 @@ jobs:
             cp "$patch_root/test/scoring_engine_test.dart" test/scoring_engine_test.dart
             cp "$patch_root/test/whole_person_intake_rules_test.dart" test/whole_person_intake_rules_test.dart
             cp "$patch_root/test/widget_test.dart" test/widget_test.dart
+            # Clinician API code in its default (offline) form: no new dependency.
+            python3 "$patch_root/apply_clinician_api.py" . --variant default
             flutter pub get
             dart format lib test
             dart format --output=none --set-exit-if-changed lib test
@@ -160,6 +162,18 @@ jobs:
             flutter build apk --debug
             cd "$GITHUB_WORKSPACE"
           done
+      - name: Default build contains no sign-in plugin
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=flutter/source/supportive_therapy_network_v4/build/app/outputs/flutter-apk/app-debug.apk
+          build_tools="$(ls -d "${ANDROID_HOME}"/build-tools/* | sort -V | tail -1)"
+          "$build_tools/aapt" dump xmltree "$apk" AndroidManifest.xml > /tmp/default-manifest.txt
+          if grep -q "RedirectUriReceiverActivity" /tmp/default-manifest.txt; then
+            echo "Default build must not include the AppAuth redirect activity" >&2
+            exit 1
+          fi
+          echo "PASS: default APK has no AppAuth redirect activity"
       - name: Upload internal debug APK
         uses: actions/upload-artifact@v7
         # APK compilation/tests remain verifiable when artifact storage is temporarily full.
@@ -169,3 +183,66 @@ jobs:
           path: flutter/source/supportive_therapy_network_v4/build/app/outputs/flutter-apk/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+
+  flutter-clinician-api-variant:
+    # Builds the opt-in clinician sign-in variant (AppAuth + package:http) natively,
+    # with synthetic placeholder configuration. Nothing here contacts a real service.
+    needs: prototype-static-checks
+    if: needs.prototype-static-checks.outputs.flutter_source_present == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.9'
+          cache: true
+      - name: Restore Flutter v4 source and apply the clinician API build variant
+        shell: bash
+        run: |
+          set -euo pipefail
+          part_dir=flutter/source-archives/parts
+          mkdir -p /tmp/stn-v4 flutter/source
+          cat "$part_dir/part1.txt" "$part_dir/part2.txt" "$part_dir/part4.txt" > /tmp/stn-v4/source.b64
+          test "$(wc -c < /tmp/stn-v4/source.b64)" -eq 18404
+          base64 --decode /tmp/stn-v4/source.b64 > /tmp/stn-v4/source.zip
+          echo "4478e3e54131fdb94db943524a7aa00cef9239122e572eaad6d9e0d5ad95261c  /tmp/stn-v4/source.zip" | sha256sum --check
+          unzip -q /tmp/stn-v4/source.zip -d flutter/source
+          cd flutter/source/supportive_therapy_network_v4
+          flutter create --platforms=android .
+          patch_root="$GITHUB_WORKSPACE/implementation-patches/flutter-v4"
+          for f in lib/main.dart lib/logic/scoring_engine.dart lib/logic/report_builder.dart lib/storage/secure_hive.dart \
+            lib/screens/home_screen.dart lib/screens/whole_person_initial_assessment_screen.dart lib/models/core_intake.dart \
+            lib/screens/module_screen.dart lib/screens/results_screen.dart lib/screens/profiles_screen.dart \
+            lib/screens/result_detail_screen.dart test/scoring_engine_test.dart test/whole_person_intake_rules_test.dart \
+            test/widget_test.dart; do
+            cp "$patch_root/$f" "$f"
+          done
+          python3 "$patch_root/apply_assets.py" .
+          python3 "$patch_root/apply_clinician_api.py" . --variant api
+      - name: Analyze and test (clinician API variant)
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: |
+          flutter pub get
+          dart format lib test
+          flutter analyze
+          flutter test
+      - name: Build debug APK with clinician sign-in enabled (synthetic configuration)
+        working-directory: flutter/source/supportive_therapy_network_v4
+        run: >-
+          flutter build apk --debug
+          --dart-define=STN_API_ENABLED=true
+          --dart-define=STN_API_BASE_URL=https://api.synthetic.invalid
+          --dart-define=STN_OIDC_ISSUER=https://login.synthetic.invalid/tenant/v2.0
+          --dart-define=STN_OIDC_CLIENT_ID=00000000-0000-0000-0000-000000000000
+      - name: Verify AppAuth redirect scheme and INTERNET permission in the APK
+        working-directory: flutter/source/supportive_therapy_network_v4
+        shell: bash
+        run: |
+          set -euo pipefail
+          apk=build/app/outputs/flutter-apk/app-debug.apk
+          build_tools="$(ls -d "${ANDROID_HOME}"/build-tools/* | sort -V | tail -1)"
+          "$build_tools/aapt" dump xmltree "$apk" AndroidManifest.xml > /tmp/api-manifest.txt
+          grep -q "net.openid.appauth.RedirectUriReceiverActivity" /tmp/api-manifest.txt
+          grep -q '"network.supportivetherapy.app"' /tmp/api-manifest.txt
+          grep -q "android.permission.INTERNET" /tmp/api-manifest.txt
+          echo "PASS: AppAuth redirect activity, network.supportivetherapy.app scheme and INTERNET permission present"

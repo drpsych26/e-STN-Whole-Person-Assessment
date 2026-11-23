@@ -5,6 +5,14 @@ name: STN Android APK build
 # repository is public. Releases are created manually and as DRAFTS only.
 on:
   workflow_dispatch:
+    inputs:
+      clinician_api:
+        description: >-
+          Build the clinician sign-in variant (AppAuth + HTTPS API). Needs repository
+          variables STN_API_BASE_URL, STN_OIDC_ISSUER and STN_OIDC_CLIENT_ID; without
+          them the app shows "not configured" and stays offline. Default: offline demo.
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -90,6 +98,17 @@ jobs:
             exit 1
           fi
 
+      - name: Apply clinician API code (default offline variant unless requested)
+        working-directory: flutter/source/supportive_therapy_network_v4
+        shell: bash
+        env:
+          CLINICIAN_API: ${{ inputs.clinician_api }}
+        run: |
+          set -euo pipefail
+          variant=default
+          if [ "$CLINICIAN_API" = "true" ]; then variant=api; fi
+          python3 ../../../implementation-patches/flutter-v4/apply_clinician_api.py . --variant "$variant"
+
       - name: Configure STN release signing key
         working-directory: flutter/source/supportive_therapy_network_v4
         shell: bash
@@ -132,7 +151,25 @@ jobs:
 
       - name: Build Android release APK
         working-directory: flutter/source/supportive_therapy_network_v4
-        run: flutter build apk --release
+        shell: bash
+        env:
+          CLINICIAN_API: ${{ inputs.clinician_api }}
+          STN_API_BASE_URL: ${{ vars.STN_API_BASE_URL }}
+          STN_OIDC_ISSUER: ${{ vars.STN_OIDC_ISSUER }}
+          STN_OIDC_CLIENT_ID: ${{ vars.STN_OIDC_CLIENT_ID }}
+          STN_OIDC_SCOPES: ${{ vars.STN_OIDC_SCOPES }}
+        run: |
+          set -euo pipefail
+          if [ "$CLINICIAN_API" = "true" ]; then
+            args=(--dart-define=STN_API_ENABLED=true
+                  --dart-define=STN_API_BASE_URL="$STN_API_BASE_URL"
+                  --dart-define=STN_OIDC_ISSUER="$STN_OIDC_ISSUER"
+                  --dart-define=STN_OIDC_CLIENT_ID="$STN_OIDC_CLIENT_ID")
+            if [ -n "$STN_OIDC_SCOPES" ]; then args+=(--dart-define=STN_OIDC_SCOPES="$STN_OIDC_SCOPES"); fi
+            flutter build apk --release "${args[@]}"
+          else
+            flutter build apk --release
+          fi
 
       - name: Verify APK output
         working-directory: flutter/source/supportive_therapy_network_v4
