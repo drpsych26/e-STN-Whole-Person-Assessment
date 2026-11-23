@@ -11,6 +11,9 @@ from app.main import app
 
 client = TestClient(app, raise_server_exceptions=False)
 
+# These tests exercise the review rules in the open-pool mode; see open_review_pool in conftest.py.
+pytestmark = pytest.mark.usefixtures("open_review_pool")
+
 MARKER = "SYNTHETIC-ASSESSMENT-MARKER-91C2"
 PAYLOAD = {"items": {"synthetic_item_1": "synthetic answer", "note": MARKER}}
 AUTHOR, OTHER_CLIN, REV1, REV2, DUAL, ADMIN = "clin-a", "clin-b", "rev-1", "rev-2", "dual-1", "admin-1"

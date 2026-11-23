@@ -11,6 +11,10 @@ Rules enforced here and covered by tests:
 - Only the author edits, submits and reopens. Edits need the current revision.
 - Only a user with the reviewer role who is not the author can start review, and
   only the reviewer who started it can return or sign off. Nobody signs off their own work.
+- Reviewer assignment (app.review_assignment): when the current submission has an
+  assigned reviewer, only that reviewer can start review. When it has none, review
+  can start only if STN_REVIEW_ASSIGNMENT_REQUIRED is false (an open review pool);
+  it defaults to true. Resubmission ends earlier assignments.
 - Safety flags raised at submission must each be acknowledged by a named human
   (the author or a reviewer) before review can start. Acknowledgement records who
   and when; it is not a risk disposition and triggers no automated action.
@@ -33,6 +37,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import uuid
 from typing import Any, Iterable
@@ -58,6 +63,7 @@ MAX_FLAGS = 50
 MAX_NOTE_CHARS = 4000
 EXPORT_FORMAT = "stn-assessment-export/1"
 HASHED_STATES = frozenset({SUBMITTED, IN_REVIEW, RETURNED, SIGNED_OFF})
+ASSIGNMENT_REQUIRED_ENV = "STN_REVIEW_ASSIGNMENT_REQUIRED"
 
 
 class AssessmentNotFound(LookupError):
@@ -74,6 +80,28 @@ class ReviewBlocked(RuntimeError):
 
 class SelfReviewForbidden(PermissionError):
     """A user may not review or sign off an assessment they authored."""
+
+
+class NotAssignedReviewer(PermissionError):
+    """The assessment is assigned to a different reviewer."""
+
+
+class ReviewerNotAssigned(RuntimeError):
+    """Assignment is required and no reviewer has been assigned to this submission."""
+
+
+def assignment_required() -> bool:
+    """Default true. Only "false", "0", "no" or "off" allow an open review pool."""
+    return os.getenv(ASSIGNMENT_REQUIRED_ENV, "true").strip().lower() not in {"false", "0", "no", "off"}
+
+
+def current_assignment(conn: db.Conn, org: str, assessment_id: str, submission: int) -> dict[str, Any] | None:
+    return conn.execute(
+        "SELECT id, reviewer_sub, assigned_by, assigned_at FROM review_assignments "
+        "WHERE org_id = ? AND assessment_id = ? AND submission = ? AND ended_at IS NULL "
+        "ORDER BY assigned_at DESC LIMIT 1",
+        (org, assessment_id, submission),
+    ).fetchone()
 
 
 class RevisionConflict(RuntimeError):
@@ -307,6 +335,15 @@ def submit(actor: str, org: str, assessment_id: str, safety_flags: Any) -> dict[
                     "reviewer_sub = NULL, review_started_at = NULL, updated_at = ? WHERE id = ? AND state = ?",
                     (SUBMITTED, submission, digest, stamp, stamp, assessment_id, DRAFT),
                 )
+                for old in conn.execute(
+                    "SELECT id FROM review_assignments WHERE org_id = ? AND assessment_id = ? AND ended_at IS NULL",
+                    (org, assessment_id),
+                ).fetchall():
+                    conn.execute(
+                        "UPDATE review_assignments SET ended_by = ?, ended_at = ?, end_reason = 'resubmitted' "
+                        "WHERE id = ? AND ended_at IS NULL",
+                        (actor, stamp, old["id"]),
+                    )
                 for code in codes:
                     flag_id = str(uuid.uuid4())
                     conn.execute(
@@ -322,15 +359,27 @@ def submit(actor: str, org: str, assessment_id: str, safety_flags: Any) -> dict[
 
 
 def review_queue(actor: str, org: str) -> list[dict[str, Any]]:
-    """Metadata only (no payloads): submitted work by others in the organisation, plus reviews held."""
+    """Metadata only (no payloads): reviews held by the caller, plus submitted work by others that the
+    caller may take (assigned to them, or unassigned when an open review pool is allowed)."""
+    open_pool = not assignment_required()
     with db.transaction() as conn:
         rows = conn.execute(
             "SELECT * FROM assessments WHERE org_id = ? AND disposed_at IS NULL AND "
             "((state = ? AND author_sub <> ?) OR (state = ? AND reviewer_sub = ?)) ORDER BY submitted_at",
             (org, SUBMITTED, actor, IN_REVIEW, actor),
         ).fetchall()
-        queue = [_meta(r) | {"unacknowledged_safety_flags": _unacknowledged(conn, r["id"], r["submission"])}
-                 for r in rows]
+        queue = []
+        for r in rows:
+            assigned = current_assignment(conn, org, r["id"], r["submission"]) if r["state"] == SUBMITTED else None
+            if r["state"] == SUBMITTED:
+                if assigned is not None and assigned["reviewer_sub"] != actor:
+                    continue
+                if assigned is None and not open_pool:
+                    continue
+            queue.append(_meta(r) | {
+                "unacknowledged_safety_flags": _unacknowledged(conn, r["id"], r["submission"]),
+                "assigned_reviewer": assigned["reviewer_sub"] if assigned else None,
+            })
         audit.append(conn, actor, "review_queue.read", "review_queue", None, "ok", org=org)
     return queue
 
@@ -406,6 +455,13 @@ def start_review(actor: str, org: str, assessment_id: str) -> dict[str, Any]:
         elif _unacknowledged(conn, assessment_id, row["submission"]):
             error = ReviewBlocked("Every safety flag must be acknowledged by a clinician or reviewer before review starts.")
             outcome = "rejected_unacknowledged_flags"
+        elif (assigned := current_assignment(conn, org, assessment_id, row["submission"])) is not None \
+                and assigned["reviewer_sub"] != actor:
+            error = NotAssignedReviewer("This assessment is assigned to another reviewer.")
+            outcome = "rejected_not_assigned"
+        elif assigned is None and assignment_required():
+            error = ReviewerNotAssigned("A reviewer must be assigned before review starts.")
+            outcome = "rejected_unassigned"
         else:
             stamp = audit.now()
             changed = conn.execute(

@@ -11,8 +11,10 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
+from . import accounts
 from . import assessments as svc
 from . import audit, db, governance
+from . import review_assignment as assign_svc
 from .clients import DISPOSED_DETAIL, _payload
 from .crypto import DataKeyError, RecordIntegrityError
 from .store import RecordDisposed, RecordNotFound
@@ -30,16 +32,19 @@ admin = require_roles(ADMIN)
 def _call(fn, *args: Any) -> Any:
     try:
         return fn(*args)
-    except (svc.AssessmentNotFound, RecordNotFound) as exc:
+    except (svc.AssessmentNotFound, RecordNotFound, accounts.AccountNotFound) as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Record not found.") from exc
     except RecordDisposed as exc:
         raise HTTPException(status.HTTP_410_GONE, DISPOSED_DETAIL) from exc
-    except (svc.SelfReviewForbidden, governance.SecondPersonRequired) as exc:
+    except (svc.SelfReviewForbidden, governance.SecondPersonRequired, svc.NotAssignedReviewer,
+            assign_svc.SelfAssignmentForbidden, accounts.AccountSelfChange,
+            accounts.AccountSecondPersonRequired) as exc:
         raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
     except (svc.TransitionNotAllowed, svc.ReviewBlocked, svc.RevisionConflict, svc.ContentHashMismatch,
-            governance.NotEligible) as exc:
+            governance.NotEligible, svc.ReviewerNotAssigned, accounts.AccountTransitionNotAllowed,
+            accounts.AccountNotUsable) as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
-    except svc.InvalidInput as exc:
+    except (svc.InvalidInput, accounts.AccountInvalidInput) as exc:
         raise HTTPException(422, str(exc)) from exc
     except governance.RetentionNotConfigured as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Retention policy is not configured.") from exc

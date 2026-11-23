@@ -20,8 +20,8 @@ cannot be disposed of, and a hold placed after a request blocks its approval.
 Disposal: an admin requests disposal of one client's records; a different person
 with the admin or reviewer role approves it. Approval re-checks eligibility
 (period elapsed, no active hold, no assessment submitted or in review) and then
-removes every payload (client record, assessment versions, notes) and the safety
-flag codes. Metadata rows stay as tombstones with disposed_at set, the executed
+removes every payload (client record, assessment versions, notes, statements of
+correction) and the safety flag codes. Metadata rows stay as tombstones with disposed_at set, the executed
 disposal row records who, when and how many, and every step is audited. Disposed
 rows are final at the database level.
 """
@@ -364,6 +364,17 @@ def approve_disposal(actor: str, org: str, disposal_id: str) -> dict[str, Any]:
                     "UPDATE client_records SET ciphertext = ?, disposed_at = ? WHERE id = ? AND org_id = ?",
                     (b"", stamp, client_id, org),
                 )
+                statements = conn.execute(
+                    "SELECT id FROM correction_statements WHERE client_id = ? AND org_id = ? AND disposed_at IS NULL",
+                    (client_id, org),
+                ).fetchall()
+                conn.execute(
+                    "UPDATE correction_statements SET statement_ciphertext = ?, disposed_at = ? "
+                    "WHERE client_id = ? AND org_id = ? AND disposed_at IS NULL",
+                    (b"", stamp, client_id, org),
+                )
+                for statement in statements:
+                    audit.append(conn, actor, "record.dispose", "correction_statement", statement["id"], "ok", org=org)
                 conn.execute(
                     "UPDATE disposals SET state = 'executed', decided_by = ?, decided_at = ?, assessments_disposed = ? "
                     "WHERE id = ? AND state = 'requested'",

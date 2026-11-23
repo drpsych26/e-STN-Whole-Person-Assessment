@@ -16,7 +16,21 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+  # Local Redis for the shared rate-limit store tests. No persistence, no password,
+  # bound to localhost only. Production uses Azure Cache for Redis over TLS.
+  redis:
+    image: redis:7
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 # Run the API against it:
 #   export STN_DATABASE_URL=postgresql://stn_local:stn_local_only@127.0.0.1:5432/stn_local
 # Run the PostgreSQL test pass (the database is wiped by the tests):
 #   STN_TEST_DATABASE_URL=$STN_DATABASE_URL STN_REQUIRE_PG_TESTS=1 pytest
+# Run the Redis rate-limit tests (database 1 is flushed by the tests):
+#   STN_TEST_REDIS_URL=redis://127.0.0.1:6379/1 STN_REQUIRE_REDIS_TESTS=1 pytest tests/test_ratelimit_redis.py

@@ -80,3 +80,38 @@ jobs:
           export STN_DATA_KEY="$(python -c 'import base64, secrets; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())')"
           python scripts/seed_synthetic_data.py --reset
           bash scripts/backup_restore_drill.sh
+
+  api-tests-redis:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Throwaway CI Redis; no credentials. Every rate limit in the suite uses the shared store.
+      STN_RATE_LIMIT_BACKEND: redis
+      STN_REDIS_URL: redis://localhost:6379/0
+      STN_TEST_REDIS_URL: redis://localhost:6379/1
+      # Fail instead of skipping if the Redis tests cannot run.
+      STN_REQUIRE_REDIS_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install API, test and Redis dependencies
+        run: python -m pip install -e ".[test,redis]"
+      - name: Run API tests with the Redis rate-limit store (SQLite)
+        run: python -m pytest -rs
+

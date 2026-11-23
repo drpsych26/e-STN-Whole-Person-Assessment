@@ -4,11 +4,15 @@ from __future__ import annotations
 import hashlib
 import json
 
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
 
 client = TestClient(app, raise_server_exceptions=False)
+
+# These tests exercise the review rules in the open-pool mode; see open_review_pool in conftest.py.
+pytestmark = pytest.mark.usefixtures("open_review_pool")
 
 ORG_A, ORG_B = "org-synthetic-a", "org-synthetic-b"
 PAYLOAD = {"items": {"synthetic_item_1": "synthetic answer"}}

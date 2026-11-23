@@ -87,3 +87,14 @@ def act(monkeypatch) -> Callable[..., None]:
 
     yield switch
     app.dependency_overrides.pop(auth.require_identity, None)
+
+
+@pytest.fixture
+def open_review_pool(monkeypatch):
+    """Open review pool: an unassigned submission can be taken by any reviewer who is not its author.
+
+    Reviewer assignment is required by default (STN_REVIEW_ASSIGNMENT_REQUIRED). Modules that test the
+    review, export, key and governance rules without assignment opt in to the open pool explicitly;
+    tests/test_review_assignment.py covers the required-assignment mode.
+    """
+    monkeypatch.setenv("STN_REVIEW_ASSIGNMENT_REQUIRED", "false")

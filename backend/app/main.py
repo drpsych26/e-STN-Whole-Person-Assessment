@@ -8,27 +8,38 @@ from .assessment_routes import router as assessments_router
 from .auth import require_identity
 from .clients import router as clients_router
 from .governance_routes import admin_router, consent_router
+from .lifecycle_routes import admin_router as lifecycle_admin_router
+from .lifecycle_routes import clinician_router as privacy_router
 from .rbac import mfa_required
 
 app = FastAPI(
     title="STN API",
-    version="0.3.0",
+    version="0.4.0",
     description=(
         "Non-live integration API. Clinician sign-in via OIDC, server-side roles "
         "(clinician, reviewer, admin), MFA enforcement and organisation scoping; encrypted, "
         "owner-scoped client and assessment records with key rotation; human review and "
         "sign-off workflow; consent records, legal holds and two-person disposal; logged "
-        "exports; rate limiting; hash-chained audit. No diagnosis, scoring, risk disposition "
-        "or crisis automation is exposed."
+        "exports; reviewer assignment; clinician account registry with two-person "
+        "reactivation and access review; client access and correction requests; rate "
+        "limiting (in-process or Redis); hash-chained audit. No diagnosis, scoring, risk "
+        "disposition or crisis automation is exposed."
     ),
 )
+
+
+# Build the rate limiter now so a misconfigured store stops the API from starting (fail closed).
+ratelimit.limiter()
 
 
 @app.middleware("http")
 async def per_ip_rate_limit(request: Request, call_next):
     """Per-IP request limit on the /v1 API (see app.ratelimit)."""
     if request.url.path.startswith("/v1/"):
-        allowed, retry_after = ratelimit.check_ip(request)
+        try:
+            allowed, retry_after = ratelimit.check_ip(request)
+        except ratelimit.RateLimitUnavailable:
+            return JSONResponse({"detail": "Rate limiting is unavailable; retry later."}, status_code=503)
         if not allowed:
             return JSONResponse(
                 {"detail": "Too many requests; slow down and retry later."},
@@ -65,4 +76,6 @@ app.include_router(clients_router)
 app.include_router(assessments_router)
 app.include_router(consent_router)
 app.include_router(admin_router)
+app.include_router(lifecycle_admin_router)
+app.include_router(privacy_router)
 app.include_router(audit_router)
