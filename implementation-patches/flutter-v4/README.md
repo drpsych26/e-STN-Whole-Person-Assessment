@@ -33,3 +33,14 @@ These changes reduce unsupported claims; they do not make the app clinically val
 Both GitHub Flutter verification workflows copy the new screen and tests into the restored v4 project. This is Part A only; the other 183 paper-pilot items, adaptive routing and all clinical/governance gates remain open. Synthetic data only.
 
 The Part A safety flag rule is intentionally conservative: any endorsed or unanswered safety-tagged item remains unresolved for human review. This is not a clinically approved risk threshold or safety disposition.
+
+
+## Clinician sign-in (optional build variant)
+
+- `lib/api/`: API configuration, client, sign-in service, token store and the offline platform stubs.
+- `lib/screens/clinician/`: sign-in, clinician workspace, review queue and record detail screens.
+- `api_variant/`: the AppAuth sign-in adapter and package:http transport that replace the stubs in the clinician API variant.
+- `apply_clinician_api.py <project> --variant default|api`: applies the above. `default` adds no dependency and changes no manifest. `api` adds `http` and `flutter_appauth`, the AppAuth redirect scheme and the INTERNET permission.
+- `test/clinician_api_test.dart`, `test/clinician_screens_test.dart`: unit and widget tests (synthetic data, fake API).
+
+Sign-in is off unless built with `--dart-define=STN_API_ENABLED=true` plus `STN_API_BASE_URL`, `STN_OIDC_ISSUER` and `STN_OIDC_CLIENT_ID`. See `docs/architecture/FLUTTER-CLINICIAN-SIGN-IN-DESIGN.md`.
