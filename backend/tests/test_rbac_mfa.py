@@ -26,7 +26,7 @@ class _Jwks:
 @pytest.fixture(autouse=True)
 def configured(monkeypatch, tmp_path):
     for name in ("STN_REQUIRE_MFA", "STN_OIDC_ROLE_MAP", "STN_OIDC_ROLES_CLAIM", "STN_MFA_AMR_VALUES",
-                 "STN_MFA_ACR_VALUES", "STN_MFA_ACRS_VALUES", "STN_DATABASE_URL"):
+                 "STN_MFA_ACR_VALUES", "STN_MFA_ACRS_VALUES", "STN_DATABASE_URL", "STN_OIDC_ORG_CLAIM"):
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv("STN_OIDC_ISSUER", ISSUER)
     monkeypatch.setenv("STN_OIDC_AUDIENCE", AUDIENCE)
@@ -42,7 +42,8 @@ client = TestClient(app)
 
 def token(**claims) -> str:
     now = int(time.time())
-    body = {"iss": ISSUER, "aud": AUDIENCE, "sub": "clinician-001", "iat": now, "exp": now + 300}
+    body = {"iss": ISSUER, "aud": AUDIENCE, "sub": "clinician-001", "iat": now, "exp": now + 300,
+            "stn_org": "org-synthetic-1"}
     body.update(claims)
     return jwt.encode(body, _KEY, algorithm="RS256")
 
@@ -111,7 +112,8 @@ def test_wrong_role_for_route_is_forbidden():
 def test_access_endpoint_reports_effective_roles():
     headers = {"Authorization": f"Bearer {token(roles=['reviewer', 'clinician'], amr=['mfa'])}"}
     body = client.get("/v1/me/access", headers=headers).json()
-    assert body == {"subject": "clinician-001", "roles": ["clinician", "reviewer"], "mfa": True, "mfa_required": True}
+    assert body == {"subject": "clinician-001", "roles": ["clinician", "reviewer"], "organisation": "org-synthetic-1",
+                    "mfa": True, "mfa_required": True}
 
 
 def test_invalid_token_is_401_before_any_role_check():
