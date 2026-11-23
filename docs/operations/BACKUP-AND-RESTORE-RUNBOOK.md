@@ -24,6 +24,7 @@ RPO and RTO targets, backup retention, restore ownership and test frequency are 
 
 `backend/scripts/backup_restore_drill.sh` runs the same steps as a real restore, against a scratch database on the same server:
 
+0. Check that `pg_dump`/`pg_restore` have the same major version as the server, and stop if they do not (a newer client writes settings an older server rejects). `STN_PG_BIN` selects the client install.
 1. `pg_dump --format=custom` of the source database, and its SHA-256.
 2. Create the scratch database and `pg_restore --exit-on-error` into it.
 3. Compare row counts for every table in the source and the restored copy.
