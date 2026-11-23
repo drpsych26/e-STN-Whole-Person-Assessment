@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "STN API",
-    "description": "Non-live integration API. Clinician sign-in via OIDC, server-side roles (clinician, reviewer, admin) and MFA enforcement; encrypted, owner-scoped client and assessment records; human review and sign-off workflow; hash-chained audit. No diagnosis, scoring, risk disposition or crisis automation is exposed.",
-    "version": "0.2.0"
+    "description": "Non-live integration API. Clinician sign-in via OIDC, server-side roles (clinician, reviewer, admin), MFA enforcement and organisation scoping; encrypted, owner-scoped client and assessment records with key rotation; human review and sign-off workflow; consent records, legal holds and two-person disposal; logged exports; rate limiting; hash-chained audit. No diagnosis, scoring, risk disposition or crisis automation is exposed.",
+    "version": "0.3.0"
   },
   "paths": {
     "/health/live": {
@@ -66,7 +66,7 @@
           "identity"
         ],
         "summary": "Current Access",
-        "description": "Effective STN roles and MFA status derived from the verified token (no client data).",
+        "description": "Effective STN roles, organisation and MFA status derived from the verified token (no client data).",
         "operationId": "current_access_v1_me_access_get",
         "responses": {
           "200": {
@@ -824,13 +824,652 @@
         }
       }
     },
+    "/v1/assessments/{assessment_id}/export": {
+      "post": {
+        "tags": [
+          "assessments"
+        ],
+        "summary": "Export Assessment",
+        "description": "Signed-off work only, by its author or the reviewer who signed it off; a reason code is required.\n\nThe response is the export document and its SHA-256. The export log and audit\nevent keep the hash and reason code, never the payload.",
+        "operationId": "export_assessment_v1_assessments__assessment_id__export_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assessment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assessment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Export Assessment V1 Assessments  Assessment Id  Export Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clients/{client_id}/consents": {
+      "post": {
+        "tags": [
+          "consent"
+        ],
+        "summary": "Record Consent",
+        "description": "Record a consent: scope code and a reference to the consent-text version shown to the client.",
+        "operationId": "record_consent_v1_clients__client_id__consents_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Record Consent V1 Clients  Client Id  Consents Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "consent"
+        ],
+        "summary": "List Consents",
+        "operationId": "list_consents_v1_clients__client_id__consents_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Consents V1 Clients  Client Id  Consents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clients/{client_id}/consents/{consent_id}/withdraw": {
+      "post": {
+        "tags": [
+          "consent"
+        ],
+        "summary": "Withdraw Consent",
+        "operationId": "withdraw_consent_v1_clients__client_id__consents__consent_id__withdraw_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          },
+          {
+            "name": "consent_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Consent Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Withdraw Consent V1 Clients  Client Id  Consents  Consent Id  Withdraw Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/retention/policy": {
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Retention Policy",
+        "operationId": "retention_policy_v1_admin_retention_policy_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Retention Policy V1 Admin Retention Policy Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/retention/due": {
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Retention Due",
+        "operationId": "retention_due_v1_admin_retention_due_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Retention Due V1 Admin Retention Due Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/legal-holds": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Place Legal Hold",
+        "operationId": "place_legal_hold_v1_admin_legal_holds_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Place Legal Hold V1 Admin Legal Holds Post"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "List Legal Holds",
+        "operationId": "list_legal_holds_v1_admin_legal_holds_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Legal Holds V1 Admin Legal Holds Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/legal-holds/{hold_id}/release": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Release Legal Hold",
+        "operationId": "release_legal_hold_v1_admin_legal_holds__hold_id__release_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "hold_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Hold Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Release Legal Hold V1 Admin Legal Holds  Hold Id  Release Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/disposals": {
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "List Disposals",
+        "operationId": "list_disposals_v1_admin_disposals_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Disposals V1 Admin Disposals Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Request Disposal",
+        "operationId": "request_disposal_v1_admin_disposals_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Request Disposal V1 Admin Disposals Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/disposals/{disposal_id}/approve": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Approve Disposal",
+        "description": "Second-person approval. Executes the disposal after re-checking eligibility.",
+        "operationId": "approve_disposal_v1_admin_disposals__disposal_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "disposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Disposal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Approve Disposal V1 Admin Disposals  Disposal Id  Approve Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/disposals/{disposal_id}/cancel": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Cancel Disposal",
+        "operationId": "cancel_disposal_v1_admin_disposals__disposal_id__cancel_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "disposal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Disposal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Cancel Disposal V1 Admin Disposals  Disposal Id  Cancel Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/keys/status": {
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Key Status",
+        "description": "Key ids in use for this organisation's records. Never returns key material.",
+        "operationId": "key_status_v1_admin_keys_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Key Status V1 Admin Keys Status Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/keys/re-encrypt": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Reencrypt",
+        "description": "Move up to `limit` of this organisation's records onto the active data key.",
+        "operationId": "reencrypt_v1_admin_keys_re_encrypt_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 5000,
+              "minimum": 1,
+              "default": 500,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Reencrypt V1 Admin Keys Re Encrypt Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/audit": {
       "get": {
         "tags": [
           "audit"
         ],
         "summary": "List Audit Events",
-        "description": "Audit metadata only. Admins get no clinical payload access anywhere in the API.",
+        "description": "Audit metadata for the caller's organisation only. Admins get no clinical payload access.",
         "operationId": "list_audit_events_v1_audit_get",
         "security": [
           {
@@ -897,6 +1536,7 @@
           "audit"
         ],
         "summary": "Verify Audit Chain",
+        "description": "Recomputes the whole platform-wide chain; returns only ok, a count and the first broken id.",
         "operationId": "verify_audit_chain_v1_audit_verify_get",
         "responses": {
           "200": {

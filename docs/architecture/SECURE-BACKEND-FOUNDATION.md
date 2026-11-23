@@ -117,3 +117,23 @@ Deviations from sections 3–5, recorded for governance acceptance:
 - The `admin` role covers audit-metadata access. There is no separate auditor role yet. The operations administrator gets no clinical content access, as section 3 requires.
 - Organisation scope and multi-tenant isolation, reviewer assignment policy, consent records and the client index endpoint are **not** implemented yet. The increment is single-organisation and owner-scoped.
 - Any reviewer may see queue metadata for submitted work and acknowledge its safety flags. Payload access is limited to the reviewer who started the review. Clinical governance must confirm this model and the safety-flag acknowledgement SOP before live use.
+
+## 11. Implementation status — hardening increment (November 2026)
+
+**Status: implemented on branch `backend-hardening` for engineering review; non-live; synthetic data only.** Details and configuration: `backend/README.md`. This section records what exists in code. It does not tick any production gate.
+
+Implemented (automated tests on SQLite and PostgreSQL; schema change in migration `002_org_governance_keys`):
+- **Organisation scope** (section 3). Organisation id from a configurable token claim; missing or malformed fails closed (403). Every table holding client-related data carries `org_id`, and every query filters on it. Cross-organisation access returns the same 404 as a missing record and is audited in the caller's organisation. Rows created before migration 002 sit in organisation `unassigned`, visible to nobody until an operator reassigns them.
+- **Consent records** (section 4 `consent_records`). Scope code, consent-text version reference, recorded-by, time and a single withdrawal; no delete or rewrite (database triggers).
+- **Retention and disposal** (section 7 item 2). Retention period from configuration only, never hard-coded; disposal is refused when it is not configured. Legal holds. Two-person disposal (requester admin; approver a different admin or reviewer) that re-checks eligibility, removes all payloads and safety-flag codes, keeps metadata tombstones, and is final at the database level.
+- **Export controls** (sections 2 and 7 item 6). Signed-off records only, by the author or the signing reviewer, with a reason code; the export log and audit event hold the document SHA-256, never the payload.
+- **Managed key lifecycle** (section 7 item 5). Versioned keyring with the key id authenticated in each ciphertext, an admin and command-line re-encryption job, and a `KeyProvider` interface with environment and Azure Key Vault implementations. The Key Vault provider is tested only against a fake secret client and fails closed when not configured or when the Azure SDK is absent.
+- **Rate limiting** (section 2). Per-IP, per-subject write and per-IP authentication-failure limits behind an interface; the in-process default is single-instance only.
+- **Restore drill** (section 7 item 7, engineering part). `backend/scripts/backup_restore_drill.sh` dumps, restores into a scratch database, compares row counts, recomputes the audit chain and decrypts every record; CI runs it on synthetic data. Runbook: `docs/operations/BACKUP-AND-RESTORE-RUNBOOK.md`.
+
+Deviations and open decisions, recorded for governance acceptance:
+- Organisation membership comes from a token claim. There is no `organisations` or `role_assignments` table yet, so organisation status, membership changes and access review live in the identity provider and need a documented process.
+- The retention anchor is the latest `updated_at` of the client record and its assessments. Legal advice must confirm the period and the anchor ("last date services were provided") before any disposal.
+- Disposal removes payloads but keeps pseudonymous metadata (ids, author and reviewer subjects, form ids, timestamps, content hash) and audit events. Whether that residual metadata may be kept, and for how long, needs the privacy review.
+- Export returns JSON to the caller. Onward handling (secure transfer, recipient, client access requests) is a procedural control still to be written.
+- The audit chain is platform-wide. Admin listing is organisation-scoped; chain verification reports a platform-wide count.

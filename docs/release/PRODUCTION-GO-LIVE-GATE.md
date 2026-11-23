@@ -26,16 +26,20 @@ This document separates successful engineering builds from approval to operate a
 
 ### Clinical service backend
 
-> **Engineering evidence, 22 November 2026 (not gate approval).** Draft PR #54 (`backend-clinician-review`) implements server-side roles (clinician, reviewer, admin), MFA enforcement, encrypted assessment records, the human review and sign-off workflow with separation of duties, safety-flag acknowledgement gating, immutable signed-off records with versioned amendments, a hash-chained append-only audit, and a PostgreSQL store with migrations. CI on its head passed: API tests on SQLite and on a PostgreSQL 16 service container (130 passed, none skipped), static quality, verification and Flutter web validation. The PR is unmerged, undeployed and not configured against an approved identity provider or managed database, so no box below is ticked. Each item still needs production configuration, independent verification and sign-off. Export auditing, consent, retention and disposal, backups and restore remain unimplemented.
+> **Engineering evidence, 22–23 November 2026 (not gate approval).** PR #54 (`backend-clinician-review`, merged to `main` as `f706a9f` on 23 November 2026) implements server-side roles (clinician, reviewer, admin), MFA enforcement, encrypted assessment records, the human review and sign-off workflow with separation of duties, safety-flag acknowledgement gating, immutable signed-off records with versioned amendments, a hash-chained append-only audit, and a PostgreSQL store with migrations. CI on its merged head passed: API tests on SQLite and on a PostgreSQL 16 service container (130 passed, none skipped), static quality, verification and Flutter web validation.
+>
+> The hardening increment (branch `backend-hardening`, PR __HARDENING_PR__) adds organisation separation, consent records, a configurable retention policy with legal holds and two-person disposal, logged exports, a versioned keyring with re-encryption and a Key Vault provider stub, rate limiting, and a backup/restore drill that CI runs on synthetic data (206 API tests on SQLite and PostgreSQL locally before push; CI results are recorded on the PR).
+>
+> None of this is deployed or configured against an approved identity provider, managed database or key vault, so no box below is ticked. Each item still needs production configuration, independent verification and sign-off.
 
 - [ ] Replace staging/demo authentication with an approved OIDC/JWT verifier. *(Verifier code exists; identity provider not yet selected or approved.)*
 - [ ] Replace in-memory demo storage with managed PostgreSQL or an equivalent approved clinical record store. *(PostgreSQL support in PR #54; no managed database provisioned.)*
 - [ ] Implement authenticated clinician access, MFA and role-based access control. *(Engineering in PR #54, CI green; unmerged and unverified in production.)*
-- [ ] Implement encrypted transport and storage, secure secret management and controlled backups.
+- [ ] Implement encrypted transport and storage, secure secret management and controlled backups. *(Encrypted storage, keyring rotation and an untested-live Key Vault provider in engineering; TLS, managed keys and backups need Azure.)*
 - [ ] Implement client/assessment persistence, server-side validation and scoring.
-- [ ] Implement immutable audit events for access, edits, exports and sign-off. *(Access, edit, transition and sign-off events in PR #54; exports not yet implemented.)*
-- [ ] Implement consent, privacy notice, access/correction, retention and secure disposal workflows.
-- [ ] Test backup restoration, failure recovery and data migration.
+- [ ] Implement immutable audit events for access, edits, exports and sign-off. *(Access, edit, transition and sign-off events in PR #54; export, consent, hold, disposal and re-encryption events in the hardening PR.)*
+- [ ] Implement consent, privacy notice, access/correction, retention and secure disposal workflows. *(Consent records, legal holds and two-person disposal in the hardening PR; retention period unset pending legal advice; privacy notice and access/correction workflows not implemented.)*
+- [ ] Test backup restoration, failure recovery and data migration. *(Synthetic dump/restore/verify drill in CI from the hardening PR; production backup, point-in-time recovery and disaster-recovery exercises not done.)*
 
 ### Safety, privacy and clinical operations
 - [ ] Complete and approve the Privacy Impact Assessment and hosting/data-processing assessment.
@@ -62,7 +66,7 @@ These cannot be completed by engineering changes. Each needs the STN owner or an
 
 1. **Android release signing:** generate the production keystore offline, store it under STN control, and add the `STN_ANDROID_KEYSTORE_BASE64` and `STN_ANDROID_KEYSTORE_PASSWORD` repository secrets. Never share them in chat or commit them.
 2. **Website domain:** set `supportivetherapy.network` in the STN-Website Pages settings, add the GitHub Pages DNS records at the registrar, then enable Enforce HTTPS.
-3. **Website content:** confirm the public phone, email, head office address and privacy officer before PR #9 (STN-Website) is merged and published.
+3. **Website content:** STN-Website PR #9 was merged and published on 23 November 2026 with the head office address and privacy officer shown as "To be confirmed". Confirm the public phone, email, head office address and privacy officer so the site can be updated.
 4. **Azure:** create the STN-owned tenant and production subscription (New Zealand North), Azure Database for PostgreSQL, Key Vault and App Service, following `docs/infrastructure/AZURE-PRODUCTION-SUBSCRIPTION-AND-DEPLOYMENT.md`.
 5. **Identity provider:** register the API and app in the STN tenant, define the app roles, and enforce MFA through Conditional Access.
 6. **Privacy:** complete and approve the Privacy Impact Assessment, appoint a privacy officer, and publish an approved privacy notice.
@@ -71,7 +75,9 @@ These cannot be completed by engineering changes. Each needs the STN owner or an
 9. **Clinical safety:** approve the clinical safety case, the hazard log, the safety-flag acknowledgement and escalation SOP, and clinician scope and sign-off authority.
 10. **Insurance:** professional indemnity, cyber and public liability cover appropriate to the service.
 11. **Repository visibility:** `drpsych26/e-STN-Whole-Person-Assessment` is currently **public**, while repository records state it should remain private. Decide whether to make it private.
-12. **Final release approval:** formal go-live sign-off for the exact release version.
+12. **Retention period:** obtain legal advice on the minimum retention period and how it is counted (Health (Retention of Health Information) Regulations 1996 and any other obligation) before `STN_RETENTION_PERIOD_DAYS` is set or any record is disposed of.
+13. **Organisation model:** decide how organisations are represented in the identity provider (claim `stn_org` or one tenant per organisation via `tid`) and the access-review process for membership.
+14. **Final release approval:** formal go-live sign-off for the exact release version.
 
 ## Data-use restriction
 

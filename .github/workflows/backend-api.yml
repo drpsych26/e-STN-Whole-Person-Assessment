@@ -67,3 +67,12 @@ jobs:
         run: python -m pip install -e ".[test,postgres]"
       - name: Run API tests (SQLite and PostgreSQL)
         run: python -m pytest -rs
+      - name: Backup and restore drill (synthetic data)
+        env:
+          STN_DATABASE_URL: postgresql://stn_ci:stn_ci_only@localhost:5432/stn_ci
+          # The seed script may wipe only this throwaway CI database.
+          STN_ALLOW_SCHEMA_RESET: "1"
+        run: |
+          export STN_DATA_KEY="$(python -c 'import base64, secrets; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())')"
+          python scripts/seed_synthetic_data.py --reset
+          bash scripts/backup_restore_drill.sh
