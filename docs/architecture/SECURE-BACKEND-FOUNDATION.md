@@ -97,3 +97,23 @@ Before any production data:
 ## 9. Explicit non-goals for this increment
 
 No live hosting, real-client data, public intake, production credentials, patient portal, autonomous diagnosis, clinical risk scoring, crisis response automation, or claim of regulatory compliance. Use synthetic data only.
+
+## 10. Implementation status — clinician sign-in and review increment (November 2026)
+
+**Status: implemented on branch `backend-clinician-review` for engineering review; non-live; synthetic data only.** Details and configuration: `backend/README.md`. This section records what exists in code. It does not tick any production gate.
+
+Implemented (with automated tests running on SQLite and PostgreSQL):
+- OIDC RS256 verification (existing), plus server-side roles from a configurable claim with provider-to-STN mapping. Missing roles fail closed.
+- MFA enforcement, on by default, via configurable `amr` / `acr` / `acrs` evidence.
+- Encrypted, author-bound assessment records against owner-scoped client records, with optimistic concurrency (`revision`).
+- Human review workflow with separation of duties: an author cannot start review of, or sign off, their own work. Sign-off quotes the reviewed content hash, signed-off rows are immutable (application rule plus database trigger), and corrections are new versions (`parent_id`).
+- Safety flags that must each be acknowledged by a named clinician or reviewer before review starts. They carry no automated disposition.
+- Hash-chained, append-only audit events (UPDATE/DELETE/TRUNCATE blocked by triggers) with admin-only chain verification. No payloads appear in audit rows.
+- PostgreSQL store behind the same interface as the SQLite test store, versioned migrations, a local `docker-compose.yml`, and a CI PostgreSQL service job.
+
+Deviations from sections 3–5, recorded for governance acceptance:
+- State names are `draft, submitted, in_review, returned, signed_off` (section 4 proposed `under_review, finalised, withdrawn`). `signed_off` corresponds to `finalised`. `withdrawn` is not implemented.
+- Endpoints are `start-review`, `return` and `sign-off` rather than a single `reviews` endpoint plus `finalise`.
+- The `admin` role covers audit-metadata access. There is no separate auditor role yet. The operations administrator gets no clinical content access, as section 3 requires.
+- Organisation scope and multi-tenant isolation, reviewer assignment policy, consent records and the client index endpoint are **not** implemented yet. The increment is single-organisation and owner-scoped.
+- Any reviewer may see queue metadata for submitted work and acknowledge its safety flags. Payload access is limited to the reviewer who started the review. Clinical governance must confirm this model and the safety-flag acknowledgement SOP before live use.

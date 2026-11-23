@@ -28,6 +28,42 @@ jobs:
           cache: pip
           cache-dependency-path: backend/pyproject.toml
       - name: Install API and test dependencies
-        run: python -m pip install -e ".[test]"
-      - name: Run API tests
+        run: python -m pip install -e ".[test,postgres]"
+      - name: Run API tests (SQLite)
         run: python -m pytest
+
+  api-tests-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: stn_ci
+          POSTGRES_PASSWORD: stn_ci_only
+          POSTGRES_DB: stn_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stn_ci -d stn_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Throwaway CI database; credentials are not secrets.
+      STN_TEST_DATABASE_URL: postgresql://stn_ci:stn_ci_only@localhost:5432/stn_ci
+      # Fail instead of skipping if the PostgreSQL pass cannot run.
+      STN_REQUIRE_PG_TESTS: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - name: Install API, test and PostgreSQL dependencies
+        run: python -m pip install -e ".[test,postgres]"
+      - name: Run API tests (SQLite and PostgreSQL)
+        run: python -m pytest -rs

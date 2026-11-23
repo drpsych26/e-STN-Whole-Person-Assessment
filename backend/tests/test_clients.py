@@ -20,6 +20,7 @@ OTHER = "clinician-other"
 @pytest.fixture
 def db_path(tmp_path, monkeypatch):
     path = tmp_path / "records.sqlite3"
+    monkeypatch.delenv("STN_DATABASE_URL", raising=False)
     monkeypatch.setenv(store.DB_ENV, str(path))
     monkeypatch.setenv("STN_DATA_KEY", base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())
     return path
@@ -28,7 +29,11 @@ def db_path(tmp_path, monkeypatch):
 @pytest.fixture
 def as_user(monkeypatch):
     current = {"sub": OWNER}
-    monkeypatch.setitem(app.dependency_overrides, auth.require_identity, lambda: {"sub": current["sub"]})
+    monkeypatch.setitem(
+        app.dependency_overrides,
+        auth.require_identity,
+        lambda: {"sub": current["sub"], "roles": ("clinician",), "mfa": True},
+    )
 
     def switch(sub: str) -> None:
         current["sub"] = sub
@@ -100,6 +105,7 @@ def test_malformed_key_is_rejected(db_path, as_user, monkeypatch):
 
 def test_unconfigured_database_fails_closed(as_user, monkeypatch):
     monkeypatch.delenv(store.DB_ENV, raising=False)
+    monkeypatch.delenv("STN_DATABASE_URL", raising=False)
     monkeypatch.setenv("STN_DATA_KEY", base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())
     assert client.post("/v1/clients", json={"x": 1}).status_code == 503
 
