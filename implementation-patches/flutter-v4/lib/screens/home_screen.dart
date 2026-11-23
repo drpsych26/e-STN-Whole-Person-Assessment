@@ -23,7 +23,7 @@ class HomeScreen extends StatelessWidget {
               errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
             ),
             const SizedBox(width: 12),
-            const Flexible(child: Text("STN Whole Person Assessment — Flutter MVP", overflow: TextOverflow.ellipsis)),
+            const Flexible(child: Text("Supportive Therapy Network", overflow: TextOverflow.ellipsis)),
           ],
         ),
         actions: [
@@ -48,6 +48,21 @@ class HomeScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Two assessments, one intake", style: TextStyle(fontFamily: "SourceSerif4", fontSize: 24, fontWeight: FontWeight.w600)),
+                  SizedBox(height: 8),
+                  Text("Run the complete STN pathway in one application. The Whole Person Initial Assessment feeds directly into the Diagnostic Assessment, with clinician review before any diagnosis is recorded."),
+                  SizedBox(height: 12),
+                  Text("Consent & client context → Whole Person Initial Assessment → Safety Gate → Adaptive Screening → Integrated Results → Diagnostic Assessment → Clinician Review → Formulation & Care Plan → Finalise", style: TextStyle(fontSize: 13)),
+                ],
+              ),
+            ),
+          ),
           const Card(
             child: Padding(
               padding: EdgeInsets.all(16),
