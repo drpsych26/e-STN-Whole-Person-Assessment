@@ -14,8 +14,20 @@ from typing import Any, Callable
 
 import pytest
 
-from app import auth, db
+from app import auth, crypto, db, ratelimit
 from app.main import app
+
+ORG = "org-synthetic-1"
+
+
+@pytest.fixture(autouse=True)
+def _isolated_limits_and_keys():
+    """Fresh rate-limit windows and key-provider selection for every test."""
+    ratelimit.limiter().reset()
+    crypto.set_key_provider(None)
+    yield
+    ratelimit.limiter().reset()
+    crypto.set_key_provider(None)
 
 
 @pytest.fixture(params=["sqlite", "postgres"])
@@ -66,12 +78,12 @@ def raw(backend) -> Callable[..., list[tuple]]:
 
 @pytest.fixture
 def act(monkeypatch) -> Callable[..., None]:
-    """Switch the verified identity seen by the API: act("sub", "clinician", mfa=True)."""
-    current: dict[str, Any] = {"sub": "nobody", "roles": (), "mfa": True}
+    """Switch the verified identity seen by the API: act("sub", "clinician", mfa=True, org=ORG)."""
+    current: dict[str, Any] = {"sub": "nobody", "roles": (), "mfa": True, "org": ORG}
     monkeypatch.setitem(app.dependency_overrides, auth.require_identity, lambda: dict(current))
 
-    def switch(sub: str, *roles: str, mfa: bool = True) -> None:
-        current.update(sub=sub, roles=tuple(roles), mfa=mfa)
+    def switch(sub: str, *roles: str, mfa: bool = True, org: str | None = ORG) -> None:
+        current.update(sub=sub, roles=tuple(roles), mfa=mfa, org=org)
 
     yield switch
     app.dependency_overrides.pop(auth.require_identity, None)

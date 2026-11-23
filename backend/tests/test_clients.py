@@ -32,7 +32,7 @@ def as_user(monkeypatch):
     monkeypatch.setitem(
         app.dependency_overrides,
         auth.require_identity,
-        lambda: {"sub": current["sub"], "roles": ("clinician",), "mfa": True},
+        lambda: {"sub": current["sub"], "roles": ("clinician",), "mfa": True, "org": "org-synthetic-1"},
     )
 
     def switch(sub: str) -> None:

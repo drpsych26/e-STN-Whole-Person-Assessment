@@ -17,8 +17,17 @@ Rules enforced here and covered by tests:
 - Sign-off requires the reviewer to quote the content hash they reviewed; it
   records reviewer, time and hash. Signed-off rows are immutable (also enforced by
   a database trigger). Corrections are new versions linked by parent_id.
-- Every access, change, transition, acknowledgement and denial is audited
+- Every access, change, transition, acknowledgement, export and denial is audited
   (hash-chained, no payloads). Denials are committed before the error is raised.
+- Everything is scoped to the caller's organisation: another organisation's
+  records behave exactly like missing ones.
+- Reads of submitted, in-review, returned or signed-off work re-check the stored
+  content hash, so an older ciphertext replayed into the row is detected.
+- Disposed records (app.governance) keep metadata only; payload access, edits and
+  transitions raise RecordDisposed.
+- Export: only signed-off work, by its author (clinician) or the reviewer who
+  signed it off, with a reason code. The export document's SHA-256 goes into the
+  export log and the audit event; the payload never does.
 """
 from __future__ import annotations
 
@@ -29,9 +38,11 @@ import uuid
 from typing import Any, Iterable
 
 from . import audit, db
-from .crypto import decrypt_payload, encrypt_payload
+from .crypto import RecordIntegrityError, decrypt_payload, encrypt_payload
 from .rbac import CLINICIAN, REVIEWER
-from .store import client_owner
+from .store import RecordDisposed, client_row
+
+__all__ = ["RecordDisposed"]
 
 DRAFT, SUBMITTED, IN_REVIEW, RETURNED, SIGNED_OFF = "draft", "submitted", "in_review", "returned", "signed_off"
 TRANSITIONS = {
@@ -45,6 +56,8 @@ TRANSITIONS = {
 _CODE = re.compile(r"^[A-Za-z0-9_.:-]{1,64}$")
 MAX_FLAGS = 50
 MAX_NOTE_CHARS = 4000
+EXPORT_FORMAT = "stn-assessment-export/1"
+HASHED_STATES = frozenset({SUBMITTED, IN_REVIEW, RETURNED, SIGNED_OFF})
 
 
 class AssessmentNotFound(LookupError):
@@ -106,13 +119,23 @@ def _meta(row: dict[str, Any]) -> dict[str, Any]:
     keys = (
         "id", "client_id", "version", "parent_id", "form_id", "form_version", "state", "revision",
         "submission", "content_hash", "author_sub", "reviewer_sub", "created_at", "updated_at",
-        "submitted_at", "review_started_at", "returned_at", "signed_off_by", "signed_off_at",
+        "submitted_at", "review_started_at", "returned_at", "signed_off_by", "signed_off_at", "disposed_at",
     )
     return {k: row[k] for k in keys}
 
 
-def _load(conn: db.Conn, assessment_id: str) -> dict[str, Any] | None:
-    return conn.execute("SELECT * FROM assessments WHERE id = ?", (assessment_id,)).fetchone()
+def _load(conn: db.Conn, assessment_id: str, org: str) -> dict[str, Any] | None:
+    return conn.execute(
+        "SELECT * FROM assessments WHERE id = ? AND org_id = ?", (assessment_id, org)
+    ).fetchone()
+
+
+def _payload(row: dict[str, Any]) -> dict[str, Any]:
+    """Decrypt and, for submitted work, check the content still matches its recorded hash."""
+    payload = decrypt_payload(row["ciphertext"], _aad(row["id"], row["author_sub"]))
+    if row["state"] in HASHED_STATES and content_hash(payload) != row["content_hash"]:
+        raise RecordIntegrityError("Stored assessment does not match its recorded content hash.")
+    return payload
 
 
 def _can_read(row: dict[str, Any], actor: str, roles: Iterable[str]) -> bool:
@@ -147,7 +170,8 @@ def _finish(error: Exception | None, result: Any) -> Any:
 # --------------------------------------------------------------------------- create / read / edit
 
 
-def create(actor: str, client_id: str, form_id: Any, form_version: Any, payload: dict[str, Any]) -> dict[str, Any]:
+def create(actor: str, org: str, client_id: str, form_id: Any, form_version: Any,
+           payload: dict[str, Any]) -> dict[str, Any]:
     form_id, form_version = _code(form_id, "form_id"), _code(form_version, "form_version")
     db.dialect()
     assessment_id = str(uuid.uuid4())
@@ -156,49 +180,56 @@ def create(actor: str, client_id: str, form_id: Any, form_version: Any, payload:
     error: Exception | None = None
     row: dict[str, Any] | None = None
     with db.transaction() as conn:
-        if client_owner(conn, client_id) != actor:
+        client = client_row(conn, client_id, org)
+        if client is None or client["owner_sub"] != actor:
             error = AssessmentNotFound(client_id)
-            audit.append(conn, actor, "assessment.create", "client", client_id, "denied_or_missing")
+            audit.append(conn, actor, "assessment.create", "client", client_id, "denied_or_missing", org=org)
+        elif client["disposed_at"] is not None:
+            error = RecordDisposed(client_id)
+            audit.append(conn, actor, "assessment.create", "client", client_id, "rejected_disposed", org=org)
         else:
             conn.execute(
-                "INSERT INTO assessments (id, client_id, author_sub, version, parent_id, form_id, form_version, state, "
-                "revision, submission, ciphertext, created_at, updated_at) "
-                "VALUES (?, ?, ?, 1, NULL, ?, ?, ?, 1, 0, ?, ?, ?)",
-                (assessment_id, client_id, actor, form_id, form_version, DRAFT, blob, stamp, stamp),
+                "INSERT INTO assessments (id, org_id, client_id, author_sub, version, parent_id, form_id, form_version, "
+                "state, revision, submission, ciphertext, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, 1, NULL, ?, ?, ?, 1, 0, ?, ?, ?)",
+                (assessment_id, org, client_id, actor, form_id, form_version, DRAFT, blob, stamp, stamp),
             )
-            audit.append(conn, actor, "assessment.create", "assessment", assessment_id, "ok")
-            row = _load(conn, assessment_id)
+            audit.append(conn, actor, "assessment.create", "assessment", assessment_id, "ok", org=org)
+            row = _load(conn, assessment_id, org)
     return _finish(error, row and _meta(row))
 
 
-def read(actor: str, roles: Iterable[str], assessment_id: str) -> dict[str, Any]:
+def read(actor: str, org: str, roles: Iterable[str], assessment_id: str) -> dict[str, Any]:
     error: Exception | None = None
     result: dict[str, Any] | None = None
     with db.transaction() as conn:
-        row = _load(conn, assessment_id)
+        row = _load(conn, assessment_id, org)
         if row is None or not _can_read(row, actor, roles):
             error = AssessmentNotFound(assessment_id)
-            audit.append(conn, actor, "assessment.read", "assessment", assessment_id, "denied_or_missing")
+            audit.append(conn, actor, "assessment.read", "assessment", assessment_id, "denied_or_missing", org=org)
+        elif row["disposed_at"] is not None:
+            error = RecordDisposed(assessment_id)
+            audit.append(conn, actor, "assessment.read", "assessment", assessment_id, "rejected_disposed", org=org)
         else:
             try:
-                payload = decrypt_payload(row["ciphertext"], _aad(assessment_id, row["author_sub"]))
+                payload = _payload(row)
                 note = None
                 if row["note_ciphertext"] is not None:
                     note = decrypt_payload(row["note_ciphertext"], _note_aad(assessment_id))["note"]
             except Exception as exc:
                 error = exc
-                audit.append(conn, actor, "assessment.read", "assessment", assessment_id, "integrity_failure")
+                audit.append(conn, actor, "assessment.read", "assessment", assessment_id, "integrity_failure", org=org)
             else:
                 result = _meta(row) | {
                     "payload": payload,
                     "note": note,
                     "safety_flags": _flags(conn, assessment_id, row["submission"]),
                 }
-                audit.append(conn, actor, "assessment.read", "assessment", assessment_id, "ok")
+                audit.append(conn, actor, "assessment.read", "assessment", assessment_id, "ok", org=org)
     return _finish(error, result)
 
 
-def update(actor: str, assessment_id: str, payload: dict[str, Any], revision: Any) -> dict[str, Any]:
+def update(actor: str, org: str, assessment_id: str, payload: dict[str, Any], revision: Any) -> dict[str, Any]:
     if not isinstance(revision, int) or isinstance(revision, bool):
         raise InvalidInput("revision must be an integer.")
     db.dialect()
@@ -208,41 +239,46 @@ def update(actor: str, assessment_id: str, payload: dict[str, Any], revision: An
     with db.transaction() as conn:
         changed = conn.execute(
             "UPDATE assessments SET ciphertext = ?, revision = revision + 1, updated_at = ? "
-            "WHERE id = ? AND author_sub = ? AND state = ? AND revision = ?",
-            (blob, audit.now(), assessment_id, actor, DRAFT, revision),
+            "WHERE id = ? AND org_id = ? AND author_sub = ? AND state = ? AND revision = ? AND disposed_at IS NULL",
+            (blob, audit.now(), assessment_id, org, actor, DRAFT, revision),
         ).rowcount
-        row = _load(conn, assessment_id)
+        row = _load(conn, assessment_id, org)
         if changed:
             outcome = "ok"
         elif row is None or row["author_sub"] != actor:
             error, outcome = AssessmentNotFound(assessment_id), "denied_or_missing"
+        elif row["disposed_at"] is not None:
+            error, outcome = RecordDisposed(assessment_id), "rejected_disposed"
         elif row["state"] != DRAFT:
             error, outcome = TransitionNotAllowed("Only draft assessments can be edited."), "rejected_state"
         else:
             error, outcome = RevisionConflict("The assessment changed; reload and retry."), "rejected_revision"
-        audit.append(conn, actor, "assessment.edit", "assessment", assessment_id, outcome)
+        audit.append(conn, actor, "assessment.edit", "assessment", assessment_id, outcome, org=org)
     return _finish(error, row and _meta(row))
 
 
-def list_for_client(actor: str, client_id: str) -> list[dict[str, Any]]:
+def list_for_client(actor: str, org: str, client_id: str) -> list[dict[str, Any]]:
+    """Metadata only. Disposed versions are listed as tombstones (disposed_at set)."""
     error: Exception | None = None
     rows: list[dict[str, Any]] = []
     with db.transaction() as conn:
-        if client_owner(conn, client_id) != actor:
+        client = client_row(conn, client_id, org)
+        if client is None or client["owner_sub"] != actor:
             error = AssessmentNotFound(client_id)
-            audit.append(conn, actor, "assessment.list", "client", client_id, "denied_or_missing")
+            audit.append(conn, actor, "assessment.list", "client", client_id, "denied_or_missing", org=org)
         else:
             rows = conn.execute(
-                "SELECT * FROM assessments WHERE client_id = ? ORDER BY created_at, version", (client_id,)
+                "SELECT * FROM assessments WHERE client_id = ? AND org_id = ? ORDER BY created_at, version",
+                (client_id, org),
             ).fetchall()
-            audit.append(conn, actor, "assessment.list", "client", client_id, "ok")
+            audit.append(conn, actor, "assessment.list", "client", client_id, "ok", org=org)
     return _finish(error, [_meta(r) for r in rows])
 
 
 # --------------------------------------------------------------------------- workflow
 
 
-def submit(actor: str, assessment_id: str, safety_flags: Any) -> dict[str, Any]:
+def submit(actor: str, org: str, assessment_id: str, safety_flags: Any) -> dict[str, Any]:
     if safety_flags is None:
         safety_flags = []
     if not isinstance(safety_flags, list) or len(safety_flags) > MAX_FLAGS:
@@ -251,9 +287,11 @@ def submit(actor: str, assessment_id: str, safety_flags: Any) -> dict[str, Any]:
     error: Exception | None = None
     row: dict[str, Any] | None = None
     with db.transaction() as conn:
-        row = _load(conn, assessment_id)
+        row = _load(conn, assessment_id, org)
         if row is None or row["author_sub"] != actor:
             error, outcome = AssessmentNotFound(assessment_id), "denied_or_missing"
+        elif row["disposed_at"] is not None:
+            error, outcome = RecordDisposed(assessment_id), "rejected_disposed"
         elif row["state"] != DRAFT:
             error, outcome = TransitionNotAllowed(f"Cannot submit from state '{row['state']}'."), "rejected_state"
         else:
@@ -276,34 +314,34 @@ def submit(actor: str, assessment_id: str, safety_flags: Any) -> dict[str, Any]:
                         "VALUES (?, ?, ?, ?, ?, ?)",
                         (flag_id, assessment_id, submission, code, actor, stamp),
                     )
-                    audit.append(conn, actor, "safety_flag.raise", "safety_flag", flag_id, "ok")
+                    audit.append(conn, actor, "safety_flag.raise", "safety_flag", flag_id, "ok", org=org)
                 outcome = "ok"
-        audit.append(conn, actor, "assessment.submit", "assessment", assessment_id, outcome)
-        row = _load(conn, assessment_id)
+        audit.append(conn, actor, "assessment.submit", "assessment", assessment_id, outcome, org=org)
+        row = _load(conn, assessment_id, org)
     return _finish(error, row and _meta(row))
 
 
-def review_queue(actor: str) -> list[dict[str, Any]]:
-    """Metadata only (no payloads): submitted work by others, plus reviews this reviewer holds."""
+def review_queue(actor: str, org: str) -> list[dict[str, Any]]:
+    """Metadata only (no payloads): submitted work by others in the organisation, plus reviews held."""
     with db.transaction() as conn:
         rows = conn.execute(
-            "SELECT * FROM assessments WHERE (state = ? AND author_sub <> ?) OR (state = ? AND reviewer_sub = ?) "
-            "ORDER BY submitted_at",
-            (SUBMITTED, actor, IN_REVIEW, actor),
+            "SELECT * FROM assessments WHERE org_id = ? AND disposed_at IS NULL AND "
+            "((state = ? AND author_sub <> ?) OR (state = ? AND reviewer_sub = ?)) ORDER BY submitted_at",
+            (org, SUBMITTED, actor, IN_REVIEW, actor),
         ).fetchall()
         queue = [_meta(r) | {"unacknowledged_safety_flags": _unacknowledged(conn, r["id"], r["submission"])}
                  for r in rows]
-        audit.append(conn, actor, "review_queue.read", "review_queue", None, "ok")
+        audit.append(conn, actor, "review_queue.read", "review_queue", None, "ok", org=org)
     return queue
 
 
-def list_flags(actor: str, roles: Iterable[str], assessment_id: str) -> list[dict[str, Any]]:
+def list_flags(actor: str, org: str, roles: Iterable[str], assessment_id: str) -> list[dict[str, Any]]:
     """Flag metadata for the author, or for any reviewer while the work awaits or is in review."""
     roles = set(roles)
     error: Exception | None = None
     flags: list[dict[str, Any]] = []
     with db.transaction() as conn:
-        row = _load(conn, assessment_id)
+        row = _load(conn, assessment_id, org)
         visible = row is not None and (
             (CLINICIAN in roles and row["author_sub"] == actor)
             or (REVIEWER in roles and row["state"] in (SUBMITTED, IN_REVIEW) and row["author_sub"] != actor)
@@ -311,19 +349,19 @@ def list_flags(actor: str, roles: Iterable[str], assessment_id: str) -> list[dic
         )
         if not visible:
             error = AssessmentNotFound(assessment_id)
-            audit.append(conn, actor, "safety_flag.list", "assessment", assessment_id, "denied_or_missing")
+            audit.append(conn, actor, "safety_flag.list", "assessment", assessment_id, "denied_or_missing", org=org)
         else:
             flags = _flags(conn, assessment_id, row["submission"])
-            audit.append(conn, actor, "safety_flag.list", "assessment", assessment_id, "ok")
+            audit.append(conn, actor, "safety_flag.list", "assessment", assessment_id, "ok", org=org)
     return _finish(error, flags)
 
 
-def acknowledge_flag(actor: str, roles: Iterable[str], assessment_id: str, flag_id: str) -> dict[str, Any]:
+def acknowledge_flag(actor: str, org: str, roles: Iterable[str], assessment_id: str, flag_id: str) -> dict[str, Any]:
     roles = set(roles)
     error: Exception | None = None
     flag: dict[str, Any] | None = None
     with db.transaction() as conn:
-        row = _load(conn, assessment_id)
+        row = _load(conn, assessment_id, org)
         allowed = row is not None and (
             (CLINICIAN in roles and row["author_sub"] == actor)
             or (REVIEWER in roles and row["state"] in (SUBMITTED, IN_REVIEW))
@@ -350,15 +388,15 @@ def acknowledge_flag(actor: str, roles: Iterable[str], assessment_id: str, flag_
                 "SELECT id, code, raised_by, raised_at, acknowledged_by, acknowledged_at FROM safety_flags WHERE id = ?",
                 (flag_id,),
             ).fetchone()
-        audit.append(conn, actor, "safety_flag.acknowledge", "safety_flag", flag_id, outcome)
+        audit.append(conn, actor, "safety_flag.acknowledge", "safety_flag", flag_id, outcome, org=org)
     return _finish(error, flag)
 
 
-def start_review(actor: str, assessment_id: str) -> dict[str, Any]:
+def start_review(actor: str, org: str, assessment_id: str) -> dict[str, Any]:
     error: Exception | None = None
     row: dict[str, Any] | None = None
     with db.transaction() as conn:
-        row = _load(conn, assessment_id)
+        row = _load(conn, assessment_id, org)
         if row is None:
             error, outcome = AssessmentNotFound(assessment_id), "denied_or_missing"
         elif row["author_sub"] == actor:
@@ -379,13 +417,15 @@ def start_review(actor: str, assessment_id: str) -> dict[str, Any]:
                 outcome = "ok"
             else:
                 error, outcome = TransitionNotAllowed("Review was started by someone else."), "rejected_state"
-        audit.append(conn, actor, "assessment.start_review", "assessment", assessment_id, outcome)
-        row = _load(conn, assessment_id)
+        audit.append(conn, actor, "assessment.start_review", "assessment", assessment_id, outcome, org=org)
+        row = _load(conn, assessment_id, org)
     return _finish(error, row and _meta(row))
 
 
-def _held_review(conn: db.Conn, actor: str, assessment_id: str) -> tuple[dict[str, Any] | None, Exception | None, str]:
-    row = _load(conn, assessment_id)
+def _held_review(
+    conn: db.Conn, actor: str, org: str, assessment_id: str
+) -> tuple[dict[str, Any] | None, Exception | None, str]:
+    row = _load(conn, assessment_id, org)
     if row is None or (row["reviewer_sub"] != actor and row["author_sub"] != actor):
         return row, AssessmentNotFound(assessment_id), "denied_or_missing"
     if row["author_sub"] == actor:
@@ -395,12 +435,12 @@ def _held_review(conn: db.Conn, actor: str, assessment_id: str) -> tuple[dict[st
     return row, None, "ok"
 
 
-def return_for_changes(actor: str, assessment_id: str, reason: Any) -> dict[str, Any]:
+def return_for_changes(actor: str, org: str, assessment_id: str, reason: Any) -> dict[str, Any]:
     reason = _note(reason, "reason")
     db.dialect()
     note_blob = encrypt_payload({"note": reason}, _note_aad(assessment_id))
     with db.transaction() as conn:
-        row, error, outcome = _held_review(conn, actor, assessment_id)
+        row, error, outcome = _held_review(conn, actor, org, assessment_id)
         if error is None:
             stamp = audit.now()
             conn.execute(
@@ -408,16 +448,16 @@ def return_for_changes(actor: str, assessment_id: str, reason: Any) -> dict[str,
                 "WHERE id = ? AND state = ? AND reviewer_sub = ?",
                 (RETURNED, stamp, note_blob, stamp, assessment_id, IN_REVIEW, actor),
             )
-        audit.append(conn, actor, "assessment.return", "assessment", assessment_id, outcome)
-        row = _load(conn, assessment_id)
+        audit.append(conn, actor, "assessment.return", "assessment", assessment_id, outcome, org=org)
+        row = _load(conn, assessment_id, org)
     return _finish(error, row and _meta(row))
 
 
-def sign_off(actor: str, assessment_id: str, quoted_hash: Any) -> dict[str, Any]:
+def sign_off(actor: str, org: str, assessment_id: str, quoted_hash: Any) -> dict[str, Any]:
     if not isinstance(quoted_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", quoted_hash):
         raise InvalidInput("content_hash must be the 64-character SHA-256 hex digest that was reviewed.")
     with db.transaction() as conn:
-        row, error, outcome = _held_review(conn, actor, assessment_id)
+        row, error, outcome = _held_review(conn, actor, org, assessment_id)
         if error is None:
             try:
                 actual = content_hash(decrypt_payload(row["ciphertext"], _aad(assessment_id, row["author_sub"])))
@@ -434,17 +474,19 @@ def sign_off(actor: str, assessment_id: str, quoted_hash: Any) -> dict[str, Any]
                         "WHERE id = ? AND state = ? AND reviewer_sub = ? AND author_sub <> ?",
                         (SIGNED_OFF, actor, stamp, stamp, assessment_id, IN_REVIEW, actor, actor),
                     )
-        audit.append(conn, actor, "assessment.sign_off", "assessment", assessment_id, outcome)
-        row = _load(conn, assessment_id)
+        audit.append(conn, actor, "assessment.sign_off", "assessment", assessment_id, outcome, org=org)
+        row = _load(conn, assessment_id, org)
     return _finish(error, row and _meta(row))
 
 
-def reopen(actor: str, assessment_id: str) -> dict[str, Any]:
+def reopen(actor: str, org: str, assessment_id: str) -> dict[str, Any]:
     error: Exception | None = None
     with db.transaction() as conn:
-        row = _load(conn, assessment_id)
+        row = _load(conn, assessment_id, org)
         if row is None or row["author_sub"] != actor:
             error, outcome = AssessmentNotFound(assessment_id), "denied_or_missing"
+        elif row["disposed_at"] is not None:
+            error, outcome = RecordDisposed(assessment_id), "rejected_disposed"
         elif row["state"] != RETURNED:
             error, outcome = TransitionNotAllowed(f"Cannot reopen from state '{row['state']}'."), "rejected_state"
         else:
@@ -453,12 +495,12 @@ def reopen(actor: str, assessment_id: str) -> dict[str, Any]:
                 (DRAFT, audit.now(), assessment_id, RETURNED, actor),
             )
             outcome = "ok"
-        audit.append(conn, actor, "assessment.reopen", "assessment", assessment_id, outcome)
-        row = _load(conn, assessment_id)
+        audit.append(conn, actor, "assessment.reopen", "assessment", assessment_id, outcome, org=org)
+        row = _load(conn, assessment_id, org)
     return _finish(error, row and _meta(row))
 
 
-def amend(actor: str, parent_id: str, payload: dict[str, Any], reason: Any) -> dict[str, Any]:
+def amend(actor: str, org: str, parent_id: str, payload: dict[str, Any], reason: Any) -> dict[str, Any]:
     """Create a new draft version of a signed-off assessment. The original is never changed."""
     reason = _note(reason, "reason")
     db.dialect()
@@ -468,9 +510,11 @@ def amend(actor: str, parent_id: str, payload: dict[str, Any], reason: Any) -> d
     error: Exception | None = None
     row: dict[str, Any] | None = None
     with db.transaction() as conn:
-        parent = _load(conn, parent_id)
+        parent = _load(conn, parent_id, org)
         if parent is None or parent["author_sub"] != actor:
             error, outcome = AssessmentNotFound(parent_id), "denied_or_missing"
+        elif parent["disposed_at"] is not None:
+            error, outcome = RecordDisposed(parent_id), "rejected_disposed"
         elif parent["state"] != SIGNED_OFF:
             error, outcome = TransitionNotAllowed("Only signed-off assessments are amended; edit drafts directly."), "rejected_state"
         elif conn.execute("SELECT 1 AS x FROM assessments WHERE parent_id = ?", (parent_id,)).fetchone():
@@ -478,14 +522,69 @@ def amend(actor: str, parent_id: str, payload: dict[str, Any], reason: Any) -> d
         else:
             stamp = audit.now()
             conn.execute(
-                "INSERT INTO assessments (id, client_id, author_sub, version, parent_id, form_id, form_version, state, "
-                "revision, submission, ciphertext, note_ciphertext, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?)",
-                (new_id, parent["client_id"], actor, parent["version"] + 1, parent_id, parent["form_id"],
+                "INSERT INTO assessments (id, org_id, client_id, author_sub, version, parent_id, form_id, form_version, "
+                "state, revision, submission, ciphertext, note_ciphertext, created_at, updated_at) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, ?, ?, ?, ?)",
+                (new_id, org, parent["client_id"], actor, parent["version"] + 1, parent_id, parent["form_id"],
                  parent["form_version"], DRAFT, blob, note_blob, stamp, stamp),
             )
-            audit.append(conn, actor, "assessment.create", "assessment", new_id, "ok")
+            audit.append(conn, actor, "assessment.create", "assessment", new_id, "ok", org=org)
             outcome = "ok"
-            row = _load(conn, new_id)
-        audit.append(conn, actor, "assessment.amend", "assessment", parent_id, outcome)
+            row = _load(conn, new_id, org)
+        audit.append(conn, actor, "assessment.amend", "assessment", parent_id, outcome, org=org)
     return _finish(error, row and _meta(row))
+
+
+# --------------------------------------------------------------------------- export
+
+
+def export(actor: str, org: str, roles: Iterable[str], assessment_id: str, reason_code: Any) -> dict[str, Any]:
+    """Export one signed-off assessment as a JSON document and log it.
+
+    Allowed for its author (clinician role) or the reviewer who signed it off
+    (reviewer role). The export log and the audit event hold the document hash
+    and reason code, never the payload.
+    """
+    reason_code = _code(reason_code, "reason_code")
+    roles = set(roles)
+    error: Exception | None = None
+    document: dict[str, Any] | None = None
+    export_hash: str | None = None
+    with db.transaction() as conn:
+        row = _load(conn, assessment_id, org)
+        visible = row is not None and (
+            (CLINICIAN in roles and row["author_sub"] == actor)
+            or (REVIEWER in roles and row["signed_off_by"] == actor)
+        )
+        if not visible:
+            error, outcome = AssessmentNotFound(assessment_id), "denied_or_missing"
+        elif row["disposed_at"] is not None:
+            error, outcome = RecordDisposed(assessment_id), "rejected_disposed"
+        elif row["state"] != SIGNED_OFF:
+            error, outcome = TransitionNotAllowed("Only signed-off assessments can be exported."), "rejected_state"
+        else:
+            try:
+                payload = _payload(row)
+            except Exception as exc:
+                error, outcome = exc, "integrity_failure"
+            else:
+                stamp = audit.now()
+                document = {
+                    "format": EXPORT_FORMAT,
+                    "exported_at": stamp,
+                    "exported_by": actor,
+                    "reason_code": reason_code,
+                    "organisation": org,
+                    "assessment": _meta(row),
+                    "payload": payload,
+                }
+                export_hash = content_hash(document)
+                conn.execute(
+                    "INSERT INTO exports (id, org_id, assessment_id, exported_by, exported_at, reason_code, export_hash) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (str(uuid.uuid4()), org, assessment_id, actor, stamp, reason_code, export_hash),
+                )
+                outcome = "ok"
+        audit.append(conn, actor, "assessment.export", "assessment", assessment_id, outcome, org=org,
+                     content_hash=export_hash)
+    return _finish(error, document and {"export": document, "export_hash": export_hash})

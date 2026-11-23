@@ -1,8 +1,9 @@
 """Authenticated client-record routes. Every route requires a verified identity.
 
-Access rule: the caller needs the clinician role (and MFA when required) and can
-create, read and update only records they own.
-Missing and not-owned records both return 404. Payloads are capped in size.
+Access rule: the caller needs the clinician role (and MFA when required) and an
+organisation, and can create, read and update only records they own in that
+organisation. Missing, not-owned and other-organisation records all return 404;
+disposed records return 410 to their owner. Payloads are capped in size.
 The payload schema is intentionally generic: clinical field definitions must be
 approved through clinical governance before any real client data is entered.
 """
@@ -21,6 +22,7 @@ router = APIRouter(prefix="/v1/clients", tags=["client-records"])
 require_clinician = require_roles(CLINICIAN)
 
 MAX_PAYLOAD_BYTES = 64 * 1024
+DISPOSED_DETAIL = "Record was disposed under the retention policy."
 
 
 async def _payload(request: Request) -> dict[str, Any]:
@@ -48,7 +50,7 @@ def _map_errors(exc: Exception) -> HTTPException:
 async def create_client_record(request: Request, identity: dict = Depends(require_clinician)) -> dict:
     payload = await _payload(request)
     try:
-        record_id = store.create_record(identity["sub"], payload)
+        record_id = store.create_record(identity["sub"], identity["org"], payload)
     except (store.StoreNotConfigured, DataKeyError) as exc:
         raise _map_errors(exc) from exc
     return {"id": record_id}
@@ -57,9 +59,11 @@ async def create_client_record(request: Request, identity: dict = Depends(requir
 @router.get("/{record_id}")
 def read_client_record(record_id: str, identity: dict = Depends(require_clinician)) -> dict:
     try:
-        payload = store.read_record(identity["sub"], record_id)
+        payload = store.read_record(identity["sub"], identity["org"], record_id)
     except store.RecordNotFound as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Record not found.") from exc
+    except store.RecordDisposed as exc:
+        raise HTTPException(status.HTTP_410_GONE, DISPOSED_DETAIL) from exc
     except (store.StoreNotConfigured, DataKeyError, RecordIntegrityError) as exc:
         raise _map_errors(exc) from exc
     return {"id": record_id, "payload": payload}
@@ -71,9 +75,11 @@ async def update_client_record(
 ) -> dict:
     payload = await _payload(request)
     try:
-        store.update_record(identity["sub"], record_id, payload)
+        store.update_record(identity["sub"], identity["org"], record_id, payload)
     except store.RecordNotFound as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Record not found.") from exc
+    except store.RecordDisposed as exc:
+        raise HTTPException(status.HTTP_410_GONE, DISPOSED_DETAIL) from exc
     except (store.StoreNotConfigured, DataKeyError) as exc:
         raise _map_errors(exc) from exc
     return {"id": record_id, "updated": True}
