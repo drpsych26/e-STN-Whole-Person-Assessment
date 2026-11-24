@@ -14,6 +14,7 @@ from .rbac import mfa_required
 from .safety_routes import router as safety_router
 from .identity_events import router as identity_router
 from .onboarding_routes import router as onboarding_router
+from .notification_routes import router as notification_router
 
 app = FastAPI(
     title="STN API",
@@ -116,3 +117,4 @@ app.include_router(audit_router)
 app.include_router(safety_router)
 app.include_router(identity_router)
 app.include_router(onboarding_router)
+app.include_router(notification_router)
