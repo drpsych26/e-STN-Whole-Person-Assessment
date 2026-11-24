@@ -158,7 +158,7 @@ Deviations and open decisions, recorded for governance acceptance:
 
 ## 13. Implementation status — production deploy kit (November 2026)
 
-**Status: implemented on branch `deploy-kit` for engineering review; nothing deployed; synthetic data only.** Runbook: `docs/operations/DEPLOYMENT-RUNBOOK.md`. This section records what exists in code. It does not tick any production gate.
+**Status: implemented on branch `deploy-kit` (PR #58) for engineering review; nothing deployed; synthetic data only.** Runbook: `docs/operations/DEPLOYMENT-RUNBOOK.md`. This section records what exists in code. It does not tick any production gate.
 
 Implemented:
 - **Container image** (sections 2 and 7). Two-stage `backend/Dockerfile` from a digest-pinned Python base, hash-pinned dependency lock, non-root user, read-only application files (runs with a read-only root filesystem), Docker health check, no secrets. One image serves two roles: the API and a migration step. CI builds it, runs both roles against PostgreSQL with a least-privilege runtime role and scans it with Trivy (fixable HIGH and CRITICAL findings fail the build).
