@@ -5,8 +5,9 @@
 - An admin who is not that clinician attests that they checked the submitted record against the
   authority's public register: the attestation cites the exact registration record (reference
   validation: it must exist, be in the same organisation, belong to the named clinician, be the
-  clinician's latest submission and be unexpired), an https source URL (host allow-listed by
-  STN_REGISTER_HOSTS when set) and the date checked (not in the future, not older than
+  clinician's latest submission and be unexpired), an https source URL whose host is exactly one of
+  STN_REGISTER_HOSTS (required, fail closed, whenever registration enforcement is on or the
+  environment is staging/production; optional only for local development) and the date checked (not in the future, not older than
   STN_ATTESTATION_MAX_AGE_DAYS, default 30). Self-attestation is refused here and by the schema.
 - Verified = the latest registration has an unrevoked attestation and has not expired.
   Submitting new details supersedes the old record, so it needs a new attestation.
@@ -52,6 +53,10 @@ class RegistryConflict(RegistryError):
     pass
 
 
+class RegistryNotConfigured(RuntimeError):
+    pass
+
+
 class SelfAttestation(PermissionError):
     pass
 
@@ -67,6 +72,11 @@ def enforcement_required() -> bool:
     if raw in {"false", "0", "no", "off"}:
         return False
     return db.hosted_environment()
+
+
+def approved_hosts() -> set[str]:
+    """Exact host names (no wildcards, no subdomain matching)."""
+    return {h.strip().lower().rstrip(".") for h in os.getenv(HOSTS_ENV, "").split(",") if h.strip()}
 
 
 def _date(value: Any, name: str) -> date:
@@ -134,7 +144,10 @@ def attest(actor: str, org: str, registration_id: Any, body: dict[str, Any]) -> 
     parsed = urlparse(source) if isinstance(source, str) else None
     if parsed is None or parsed.scheme != "https" or not parsed.hostname or len(source) > 512:
         raise RegistryInvalidInput("source_url must be the https address of the public register entry.")
-    hosts = {h.strip().lower() for h in os.getenv(HOSTS_ENV, "").split(",") if h.strip()}
+    hosts = approved_hosts()
+    if not hosts and (enforcement_required() or db.hosted_environment()):
+        # Fail closed: without an approved list, any https site could be cited as a register.
+        raise RegistryNotConfigured("Approved public-register hosts are not configured (STN_REGISTER_HOSTS).")
     if hosts and parsed.hostname.lower() not in hosts:
         raise RegistryInvalidInput("source_url is not on an approved public register (STN_REGISTER_HOSTS).")
     checked = _date(body.get("checked_on"), "checked_on")

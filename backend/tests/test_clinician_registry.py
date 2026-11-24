@@ -25,6 +25,7 @@ ATTEST = {"source_url": "https://register.synthetic.test/entry/SYN-00001", "chec
 @pytest.fixture
 def enforced(monkeypatch):
     monkeypatch.setenv("STN_REQUIRE_VERIFIED_REGISTRATION", "true")
+    monkeypatch.setenv("STN_REGISTER_HOSTS", "register.synthetic.test")  # explicit synthetic host
 
 
 def submit(act, who=CLIN, role="clinician", body=REG):
@@ -78,6 +79,8 @@ def test_attestation_reference_validation(backend, act, enforced, monkeypatch):
     monkeypatch.setenv("STN_REGISTER_HOSTS", "register.approved.test")
     assert attest(act, reg_id).status_code == 422
     monkeypatch.setenv("STN_REGISTER_HOSTS", "register.synthetic.test")
+    assert attest(act, reg_id, body={**ATTEST, "source_url": "https://evil.register.synthetic.test/x"}).status_code == 422
+    assert attest(act, reg_id, body={**ATTEST, "source_url": "https://register.synthetic.test.evil.test/x"}).status_code == 422
     newer = submit(act, body={**REG, "registration_number": "SYN-00002"}).json()["registration"]["id"]
     assert attest(act, reg_id).status_code == 409  # superseded by a newer submission
     assert attest(act, newer).status_code == 201
@@ -128,3 +131,23 @@ def test_enforcement_defaults_follow_the_environment(backend, act, monkeypatch):
     assert clinician_registry.enforcement_required() is True
     monkeypatch.setenv("STN_REQUIRE_VERIFIED_REGISTRATION", "false")
     assert clinician_registry.enforcement_required() is False
+
+
+@pytest.mark.parametrize("env", [{"STN_REQUIRE_VERIFIED_REGISTRATION": "true"}, {"STN_ENVIRONMENT": "production"},
+                                 {"STN_ENVIRONMENT": "staging"}])
+def test_missing_host_list_fails_closed_when_enforced_or_hosted(backend, act, monkeypatch, env):
+    monkeypatch.delenv("STN_REGISTER_HOSTS", raising=False)
+    reg_id = submit(act).json()["registration"]["id"]
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
+    if "STN_ENVIRONMENT" in env:  # hosted environments refuse SQLite; exercise the registry rule directly
+        from app import clinician_registry
+        with pytest.raises(clinician_registry.RegistryNotConfigured):
+            clinician_registry.attest(ADMIN, "org-synthetic-1", reg_id, ATTEST)
+        return
+    r = attest(act, reg_id)
+    assert r.status_code == 503 and "STN_REGISTER_HOSTS" in r.json()["detail"]
+    monkeypatch.setenv("STN_REGISTER_HOSTS", " , ")  # blank entries count as empty
+    assert attest(act, reg_id).status_code == 503
+    monkeypatch.setenv("STN_REGISTER_HOSTS", "register.synthetic.test")
+    assert attest(act, reg_id).status_code == 201  # exact approved host accepted

@@ -47,7 +47,7 @@ any state except deactivated --deactivate (admin)--> deactivated (final)
 ## 4. Clinician registration and attestation (D-08)
 
 - The clinician submits their own registration details (`POST /v1/me/clinician-registration`): authority code, number, scope code and expiry. **A submission grants nothing.**
-- An admin who is **not** that clinician attests that they checked it against the public register (`POST /v1/admin/clinician-registrations/{id}/attest`). The attestation's reference is validated: the record must exist, be in the same organisation, be the clinician's latest submission, be unexpired and not already attested. `source_url` must be https, and its host must be in `STN_REGISTER_HOSTS` when that is set. `checked_on` must be in the last `STN_ATTESTATION_MAX_AGE_DAYS` (default 30) and not in the future. Self-attestation is refused by the code and by a database `CHECK`.
+- An admin who is **not** that clinician attests that they checked it against the public register (`POST /v1/admin/clinician-registrations/{id}/attest`). The attestation's reference is validated: the record must exist, be in the same organisation, be the clinician's latest submission, be unexpired and not already attested. `source_url` must be https and its host must **exactly** match an entry in `STN_REGISTER_HOSTS`. When registration enforcement is on, or in staging/production, an empty list **fails closed** (503); it is optional only for local development. `checked_on` must be in the last `STN_ATTESTATION_MAX_AGE_DAYS` (default 30) and not in the future. Self-attestation is refused by the code and by a database `CHECK`.
 - Verified = latest registration + unrevoked attestation + unexpired. Revocation (`POST /v1/admin/attestations/{id}/revoke`) and expiry remove clinical access straight away.
 - Enforcement: `STN_REQUIRE_VERIFIED_REGISTRATION` (Bicep sets `true` for staging and production; the default is true whenever `STN_ENVIRONMENT` is staging or production, and false locally). It applies to every route reached through the clinician or reviewer role, except the clinician's own registration routes.
 - **Limitation:** the platform records what an admin says they checked. It does not query any register itself.
@@ -63,7 +63,7 @@ any state except deactivated --deactivate (admin)--> deactivated (final)
 | Client sign-up | External ID user flow with email verification and MFA enrolment | — |
 | **Verification events** | **Decision needed:** Entra doesn't natively post signed verification events to an external webhook. Options: **(A)** a small relay (for example an Azure Function behind an Entra custom authentication extension) that signs events with its own key and publishes a JWKS; or **(B)** change `identity_events` to accept verification facts from verified token claims. A is implemented against this contract; B would be a small code change | `STN_IDP_EVENT_AUDIENCE`, optionally `STN_IDP_EVENT_ISSUER` / `STN_IDP_EVENT_JWKS_URL` |
 | Document versions | Publish the approved terms, privacy notice and consent; set their version ids | `STN_TERMS_VERSION`, `STN_PRIVACY_NOTICE_VERSION`, `STN_CONSENT_VERSION` |
-| Registers | Host names of the public registers admins check | `STN_REGISTER_HOSTS` |
+| Registers | Exact host names of the public registers admins check (**required**; attestations are refused until set) | `STN_REGISTER_HOSTS` |
 
 All of these are wired from GitHub `staging` environment variables through `deploy-staging.yml` into App Service settings (`infra/azure/main.bicep`).
 

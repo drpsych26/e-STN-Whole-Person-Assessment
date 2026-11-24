@@ -45,7 +45,7 @@ def _call(fn, *args: Any) -> Any:
         raise HTTPException(422, {"message": "Onboarding requirements are not met.", "missing": exc.missing}) from exc
     except (ca.ClientAccountInvalidInput, reg.RegistryInvalidInput) as exc:
         raise HTTPException(422, str(exc)) from exc
-    except ca.OnboardingNotConfigured as exc:
+    except (ca.OnboardingNotConfigured, reg.RegistryNotConfigured) as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc)) from exc
     except (db.StoreNotConfigured, DataKeyError) as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Record storage is not available.") from exc

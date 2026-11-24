@@ -96,7 +96,7 @@ param termsVersion string = ''
 param privacyNoticeVersion string = ''
 param consentVersion string = ''
 
-@description('Comma-separated host names of approved public professional registers for attestations. Empty: any https host.')
+@description('Comma-separated exact host names of approved public professional registers. Required: attestations fail closed (503) in staging and production while empty.')
 param registerHosts string = ''
 @description('Only the value confirmed by legal advice. Empty: disposal stays disabled.')
 param retentionPeriodDays string = ''
