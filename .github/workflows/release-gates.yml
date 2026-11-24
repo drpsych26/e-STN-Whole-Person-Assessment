@@ -1,0 +1,115 @@
+name: STN release gates (G01-G13)
+
+# Report only. This workflow cannot approve, set or override any gate.
+#  - pull_request / push to main: runs the engine tests and publishes the readiness dashboard for
+#    each release-candidate commit named in release/evidence/current.json. The job succeeds while
+#    gates are blocked: it reports readiness, it does not gate merging.
+#  - workflow_dispatch: evaluates one release-candidate commit against one evidence file read from
+#    main, and FAILS unless every gate passed. Use this as the release decision check.
+# Evidence always lives on main, not in the candidate commit: a commit cannot contain a record that
+# names its own hash. The candidate must already be on main (reviewed and merged).
+# Inputs reach the shell only through env: and are validated before they are used.
+
+on:
+  pull_request:
+    paths:
+      - "backend/app/release_gates.py"
+      - "backend/tests/test_release_gates.py"
+      - "release/evidence/**"
+      - ".github/workflows/release-gates.yml"
+  push:
+    branches: [main]
+    paths:
+      - "backend/app/release_gates.py"
+      - "release/evidence/**"
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Release candidate commit SHA (40 lowercase hex characters)"
+        required: true
+        type: string
+      evidence:
+        description: "Evidence file: release/evidence/<name>.json"
+        required: true
+        default: "release/evidence/current.json"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  readiness-report:
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.12"
+      - name: Release gate engine tests
+        working-directory: backend
+        run: |
+          python -m pip install -e ".[test]"
+          python -m pytest tests/test_release_gates.py -q
+      - name: Readiness dashboard for each candidate named in the evidence (report only)
+        working-directory: backend
+        run: |
+          set -euo pipefail
+          commits=$(python -c 'import json,sys; print(" ".join(sorted({r.get("commit","") for r in json.load(open(sys.argv[1])) if isinstance(r,dict)})))' ../release/evidence/current.json)
+          if [ -z "$commits" ]; then
+            echo "### Release readiness: no release candidate has evidence yet (release/evidence/current.json is empty). Every gate is BLOCKED." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          for commit in $commits; do
+            code=0
+            python -m app.release_gates --commit "$commit" --evidence ../release/evidence/current.json \
+              --format markdown --output "$RUNNER_TEMP/release-readiness.md" || code=$?
+            [ "$code" -le 1 ] || { echo "::error::Evidence file is malformed (exit $code)."; exit "$code"; }
+            cat "$RUNNER_TEMP/release-readiness.md" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+  release-decision:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      INPUT_COMMIT: ${{ inputs.commit }}
+      INPUT_EVIDENCE: ${{ inputs.evidence }}
+    steps:
+      - name: Validate inputs before any checkout
+        run: |
+          set -euo pipefail
+          [[ "$INPUT_COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Commit must be 40 lowercase hex characters."; exit 2; }
+          [[ "$INPUT_EVIDENCE" =~ ^release/evidence/[A-Za-z0-9._-]+\.json$ && "$INPUT_EVIDENCE" != *..* ]] || {
+            echo "::error::Evidence must be release/evidence/<name>.json."; exit 2; }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Confirm the candidate is on main and the evidence file is tracked there
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$INPUT_COMMIT" HEAD || {
+            echo "::error::$INPUT_COMMIT is not on main. Only reviewed, merged commits can be released."; exit 1; }
+          git ls-files --error-unmatch -- "$INPUT_EVIDENCE" >/dev/null
+          echo "Candidate \`$INPUT_COMMIT\`; evidence \`$INPUT_EVIDENCE\` SHA-256 \`$(sha256sum -- "$INPUT_EVIDENCE" | cut -d' ' -f1)\` read from main at \`$(git rev-parse HEAD)\`" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.12"
+      - name: Evaluate G01-G13 (fails unless every gate passed)
+        working-directory: backend
+        run: |
+          set -euo pipefail
+          python -m pip install -e .
+          python -m app.release_gates --commit "$INPUT_COMMIT" --evidence "$GITHUB_WORKSPACE/$INPUT_EVIDENCE" \
+            --format markdown --output "$RUNNER_TEMP/release-readiness.md" || code=$?
+          cat "$RUNNER_TEMP/release-readiness.md" >> "$GITHUB_STEP_SUMMARY"
+          exit "${code:-0}"
