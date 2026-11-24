@@ -9,6 +9,9 @@ Rules (each failure prints one line; exit status 1 if any rule fails):
 2. No `run:` script interpolates untrusted expressions directly (`${{ github.event.* }}`,
    `${{ inputs.* }}`, `${{ github.head_ref }}`). Pass them through `env:` and quote them.
 3. No workflow uses the `pull_request_target` trigger.
+4. Least privilege for repository writes: top-level permissions never grant `contents: write`,
+   and a job that holds `contents: write` runs no checkout and no action other than
+   actions/download-artifact (it may only act on artifacts that a read-only job produced).
 
 Dependabot (.github/dependabot.yml) keeps the pinned SHAs current.
 """
@@ -23,6 +26,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOWS = ROOT / ".github" / "workflows"
 SHA_PINNED = re.compile(r"^[^@\s]+@[0-9a-f]{40}$")
+WRITE_JOB_ACTIONS = ("actions/download-artifact@",)
 UNTRUSTED = re.compile(r"\$\{\{\s*(github\.event\.|inputs\.|github\.head_ref|github\.event_name)")
 
 
@@ -32,7 +36,16 @@ def check(path: Path) -> list[str]:
     triggers = doc.get("on", doc.get(True))
     if (isinstance(triggers, dict) and "pull_request_target" in triggers) or triggers == "pull_request_target":
         failures.append(f"{path.name}: pull_request_target is not allowed")
+    top = doc.get("permissions")
+    if top == "write-all" or (isinstance(top, dict) and top.get("contents") == "write"):
+        failures.append(f"{path.name}: top-level permissions must not grant contents: write; grant it to one job")
     for job_name, job in (doc.get("jobs") or {}).items():
+        perms = job.get("permissions")
+        if perms == "write-all" or (isinstance(perms, dict) and perms.get("contents") == "write"):
+            for step in job.get("steps") or []:
+                uses = step.get("uses") or ""
+                if uses and not uses.startswith(WRITE_JOB_ACTIONS):
+                    failures.append(f"{path.name}: job {job_name} holds contents: write and must not use {uses}")
         if isinstance(job.get("uses"), str) and not job["uses"].startswith("./") and not SHA_PINNED.match(job["uses"]):
             failures.append(f"{path.name}: job {job_name}: {job['uses']} must be pinned to a full commit SHA")
         for index, step in enumerate(job.get("steps") or []):
