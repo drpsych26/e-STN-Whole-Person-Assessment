@@ -3,7 +3,8 @@
 Roles come from a configurable claim (default "roles", as issued by Microsoft
 Entra ID app roles). Provider role values map to STN roles through
 STN_OIDC_ROLE_MAP, e.g. "STN.Clinician=clinician,STN.Reviewer=reviewer,STN.Admin=admin".
-Without a map, only the exact values clinician, reviewer and admin are accepted.
+Without a map, only the exact values clinician, reviewer, admin and client are accepted. A token
+holding client together with any staff role is refused.
 Unknown values are ignored. No role means no access to protected routes.
 
 MFA: when STN_REQUIRE_MFA is on (the default; only "false", "0", "no" or "off"
@@ -34,12 +35,15 @@ from typing import Any, Callable
 
 from fastapi import Depends, HTTPException, Request, status
 
-from . import accounts, ratelimit
+from . import accounts, db, ratelimit
 
 CLINICIAN = "clinician"
 REVIEWER = "reviewer"
 ADMIN = "admin"
-STN_ROLES = frozenset({CLINICIAN, REVIEWER, ADMIN})
+CLIENT = "client"
+STAFF_ROLES = frozenset({CLINICIAN, REVIEWER, ADMIN})
+CLINICAL_ROLES = frozenset({CLINICIAN, REVIEWER})
+STN_ROLES = STAFF_ROLES | {CLIENT}
 _ORG = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
 
 
@@ -94,8 +98,11 @@ def mfa_required() -> bool:
     return os.getenv("STN_REQUIRE_MFA", "true").strip().lower() not in {"false", "0", "no", "off"}
 
 
-def require_roles(*allowed: str) -> Callable[..., dict[str, Any]]:
-    """Dependency factory: verified identity, MFA (when required) and one of the allowed roles."""
+def require_roles(*allowed: str, check_registration: bool = True) -> Callable[..., dict[str, Any]]:
+    """Dependency factory: verified identity, MFA (when required) and one of the allowed roles.
+
+    check_registration=False is only for the routes a clinician uses to submit and view their own
+    registration (they cannot be verified before they have submitted it)."""
     from .auth import require_identity  # local import avoids a cycle
 
     wanted = frozenset(allowed)
@@ -109,14 +116,26 @@ def require_roles(*allowed: str) -> Callable[..., dict[str, Any]]:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "No STN role is assigned to this account.")
         if not isinstance(org, str) or not _ORG.match(org):
             raise HTTPException(status.HTTP_403_FORBIDDEN, "No organisation is assigned to this account.")
+        if CLIENT in roles and roles & STAFF_ROLES:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "A client sign-in cannot also hold a staff role.")
         if not roles & wanted:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "This account's role does not permit this action.")
-        try:
-            accounts.enforce(org, identity["sub"], roles)
-        except accounts.AccountAccessDenied as exc:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
-        except accounts.AccountRegistryUnavailable as exc:
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Account registry is not available.") from exc
+        if roles != {CLIENT}:  # staff: clinician account registry; clients: app.client_accounts
+            try:
+                accounts.enforce(org, identity["sub"], roles)
+            except accounts.AccountAccessDenied as exc:
+                raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
+            except accounts.AccountRegistryUnavailable as exc:
+                raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Account registry is not available.") from exc
+        granted = roles & wanted
+        if check_registration and granted and granted <= CLINICAL_ROLES:  # reached through clinical authority only
+            from . import clinician_registry  # local import avoids a cycle
+            try:
+                clinician_registry.enforce(org, identity["sub"])
+            except clinician_registry.RegistrationNotVerified as exc:
+                raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
+            except db.StoreNotConfigured as exc:
+                raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Record storage is not available.") from exc
         ratelimit.check_write(request, org, identity["sub"])
         return identity
 

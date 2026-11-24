@@ -2890,6 +2890,538 @@
           }
         }
       }
+    },
+    "/v1/identity/events": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Receive Event",
+        "description": "Identity-provider webhook. Authenticated only by the event's own signature; body {\"event\": \"<JWT>\"}.",
+        "operationId": "receive_event_v1_identity_events_post",
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Receive Event V1 Identity Events Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clients/{client_id}/client-account/invitation": {
+      "post": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "Invite Client",
+        "description": "Issue (or reissue) a one-time invitation code for the client of a record you own. Shown once.",
+        "operationId": "invite_client_v1_clients__client_id__client_account_invitation_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Invite Client V1 Clients  Client Id  Client Account Invitation Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clients/{client_id}/client-account": {
+      "get": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "Client Account Status",
+        "operationId": "client_account_status_v1_clients__client_id__client_account_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Client Account Status V1 Clients  Client Id  Client Account Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clients/{client_id}/client-account/activate": {
+      "post": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "Activate Client",
+        "operationId": "activate_client_v1_clients__client_id__client_account_activate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Activate Client V1 Clients  Client Id  Client Account Activate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/client-accounts/{client_id}/{action}": {
+      "post": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "Admin Client Status",
+        "description": "action: suspend | reactivate | deactivate. Body: reason_code (required for suspend and deactivate).",
+        "operationId": "admin_client_status_v1_admin_client_accounts__client_id___action__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          },
+          {
+            "name": "action",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Action"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Admin Client Status V1 Admin Client Accounts  Client Id   Action  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/me/client-invitation/claim": {
+      "post": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "Claim Invitation",
+        "operationId": "claim_invitation_v1_me_client_invitation_claim_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Claim Invitation V1 Me Client Invitation Claim Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/me/client-account": {
+      "get": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "My Client Account",
+        "operationId": "my_client_account_v1_me_client_account_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response My Client Account V1 Me Client Account Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/me/client-acknowledgements": {
+      "post": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "Acknowledge",
+        "description": "Body: kind (terms | privacy_notice | consent), version (must be the current version).",
+        "operationId": "acknowledge_v1_me_client_acknowledgements_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Acknowledge V1 Me Client Acknowledgements Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/me/client-assessments": {
+      "get": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "My Assessments",
+        "description": "Metadata of your own assessments (no answers or clinician notes). Active accounts only.",
+        "operationId": "my_assessments_v1_me_client_assessments_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response My Assessments V1 Me Client Assessments Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/me/clinician-registration": {
+      "get": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "My Registration",
+        "operationId": "my_registration_v1_me_clinician_registration_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response My Registration V1 Me Clinician Registration Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "Submit Registration",
+        "operationId": "submit_registration_v1_me_clinician_registration_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Submit Registration V1 Me Clinician Registration Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/clinician-registrations": {
+      "get": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "List Registrations",
+        "operationId": "list_registrations_v1_admin_clinician_registrations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response List Registrations V1 Admin Clinician Registrations Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/clinician-registrations/{registration_id}/attest": {
+      "post": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "Attest Registration",
+        "description": "Body: source_url (https public-register entry), checked_on (YYYY-MM-DD).",
+        "operationId": "attest_registration_v1_admin_clinician_registrations__registration_id__attest_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "registration_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Registration Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Attest Registration V1 Admin Clinician Registrations  Registration Id  Attest Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/attestations/{attestation_id}/revoke": {
+      "post": {
+        "tags": [
+          "client-accounts"
+        ],
+        "summary": "Revoke Attestation",
+        "operationId": "revoke_attestation_v1_admin_attestations__attestation_id__revoke_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "attestation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Attestation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Revoke Attestation V1 Admin Attestations  Attestation Id  Revoke Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
