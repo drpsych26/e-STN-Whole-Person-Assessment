@@ -10,13 +10,17 @@ jobs:
   static-quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: '26.13.0'
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: '3.12'
+      - name: Check every workflow pins actions to commit SHAs and avoids untrusted interpolation
+        run: |
+          python -m pip install "pyyaml==6.0.2"
+          python tools/check_workflow_security.py
       - name: Verify STN logo and brand consistency across HTML screens
         run: node tests/brand-consistency.test.js
       - name: Run browser prototype workflow regression tests with synthetic data
@@ -27,7 +31,7 @@ jobs:
         run: python tools/static_quality_check.py
 
       - name: Package standalone synthetic-data HTML UAT
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         # Artifact storage quota must not turn passing source checks into a false code failure.
         continue-on-error: true
         with:

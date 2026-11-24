@@ -11,6 +11,7 @@ from .governance_routes import admin_router, consent_router
 from .lifecycle_routes import admin_router as lifecycle_admin_router
 from .lifecycle_routes import clinician_router as privacy_router
 from .rbac import mfa_required
+from .safety_routes import router as safety_router
 
 app = FastAPI(
     title="STN API",
@@ -83,3 +84,4 @@ app.include_router(admin_router)
 app.include_router(lifecycle_admin_router)
 app.include_router(privacy_router)
 app.include_router(audit_router)
+app.include_router(safety_router)

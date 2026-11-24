@@ -289,6 +289,7 @@ var apiSettings = union(
     WEBSITES_PORT: '8000'
     WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'false'
     STN_PROCESS_ROLE: 'api'
+    STN_ENVIRONMENT: environmentName
     AZURE_CLIENT_ID: identities.outputs.apiClientId
     STN_DATABASE_URL: 'postgresql://${names.apiIdentity}@${postgres.outputs.fqdn}:5432/${databaseName}?sslmode=require'
     STN_DATABASE_AUTH: 'azure-managed-identity'
@@ -311,6 +312,7 @@ var migrateSettings = union(
     WEBSITES_PORT: '8000'
     WEBSITES_ENABLE_APP_SERVICE_STORAGE: 'false'
     STN_PROCESS_ROLE: 'migrate'
+    STN_ENVIRONMENT: environmentName
     AZURE_CLIENT_ID: identities.outputs.migrateClientId
     STN_DATABASE_URL: 'postgresql://${names.migrateIdentity}@${postgres.outputs.fqdn}:5432/${databaseName}?sslmode=require'
     STN_DATABASE_AUTH: 'azure-managed-identity'
