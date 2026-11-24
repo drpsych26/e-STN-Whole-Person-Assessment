@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "STN API",
-    "description": "Non-live integration API. Clinician sign-in via OIDC, server-side roles (clinician, reviewer, admin), MFA enforcement and organisation scoping; encrypted, owner-scoped client and assessment records with key rotation; human review and sign-off workflow; consent records, legal holds and two-person disposal; logged exports; rate limiting; hash-chained audit. No diagnosis, scoring, risk disposition or crisis automation is exposed.",
-    "version": "0.3.0"
+    "description": "Non-live integration API. Clinician sign-in via OIDC, server-side roles (clinician, reviewer, admin), MFA enforcement and organisation scoping; encrypted, owner-scoped client and assessment records with key rotation; human review and sign-off workflow; consent records, legal holds and two-person disposal; logged exports; reviewer assignment; clinician account registry with two-person reactivation and access review; client access and correction requests; rate limiting (in-process or Redis); hash-chained audit. No diagnosis, scoring, risk disposition or crisis automation is exposed.",
+    "version": "0.4.0"
   },
   "paths": {
     "/health/live": {
@@ -1446,6 +1446,1033 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Reencrypt V1 Admin Keys Re Encrypt Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/assessments/{assessment_id}/reviewer": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Assign Reviewer",
+        "description": "Assign (or reassign) the reviewer for the current submission: body `reviewer_sub`.",
+        "operationId": "assign_reviewer_v1_admin_assessments__assessment_id__reviewer_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assessment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assessment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Assign Reviewer V1 Admin Assessments  Assessment Id  Reviewer Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/assessments/{assessment_id}/reviewer-history": {
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Reviewer History",
+        "operationId": "reviewer_history_v1_admin_assessments__assessment_id__reviewer_history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "assessment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Assessment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Reviewer History V1 Admin Assessments  Assessment Id  Reviewer History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/review-assignments": {
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Reassignment Queue",
+        "description": "Submitted work that is unassigned or whose assignment is stale (metadata only).",
+        "operationId": "reassignment_queue_v1_admin_review_assignments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "older_than_hours",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 8760,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Older Than Hours"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Reassignment Queue V1 Admin Review Assignments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accounts": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Invite Account",
+        "description": "Register a token subject in this organisation as invited: body `subject`, optional `reason_code`.",
+        "operationId": "invite_account_v1_admin_accounts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Invite Account V1 Admin Accounts Post"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "List Accounts",
+        "operationId": "list_accounts_v1_admin_accounts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Accounts V1 Admin Accounts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accounts/{subject}/history": {
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Account History",
+        "operationId": "account_history_v1_admin_accounts__subject__history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Account History V1 Admin Accounts  Subject  History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accounts/{subject}/activate": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Activate Account",
+        "description": "Invited or suspended -> active. Deactivated accounts need the two-person reactivation flow.",
+        "operationId": "activate_account_v1_admin_accounts__subject__activate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Activate Account V1 Admin Accounts  Subject  Activate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accounts/{subject}/suspend": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Suspend Account",
+        "description": "Active -> suspended; `reason_code` required.",
+        "operationId": "suspend_account_v1_admin_accounts__subject__suspend_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Suspend Account V1 Admin Accounts  Subject  Suspend Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accounts/{subject}/deactivate": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Deactivate Account",
+        "description": "Invited, active or suspended -> deactivated; `reason_code` required. Ends open review assignments.",
+        "operationId": "deactivate_account_v1_admin_accounts__subject__deactivate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Deactivate Account V1 Admin Accounts  Subject  Deactivate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/accounts/{subject}/reactivation-requests": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Request Reactivation",
+        "operationId": "request_reactivation_v1_admin_accounts__subject__reactivation_requests_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "subject",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Subject"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Request Reactivation V1 Admin Accounts  Subject  Reactivation Requests Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/account-reactivations/{request_id}/approve": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Approve Reactivation",
+        "description": "Second-person approval: a different admin from the requester.",
+        "operationId": "approve_reactivation_v1_admin_account_reactivations__request_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Approve Reactivation V1 Admin Account Reactivations  Request Id  Approve Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/account-reactivations/{request_id}/cancel": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Cancel Reactivation",
+        "operationId": "cancel_reactivation_v1_admin_account_reactivations__request_id__cancel_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Cancel Reactivation V1 Admin Account Reactivations  Request Id  Cancel Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/access-review": {
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Access Review",
+        "description": "Periodic access review: status, roles last presented and last activity per registered subject.",
+        "operationId": "access_review_v1_admin_access_review_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "inactive_after_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 3650,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Inactive After Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Access Review V1 Admin Access Review Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/privacy-requests/policy": {
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Privacy Policy",
+        "operationId": "privacy_policy_v1_admin_privacy_requests_policy_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Privacy Policy V1 Admin Privacy Requests Policy Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/privacy-requests": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Log Privacy Request",
+        "description": "Log an access or correction request: `client_id`, `kind` (access|correction), `received_on` (YYYY-MM-DD).",
+        "operationId": "log_privacy_request_v1_admin_privacy_requests_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Log Privacy Request V1 Admin Privacy Requests Post"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "List Privacy Requests",
+        "operationId": "list_privacy_requests_v1_admin_privacy_requests_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Privacy Requests V1 Admin Privacy Requests Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/privacy-requests/{request_id}/close": {
+      "post": {
+        "tags": [
+          "governance"
+        ],
+        "summary": "Close Privacy Request",
+        "description": "Close with `outcome_code`: completed (needs a recorded response), refused, transferred or withdrawn.",
+        "operationId": "close_privacy_request_v1_admin_privacy_requests__request_id__close_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Close Privacy Request V1 Admin Privacy Requests  Request Id  Close Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/privacy-requests/{request_id}/access-response": {
+      "post": {
+        "tags": [
+          "privacy-requests"
+        ],
+        "summary": "Access Response",
+        "description": "The owning clinician prepares the access-response export (logged with its SHA-256).",
+        "operationId": "access_response_v1_privacy_requests__request_id__access_response_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Access Response V1 Privacy Requests  Request Id  Access Response Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/privacy-requests/{request_id}/correction-response": {
+      "post": {
+        "tags": [
+          "privacy-requests"
+        ],
+        "summary": "Correction Response",
+        "description": "`action`: amended (with `assessment_id` of the new version), client_record_corrected, or declined\n(with the client's `statement` of correction, stored encrypted and attached to the client).",
+        "operationId": "correction_response_v1_privacy_requests__request_id__correction_response_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "request_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Request Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Correction Response V1 Privacy Requests  Request Id  Correction Response Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clients/{client_id}/privacy-requests": {
+      "get": {
+        "tags": [
+          "privacy-requests"
+        ],
+        "summary": "Client Privacy Requests",
+        "operationId": "client_privacy_requests_v1_clients__client_id__privacy_requests_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Client Privacy Requests V1 Clients  Client Id  Privacy Requests Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/clients/{client_id}/correction-statements": {
+      "get": {
+        "tags": [
+          "privacy-requests"
+        ],
+        "summary": "Client Correction Statements",
+        "operationId": "client_correction_statements_v1_clients__client_id__correction_statements_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Client Correction Statements V1 Clients  Client Id  Correction Statements Get"
                 }
               }
             }

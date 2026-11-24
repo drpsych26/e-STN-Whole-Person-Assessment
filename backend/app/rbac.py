@@ -20,6 +20,10 @@ A token without a valid organisation is refused (403). All records, audit events
 consents, holds, disposals and exports are scoped to that organisation; records of
 another organisation are indistinguishable from missing ones (404).
 
+Account status: after the checks above, app.accounts.enforce refuses subjects the
+organisation has invited but not activated, suspended or deactivated (403), and
+unregistered subjects when STN_ACCOUNT_REGISTRY_REQUIRED is true.
+
 Write requests are rate limited per subject after authorisation (app.ratelimit).
 """
 from __future__ import annotations
@@ -30,7 +34,7 @@ from typing import Any, Callable
 
 from fastapi import Depends, HTTPException, Request, status
 
-from . import ratelimit
+from . import accounts, ratelimit
 
 CLINICIAN = "clinician"
 REVIEWER = "reviewer"
@@ -107,6 +111,12 @@ def require_roles(*allowed: str) -> Callable[..., dict[str, Any]]:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "No organisation is assigned to this account.")
         if not roles & wanted:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "This account's role does not permit this action.")
+        try:
+            accounts.enforce(org, identity["sub"], roles)
+        except accounts.AccountAccessDenied as exc:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
+        except accounts.AccountRegistryUnavailable as exc:
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Account registry is not available.") from exc
         ratelimit.check_write(request, org, identity["sub"])
         return identity
 

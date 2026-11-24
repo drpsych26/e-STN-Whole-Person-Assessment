@@ -13,7 +13,8 @@ assessments are checked against their recorded content hash before they are
 rewritten, so a record that fails verification is skipped and audited, never
 "healed". Only ciphertext columns change: updated_at, workflow state and sign-off
 metadata are untouched (the database trigger on signed-off rows enforces this).
-Disposed records hold no ciphertext and are skipped.
+Disposed records hold no ciphertext and are skipped. Statements of correction
+(app.privacy_requests) are covered as well.
 """
 from __future__ import annotations
 
@@ -26,6 +27,7 @@ from . import audit, db
 from .assessments import _aad as assessment_aad
 from .assessments import _note_aad, _payload
 from .crypto import decrypt_payload, encrypt_payload, key_id_of, key_provider, keyring
+from .privacy_requests import statement_aad
 from .store import client_aad
 
 SYSTEM_ACTOR = "system:rekey"
@@ -50,6 +52,8 @@ def status(org: str | None) -> dict[str, Any]:
             counts[key_id_of(row["ciphertext"])] += 1
             if row["note_ciphertext"] is not None:
                 counts[key_id_of(row["note_ciphertext"])] += 1
+        for row in _rows(conn, "correction_statements", org):
+            counts[key_id_of(row["statement_ciphertext"])] += 1
     pending = sum(n for key_id, n in counts.items() if key_id != ring.active_id)
     return {
         "provider": key_provider().name,
@@ -106,6 +110,25 @@ def reencrypt(actor: str, org: str | None, limit: int = 500) -> dict[str, Any]:
             )
             done += 1
             audit.append(conn, actor, "key.reencrypt", "assessment", row["id"], "ok", org=row["org_id"])
+        for row in _rows(conn, "correction_statements", org):
+            if done + failed >= limit:
+                break
+            if key_id_of(row["statement_ciphertext"]) == active:
+                continue
+            aad = statement_aad(row["id"], row["client_id"])
+            try:
+                blob = encrypt_payload(decrypt_payload(row["statement_ciphertext"], aad), aad)
+            except Exception:  # noqa: BLE001 - integrity or key failure: skip and audit
+                failed += 1
+                audit.append(conn, actor, "key.reencrypt", "correction_statement", row["id"], "integrity_failure",
+                             org=row["org_id"])
+                continue
+            conn.execute(
+                "UPDATE correction_statements SET statement_ciphertext = ? WHERE id = ? AND statement_ciphertext = ?",
+                (blob, row["id"], row["statement_ciphertext"]),
+            )
+            done += 1
+            audit.append(conn, actor, "key.reencrypt", "correction_statement", row["id"], "ok", org=row["org_id"])
     remaining = status(org)["pending_reencryption"]
     return {"active_key_id": active, "reencrypted": done, "failed": failed, "remaining": remaining}
 
@@ -126,6 +149,12 @@ def verify_decrypt(org: str | None) -> dict[str, Any]:
                 _payload(row)
                 if row["note_ciphertext"] is not None:
                     decrypt_payload(row["note_ciphertext"], _note_aad(row["id"]))
+            except Exception:  # noqa: BLE001
+                failed += 1
+        for row in _rows(conn, "correction_statements", org):
+            checked += 1
+            try:
+                decrypt_payload(row["statement_ciphertext"], statement_aad(row["id"], row["client_id"]))
             except Exception:  # noqa: BLE001
                 failed += 1
     return {"records_checked": checked, "failed": failed, "ok": failed == 0}
