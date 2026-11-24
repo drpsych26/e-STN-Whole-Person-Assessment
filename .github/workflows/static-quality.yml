@@ -21,16 +21,16 @@ jobs:
         run: |
           python -m pip install "pyyaml==6.0.2"
           python tools/check_workflow_security.py
-      - name: Crisis panel scenarios and register drift check
-        run: |
-          node tests/crisis-panel.test.js
-          python tools/export_crisis_resources.py --check
       - name: Verify STN logo and brand consistency across HTML screens
         run: node tests/brand-consistency.test.js
       - name: Run browser prototype workflow regression tests with synthetic data
         run: node tests/prototype-smoke.test.js
       - name: Run follow-up assessment regression tests with synthetic data
         run: node tests/followup-smoke.test.js
+      - name: Crisis panel scenarios and register drift check
+        run: |
+          node tests/crisis-panel.test.js
+          python tools/export_crisis_resources.py --check
       - name: Check inline JavaScript syntax and supplied ZIP integrity
         run: python tools/static_quality_check.py
 
