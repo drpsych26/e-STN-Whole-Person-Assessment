@@ -12,6 +12,8 @@ from .lifecycle_routes import admin_router as lifecycle_admin_router
 from .lifecycle_routes import clinician_router as privacy_router
 from .rbac import mfa_required
 from .safety_routes import router as safety_router
+from .identity_events import router as identity_router
+from .onboarding_routes import router as onboarding_router
 
 app = FastAPI(
     title="STN API",
@@ -112,3 +114,5 @@ app.include_router(lifecycle_admin_router)
 app.include_router(privacy_router)
 app.include_router(audit_router)
 app.include_router(safety_router)
+app.include_router(identity_router)
+app.include_router(onboarding_router)

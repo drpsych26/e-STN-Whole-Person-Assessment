@@ -87,6 +87,17 @@ param oidcJwksUrl string = ''
 param oidcRoleMap string = ''
 param oidcOrgClaim string = ''
 param mfaAcrsValues string = ''
+
+@description('Audience of identity-provider verification events (must differ from oidcAudience). Empty disables the events endpoint (503).')
+param idpEventAudience string = ''
+
+@description('Current versions of the client terms, privacy notice and consent. Empty: client activation fails closed (503).')
+param termsVersion string = ''
+param privacyNoticeVersion string = ''
+param consentVersion string = ''
+
+@description('Comma-separated exact host names of approved public professional registers. Required: attestations fail closed (503) in staging and production while empty.')
+param registerHosts string = ''
 @description('Only the value confirmed by legal advice. Empty: disposal stays disabled.')
 param retentionPeriodDays string = ''
 @description('Only the value confirmed by the privacy officer. Empty: requests get no due date.')
@@ -278,6 +289,11 @@ var optionalApiSettings = {
   STN_OIDC_ROLE_MAP: oidcRoleMap
   STN_OIDC_ORG_CLAIM: oidcOrgClaim
   STN_MFA_ACRS_VALUES: mfaAcrsValues
+  STN_IDP_EVENT_AUDIENCE: idpEventAudience
+  STN_TERMS_VERSION: termsVersion
+  STN_PRIVACY_NOTICE_VERSION: privacyNoticeVersion
+  STN_CONSENT_VERSION: consentVersion
+  STN_REGISTER_HOSTS: registerHosts
   STN_RETENTION_PERIOD_DAYS: retentionPeriodDays
   STN_PRIVACY_RESPONSE_WORKING_DAYS: privacyResponseWorkingDays
   STN_PRIVACY_EXCLUDE_SUMMER_PERIOD: privacyExcludeSummerPeriod
@@ -302,6 +318,7 @@ var apiSettings = union(
     STN_REQUIRE_MFA: 'true'
     STN_ACCOUNT_REGISTRY_REQUIRED: 'true'
     STN_REVIEW_ASSIGNMENT_REQUIRED: 'true'
+    STN_REQUIRE_VERIFIED_REGISTRATION: 'true'
   },
   redisEnabled ? { STN_REDIS_URL: '@Microsoft.KeyVault(SecretUri=${redis!.outputs.secretUri})' } : {},
   toObject(filter(items(optionalApiSettings), s => !empty(s.value)), s => s.key, s => s.value)
