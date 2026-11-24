@@ -19,7 +19,8 @@ cannot be disposed of, and a hold placed after a request blocks its approval.
 
 Disposal: an admin requests disposal of one client's records; a different person
 with the admin or reviewer role approves it. Approval re-checks eligibility
-(period elapsed, no active hold, no assessment submitted or in review) and then
+(period elapsed, no active hold, no unresolved safety escalation, no assessment
+submitted or in review) and then
 removes every payload (client record, assessment versions, notes, statements of
 correction) and the safety flag codes. Metadata rows stay as tombstones with disposed_at set, the executed
 disposal row records who, when and how many, and every step is audited. Disposed
@@ -248,10 +249,19 @@ def _pending_disposal(conn: db.Conn, client_id: str, org: str) -> bool:
     ).fetchone() is not None
 
 
+def _unresolved_escalation(conn: db.Conn, client_id: str, org: str) -> bool:
+    return conn.execute(
+        "SELECT 1 AS x FROM safety_escalations WHERE client_id = ? AND org_id = ? AND status <> 'resolved'",
+        (client_id, org),
+    ).fetchone() is not None
+
+
 def _ineligible_reason(conn: db.Conn, client: dict[str, Any], org: str, days: int) -> tuple[str | None, str]:
     anchor = _anchor(conn, client, org)
     if _active_hold(conn, client["id"], org):
         return "The client's records are under an active legal hold.", anchor
+    if _unresolved_escalation(conn, client["id"], org):
+        return "A safety escalation about this client is unresolved; resolve it first.", anchor
     if _active_workflow(conn, client["id"], org):
         return "An assessment is submitted or in review; finish or return it first.", anchor
     if datetime.fromisoformat(anchor) + timedelta(days=days) > _now():

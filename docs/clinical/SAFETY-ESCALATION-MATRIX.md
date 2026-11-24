@@ -39,7 +39,7 @@ Windows are configurable per deployment with `STN_SAFETY_ACK_MINUTES` (for examp
 | D-SAFE-03 | Approve or change the resolution codes | Clinical lead |
 | D-SAFE-04 | Whether the clinician who opened an urgent or emergency escalation may also resolve it alone, or a second clinician must review | Clinical lead |
 | D-SAFE-05 | Which assessment items or safety-flag codes should prompt a clinician to open an escalation, and at which tier | Clinical lead |
-| D-SAFE-06 | Whether client-record disposal must be blocked while an escalation is unresolved (not enforced yet) | Privacy officer + clinical lead |
+| D-SAFE-06 | Confirm that client-record disposal stays blocked while an escalation is unresolved (enforced from 25 Nov 2026 as a safe default; the privacy officer and clinical lead may change it) | Privacy officer + clinical lead |
 
 ## 5. New Zealand crisis contacts (verified 25 November 2026)
 
