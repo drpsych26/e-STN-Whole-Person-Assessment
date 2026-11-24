@@ -90,3 +90,12 @@ Until all applicable gates are signed off, use synthetic test data only. Do not 
 ## Release decision
 
 **Current decision: controlled testing / public informational website only. No identifiable clinical production use.**
+
+## Status update, 25 November 2026
+
+This section records work completed on 25 November 2026. It does not tick any gate above. The gate checklist and release decision are unchanged.
+
+- **Public contact channel (operational, not a gate item):** the published website addresses (info, help, partnership, investors, support, accounts, privacy at the STN domain) now forward through ImprovMX to the STN Gmail account. Delivery was confirmed from the ImprovMX delivery log, with the test message received in the inbox on 25 November 2026. Forwarding must be re-tested after any DNS or forwarding change.
+- **Website:** contact-address change (website PR #12) was merged on 24 November 2026, before forwarding was verified. Website README status update merged as PR #13 on 25 November 2026.
+- **Repository visibility:** item 11 above remains open. The repository is currently public.
+- **Engineering state:** main is at `0337d87` (PR #58). Draft PR #52 is still marked not for merge.
