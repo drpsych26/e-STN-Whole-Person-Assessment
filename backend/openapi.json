@@ -3422,6 +3422,93 @@
           }
         }
       }
+    },
+    "/v1/me/notification-preferences": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Set Preference",
+        "description": "Body: category, opted_out (bool). Safety and security notices cannot be turned off.",
+        "operationId": "set_preference_v1_me_notification_preferences_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Set Preference V1 Me Notification Preferences Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/admin/notifications": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Outbox",
+        "description": "Provider state and recent notifications (no content, no parameters). Use status=dead for failures.",
+        "operationId": "outbox_v1_admin_notifications_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(pending|sent|dead|suppressed)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Outbox V1 Admin Notifications Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

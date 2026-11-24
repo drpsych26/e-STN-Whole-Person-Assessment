@@ -26,7 +26,7 @@ Windows are configurable per deployment with `STN_SAFETY_ACK_MINUTES` (for examp
 
 ## 3. What the software does not do
 
-- It does **not** notify anyone. There is no paging, SMS or email. Notification is a separate, open work item (directive Stage 9) and must not be described as live until it is built, tested and staffed.
+- **Notifications (engineering only, not live):** opening an escalation queues a content-free notice (no client identity, no clinical detail) to the client record's owning clinician and to any subjects in `STN_SAFETY_NOTIFY_SUBJECTS`. An overdue notice goes out once per escalation. **No provider is approved or configured, so nothing is sent** (`STN_NOTIFY_PROVIDER=disabled`). There is still no paging or phone call, and a sent message doesn't mean anyone has read it. Who is notified, and how fast, is part of D-SAFE-01.
 - It does **not** imply that anyone is monitoring the queue. Client-facing text must not say or suggest that STN staff monitor clients continuously unless a staffed roster exists.
 - It does **not** cover the period when no clinician is on duty. **Open decision D-SAFE-01:** the owner and the clinical lead must define the out-of-hours pathway (for example, client-facing instruction to call 111 or 1737, plus next-business-day review of anything opened out of hours).
 

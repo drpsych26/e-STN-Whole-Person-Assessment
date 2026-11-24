@@ -22,8 +22,16 @@ Rules (enforced here and by the schema; covered by tests/test_safety_escalations
   placeholder values below, which are PENDING CLINICAL APPROVAL
   (docs/clinical/SAFETY-ESCALATION-MATRIX.md).
 
-What this module does not do (deliberately): it does not page, text or email anyone and it
-does not imply anyone is watching the queue. A positive screen is not a risk classification:
+Notifications: opening an escalation queues a content-free notice (app.notifications) to the
+client record's owning clinician and to the subjects in STN_SAFETY_NOTIFY_SUBJECTS (comma-separated,
+for an on-call roster), excluding the person who opened it. The notice is in the same transaction,
+so the escalation never depends on the provider; delivery failures are retried and then dead-lettered
+where admins can see them. queue_overdue_notifications() (run by the scheduled dispatcher) sends one
+overdue notice per escalation. Who must be notified, and how fast, is clinical decision D-SAFE-01;
+these recipients are an engineering default.
+
+What this module does not do (deliberately): it does not page or phone anyone, and a sent
+notification does not mean anyone has read it. Nothing here implies anyone is watching the queue. A positive screen is not a risk classification:
 the tier is a clinician's judgement recorded by that clinician. For immediate danger the
 client-facing instruction is always to call 111; nothing here replaces that.
 
@@ -37,7 +45,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from . import audit, db
+from . import audit, db, notifications
 
 SEVERITIES = ("routine_monitoring", "increased_concern", "urgent_assessment", "immediate_emergency")
 SOURCES = frozenset({"assessment_item", "safety_flag", "clinician_report", "client_contact", "third_party_report"})
@@ -54,6 +62,19 @@ DEFAULT_ACK_MINUTES = {
     "routine_monitoring": 7 * 24 * 60,
 }
 _ID = re.compile(r"^[A-Za-z0-9_.:-]{1,128}$")
+NOTIFY_ENV = "STN_SAFETY_NOTIFY_SUBJECTS"
+URGENT_TIERS = frozenset({"immediate_emergency", "urgent_assessment"})
+
+
+def _recipients(conn: db.Conn, org: str, client_id: str, exclude: str | None) -> list[str]:
+    owner = conn.execute("SELECT owner_sub FROM client_records WHERE id = ? AND org_id = ?", (client_id, org)).fetchone()
+    roster = [s.strip() for s in os.getenv(NOTIFY_ENV, "").split(",") if s.strip()]
+    people = ([owner["owner_sub"]] if owner else []) + roster
+    return [p for p in dict.fromkeys(people) if p != exclude]
+
+
+def _priority(severity: str) -> str:
+    return "urgent" if severity in URGENT_TIERS else "routine"
 
 
 class EscalationError(Exception):
@@ -164,6 +185,9 @@ def open_escalation(actor: str, org: str, body: dict[str, Any]) -> dict[str, Any
                 (escalation_id, org, client_id, assessment_id, source, severity, actor, stamp),
             )
             result = _view(_load(conn, org, escalation_id))
+            result["notified"] = notifications.enqueue(
+                conn, org, "safety_escalation_opened", _recipients(conn, org, client_id, actor),
+                {"priority": _priority(severity), "reference": escalation_id}, f"esc:{escalation_id}:opened")
         audit.append(conn, actor, f"safety_escalation.open.{severity}", "safety_escalation",
                      escalation_id if error is None else client_id, outcome, org=org)
     return _finish(error, result)
@@ -262,3 +286,17 @@ def for_client(actor: str, org: str, client_id: str) -> list[dict[str, Any]]:
             ).fetchall()
         audit.append(conn, actor, "safety_escalation.client_history", "client", client_id, outcome, org=org)
     return _finish(error, [_view(r) for r in rows])
+
+
+def queue_overdue_notifications(now: datetime | None = None) -> int:
+    """For every organisation, queue one overdue notice per open (unacknowledged) overdue escalation."""
+    now = now or datetime.now(timezone.utc)
+    queued = 0
+    with db.transaction() as conn:
+        for row in conn.execute("SELECT * FROM safety_escalations WHERE status = 'open'").fetchall():
+            if not _view(row, now)["overdue"]:
+                continue
+            queued += notifications.enqueue(
+                conn, row["org_id"], "safety_escalation_overdue", _recipients(conn, row["org_id"], row["client_id"], None),
+                {"priority": _priority(row["severity"]), "reference": row["id"]}, f"esc:{row['id']}:overdue")
+    return queued
