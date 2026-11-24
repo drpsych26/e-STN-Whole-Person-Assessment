@@ -2,7 +2,7 @@
 <html lang="en-NZ">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'sha256-ppPfYaGZuVq34qT3M+1vD+daT4rgIEyTCXtqVBabLhQ='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#08070a"><meta name="apple-mobile-web-app-capable" content="yes">
 <title>STN | Clinical Follow-Up & Diagnostic Formulation</title>
@@ -34,7 +34,7 @@ button,input,textarea,select{font-family:var(--stn-body)}
 <section id="formulation"><h2>6. Integrated formulation</h2><label for="fivePs">5Ps formulation (presenting, predisposing, precipitating, perpetuating, protective)</label><textarea id="fivePs"></textarea><label for="twhare">Te Whare Tapa Whā (taha tinana, hinengaro, whānau, wairua; whenua where relevant)</label><textarea id="twhare"></textarea><label for="integrated">Integrated formulation and maintaining factors</label><textarea id="integrated"></textarea><label for="uncertainty">Uncertainty, missing evidence and limitations</label><textarea id="uncertainty"></textarea></section>
 <section><h2>7. Diagnostic indications — clinician decision support</h2><p class="small">Choose an evidence status, not an automated diagnosis. Formal diagnosis requires an appropriately qualified and authorised clinician acting within scope.</p><div id="diagnosisRows"></div><label for="diagnosticRationale">Rationale, supporting evidence, contradictions and differential</label><textarea id="diagnosticRationale"></textarea></section>
 <section id="plan"><h2>8. Whole-person care and referral plan</h2><label for="goals">Client-prioritised goals</label><textarea id="goals"></textarea><label for="interventions">Interventions, supports and referrals (including wrap-around needs)</label><textarea id="interventions"></textarea><label for="coordination">Care coordination, consent to share and responsible person</label><textarea id="coordination"></textarea><div class="grid"><div><label for="reviewInterval">Review interval / next appointment</label><input id="reviewInterval" placeholder="e.g. date or timeframe"></div><div><label for="outcomes">Outcome measures / monitoring plan</label><textarea id="outcomes"></textarea></div></div><label for="clinicianDecision">Clinician decision and rationale</label><textarea id="clinicianDecision"></textarea><label for="signoff">Clinician sign-off</label><input id="signoff"></section>
-<section id="report"><h2>9. Summary / export</h2><div class="status" id="saveStatus">Not saved in this browser yet.</div><p class="small">This demonstration stores entered information in local browser storage on this device. It does not securely transmit or synchronise records to the initial assessment or a clinical backend.</p><div class="actions"><button class="primary" onclick="saveForm()">Save locally</button><button class="secondary" onclick="buildReport()">Generate summary</button><button class="secondary" onclick="window.print()">Print / save as PDF</button><button class="secondary" onclick="downloadJson()">Export JSON</button></div><div id="reportOutput"></div></section>
+<section id="report"><h2>9. Summary / export</h2><div class="status" id="saveStatus">Not saved in this browser yet.</div><p class="small">This demonstration stores entered information in local browser storage on this device. It does not securely transmit or synchronise records to the initial assessment or a clinical backend.</p><div class="actions"><button class="primary" data-action="saveForm">Save locally</button><button class="secondary" data-action="buildReport">Generate summary</button><button class="secondary" data-action="print">Print / save as PDF</button><button class="secondary" data-action="downloadJson">Export JSON</button></div><div id="reportOutput"></div></section>
 </main><footer>STN · Clinical follow-up prototype · Not for production clinical use.</footer>
 <script>
 const domains=[['depression','Depressive symptoms / mood'],['anxiety','Anxiety and worry'],['trauma','Trauma-related symptoms'],['attention','Attention / executive functioning'],['moodEpisodes','Mania / hypomania history'],['psychosis','Psychotic symptoms / reality testing'],['substanceDomain','Substance-related and medication effects'],['neurodevelopment','Neurodevelopmental / developmental considerations'],['personality','Enduring interpersonal / emotion-regulation patterns'],['sleepMedical','Sleep, medical and other differential factors']];
@@ -50,4 +50,32 @@ function buildReport(){state=collect();const f=state.fields;const line=(label,va
 function esc(s){return String(s||'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
 function downloadJson(){const data=JSON.stringify(collect(),null,2),blob=new Blob([data],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='stn-followup-assessment-demo.json';a.click();URL.revokeObjectURL(url)}
 init();
+/* STN strict-CSP dispatcher */
+(function(){
+  var actions={
+    show:function(t){show(t.getAttribute('data-arg'));},
+    goFollowUp:function(){location.assign('follow-up-assessment.html');},
+    saveDataThenSafety:function(){saveData();show('safety');},
+    print:function(){window.print();},
+    setRisk:function(t){setRisk(t.getAttribute('data-q'),t.getAttribute('data-value'));}
+  };
+  var changes={setAnswer:function(t){setAnswer(t.getAttribute('data-q'),t.value);}};
+  if(typeof buildReport==='function'){actions.buildReport=function(){buildReport();};}
+  if(typeof downloadJson==='function'){actions.downloadJson=function(){downloadJson();};}
+  if(typeof saveForm==='function'){actions.saveForm=function(){saveForm();};}
+  if(typeof document.addEventListener!=='function'){return;}
+  document.addEventListener('click',function(e){
+    var t=e.target&&e.target.closest?e.target.closest('[data-action]'):null;
+    if(!t){return;}
+    var fn=actions[t.getAttribute('data-action')];
+    if(fn){fn(t);}
+  });
+  document.addEventListener('change',function(e){
+    var t=e.target;
+    if(!t||!t.getAttribute){return;}
+    var fn=changes[t.getAttribute('data-change')];
+    if(fn){fn(t);}
+  });
+})();
+
 </script></body></html>
