@@ -18,7 +18,7 @@ import uuid
 from typing import Any
 
 from . import audit, db
-from .crypto import decrypt_payload, encrypt_payload
+from .crypto import RecordIntegrityError, decrypt_payload, encrypt_payload
 from .db import DB_ENV, StoreNotConfigured  # re-exported for callers and tests
 
 __all__ = ["DB_ENV", "StoreNotConfigured", "RecordNotFound", "RecordDisposed", "create_record", "read_record",
@@ -73,7 +73,8 @@ def read_record(actor: str, org: str, record_id: str) -> dict[str, Any]:
         audit.append(conn, actor, "read", "client", record_id, outcome, org=org)
     if failure is not None:
         raise failure
-    assert payload is not None
+    if payload is None:  # explicit check: assert statements are removed under python -O
+        raise RecordIntegrityError(record_id)
     return payload
 
 

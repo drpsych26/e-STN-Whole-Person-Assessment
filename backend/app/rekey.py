@@ -33,8 +33,13 @@ from .store import client_aad
 SYSTEM_ACTOR = "system:rekey"
 
 
+_TABLES = frozenset({"client_records", "assessments", "correction_statements"})
+
+
 def _rows(conn: db.Conn, table: str, org: str | None) -> list[dict[str, Any]]:
-    sql = f"SELECT * FROM {table} WHERE disposed_at IS NULL"
+    if table not in _TABLES:  # table names are never caller-controlled; refuse anything unexpected
+        raise ValueError(f"Unknown table {table!r}.")
+    sql = f"SELECT * FROM {table} WHERE disposed_at IS NULL"  # table name is from _TABLES only
     params: tuple = ()
     if org is not None:
         sql += " AND org_id = ?"

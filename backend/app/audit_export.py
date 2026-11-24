@@ -89,7 +89,8 @@ class AzureBlobSink:
                             "Content-Type": "application/octet-stream", "Content-Length": str(len(data or b""))})
         request = urllib.request.Request(f"{self.endpoint}/{container}/{name}", data=data, method=method, headers=headers)
         try:
-            with urllib.request.urlopen(request, timeout=60) as response:  # noqa: S310 (https only, checked above)
+            # Bandit B310 reviewed: the endpoint is required to be https in __init__.
+            with urllib.request.urlopen(request, timeout=60) as response:  # nosec B310
                 return response.read()
         except urllib.error.HTTPError as exc:
             if exc.code in (409, 412):

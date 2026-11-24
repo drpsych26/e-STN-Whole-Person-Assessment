@@ -15,7 +15,7 @@ Session of 25 Nov 2026 (04:56–06:10 NZDT). Next session: start here.
 ## Next engineering steps (in order)
 
 1. After the owner merges: rebase any remaining stacked PRs, re-run the full suite on `main`, close #52 as superseded.
-2. Add `pip-audit` and Bandit to backend CI (security register).
+2. Done in #72: pip-audit and Bandit in CI. Keep `bandit-baseline.json` for reviewed findings only.
 3. Client portal UI (web): sign-in, invitation claim, onboarding checklist, acknowledgements, own assessments, crisis panel embed, notification preferences. Uses the #63/#64/#66 APIs.
 4. Clinician and admin web UI for safety escalations, client-account activation, registration attestation and the notification dead-letter view.
 5. Flutter: port the crisis panel to a widget (needs a Flutter toolchain), wire client sign-in.
