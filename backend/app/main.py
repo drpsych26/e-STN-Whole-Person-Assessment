@@ -50,6 +50,33 @@ async def per_ip_rate_limit(request: Request, call_next):
     return await call_next(request)
 
 
+# JSON API responses never need to load scripts, styles or frames. The interactive API docs do,
+# so they keep FastAPI's defaults and get every header except the CSP.
+_DOCS_PATHS = ("/docs", "/redoc", "/openapi.json")
+_API_CSP = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+_SECURITY_HEADERS = {
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Cross-Origin-Opener-Policy": "same-origin",
+    "Cross-Origin-Resource-Policy": "same-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+}
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    """Security headers on every response, including rate-limit refusals and errors."""
+    response = await call_next(request)
+    for name, value in _SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    if not request.url.path.startswith(_DOCS_PATHS):
+        response.headers.setdefault("Content-Security-Policy", _API_CSP)
+        response.headers.setdefault("Cache-Control", "no-store")
+    return response
+
+
 @app.get("/health/live", tags=["health"])
 def liveness() -> dict[str, str]:
     """Kept for existing callers; /healthz is the platform liveness probe."""
