@@ -21,14 +21,16 @@ app = FastAPI(
     title="STN API",
     version="0.5.0",
     description=(
-        "Non-live integration API. Clinician sign-in via OIDC, server-side roles "
-        "(clinician, reviewer, admin), MFA enforcement and organisation scoping; encrypted, "
-        "owner-scoped client and assessment records with key rotation; human review and "
-        "sign-off workflow; consent records, legal holds and two-person disposal; logged "
-        "exports; reviewer assignment; clinician account registry with two-person "
-        "reactivation and access review; client access and correction requests; rate "
-        "limiting (in-process or Redis); hash-chained audit. No diagnosis, scoring, risk "
-        "disposition or crisis automation is exposed."
+        "Non-live integration API (synthetic data only). Clinician and client sign-in via OIDC; "
+        "server-side roles (clinician, reviewer, admin, client), MFA and organisation scoping; "
+        "verified-registration enforcement for clinical routes; identity-provider verification "
+        "events; client invitation, onboarding and own-record access; encrypted, owner-scoped "
+        "records with key rotation; human review and sign-off; consent, legal holds and two-person "
+        "disposal; reviewer assignment; account registry; privacy access and correction requests; "
+        "safety escalations (open, acknowledge, hand over, resolve) with a notification outbox; a "
+        "public crisis-resource register; rate limiting; hash-chained audit with verified export. "
+        "No diagnosis, scoring, risk disposition or automated crisis response is exposed, and "
+        "nothing here is clinically approved."
     ),
 )
 
@@ -120,3 +122,10 @@ app.include_router(identity_router)
 app.include_router(onboarding_router)
 app.include_router(notification_router)
 app.include_router(crisis_router)
+
+
+# Registered last, so it is the outermost middleware: every response (including rate-limit
+# refusals and errors) gets an X-Request-ID and one structured access-log line.
+from . import observability  # noqa: E402
+
+app.middleware("http")(observability.middleware)
