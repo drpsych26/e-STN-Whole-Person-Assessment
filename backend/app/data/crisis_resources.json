@@ -1,0 +1,297 @@
+{
+  "schema": "stn-crisis-resources/1",
+  "approval": {
+    "status": "provisional",
+    "clinically_approved": false,
+    "notice": "Provisional content. Wording and tiers need approval from STN's clinical lead (D-SAFE-01). Contact details verified 25 November 2026; regional numbers must be checked against the source PDF by a person before release."
+  },
+  "verified_on": "2026-11-25",
+  "sources": [
+    {
+      "title": "Mental Health Foundation: Helplines and local mental health services (June 2026)",
+      "url": "https://mentalhealth.org.nz/media/zpagc3e5/helplines_june-2026_final_pages.pdf"
+    },
+    {
+      "title": "Mental Health Foundation: National helplines",
+      "url": "https://mentalhealth.org.nz/get-help-support/helplines-support/national-helplines/"
+    },
+    {
+      "title": "Lifeline Aotearoa: reduced operating hours (6 Nov 2025)",
+      "url": "https://www.lifeline.org.nz/about-us/news/lifeline-aotearoa-reduces-operating-hours-due-to-funding-constraints"
+    }
+  ],
+  "stn_statement": "STN is not an emergency service. Messages and forms in this app are not monitored around the clock, and sending one does not contact emergency services or a crisis team.",
+  "tiers": [
+    {
+      "id": "immediate_danger",
+      "order": 1,
+      "heading": "Immediate danger",
+      "when": "Someone's life is at risk now, or they cannot be kept safe.",
+      "actions": [
+        {
+          "label": "Call 111",
+          "phone": "111",
+          "tel": "111",
+          "hours": "24/7",
+          "detail": "Police, fire and ambulance. Or go to your nearest hospital emergency department."
+        }
+      ]
+    },
+    {
+      "id": "urgent_crisis",
+      "order": 2,
+      "heading": "Urgent mental-health crisis",
+      "when": "You need urgent mental-health help today but no one is in immediate danger.",
+      "actions": [
+        {
+          "label": "Your local mental-health crisis team",
+          "regional": true,
+          "hours": "Varies by region",
+          "detail": "Choose your region to see the number. If you are unsure, call 111."
+        }
+      ]
+    },
+    {
+      "id": "distress",
+      "order": 3,
+      "heading": "Distress: talk to someone now",
+      "when": "You are struggling and want to talk to a trained person.",
+      "actions": [
+        {
+          "label": "1737 Need to talk?",
+          "phone": "1737",
+          "tel": "1737",
+          "hours": "24/7",
+          "detail": "Free call or text a trained counsellor."
+        },
+        {
+          "label": "Samaritans",
+          "phone": "0800 726 666",
+          "tel": "0800726666",
+          "hours": "24/7",
+          "detail": "If you are lonely or in distress."
+        },
+        {
+          "label": "Suicide Crisis Helpline",
+          "phone": "0508 828 865",
+          "tel": "0508828865",
+          "hours": "7am to midnight",
+          "detail": "If you are thinking about suicide, or worried about someone. Not 24/7: overnight, call 1737 or 111."
+        },
+        {
+          "label": "Lifeline",
+          "phone": "0800 543 354",
+          "tel": "0800543354",
+          "sms": "4357",
+          "hours": "7am to midnight",
+          "detail": "Free call, or text 4357. Not 24/7."
+        }
+      ]
+    },
+    {
+      "id": "routine_support",
+      "order": 4,
+      "heading": "Routine support",
+      "when": "Questions about your appointments, your account or non-urgent support.",
+      "actions": [
+        {
+          "label": "Healthline",
+          "phone": "0800 611 116",
+          "tel": "0800611116",
+          "hours": "24/7",
+          "detail": "Free health advice from health professionals."
+        },
+        {
+          "label": "Contact STN",
+          "hours": "Business hours (to be confirmed)",
+          "detail": "Use the contact details on the STN website. STN does not respond to messages around the clock."
+        }
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "northland",
+      "name": "Northland",
+      "status": "see_source",
+      "teams": []
+    },
+    {
+      "id": "auckland",
+      "name": "Auckland",
+      "status": "see_source",
+      "teams": []
+    },
+    {
+      "id": "waikato",
+      "name": "Waikato",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Hamilton",
+          "phone": "0800 505 050",
+          "tel": "0800505050"
+        }
+      ]
+    },
+    {
+      "id": "bay_of_plenty",
+      "name": "Bay of Plenty",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Tauranga",
+          "phone": "0800 800 508",
+          "tel": "0800800508"
+        },
+        {
+          "place": "Whakatāne",
+          "phone": "0800 77 45 45",
+          "tel": "0800774545"
+        },
+        {
+          "place": "Rotorua and Taupō",
+          "phone": "0800 166 167",
+          "tel": "0800166167"
+        }
+      ]
+    },
+    {
+      "id": "tairawhiti",
+      "name": "Tairāwhiti",
+      "status": "see_source",
+      "teams": []
+    },
+    {
+      "id": "hawkes_bay",
+      "name": "Hawke's Bay",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Napier and Hastings",
+          "phone": "0800 112 334",
+          "tel": "0800112334"
+        }
+      ]
+    },
+    {
+      "id": "taranaki",
+      "name": "Taranaki",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "New Plymouth",
+          "phone": "0508 292 467",
+          "tel": "0508292467"
+        }
+      ]
+    },
+    {
+      "id": "manawatu_whanganui",
+      "name": "Manawatū-Whanganui",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Palmerston North",
+          "phone": "0800 653 357",
+          "tel": "0800653357"
+        },
+        {
+          "place": "Whanganui",
+          "phone": "0800 653 358",
+          "tel": "0800653358"
+        }
+      ]
+    },
+    {
+      "id": "wairarapa",
+      "name": "Wairarapa",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Masterton",
+          "phone": "0508 432 432",
+          "tel": "0508432432"
+        }
+      ]
+    },
+    {
+      "id": "wellington",
+      "name": "Wellington, Hutt and Kāpiti",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Wellington, Hutt and Kāpiti",
+          "phone": "0800 745 477",
+          "tel": "0800745477"
+        }
+      ]
+    },
+    {
+      "id": "nelson_marlborough",
+      "name": "Nelson, Marlborough and Tasman",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Nelson and Golden Bay",
+          "phone": "0800 776 364",
+          "tel": "0800776364"
+        },
+        {
+          "place": "Marlborough",
+          "phone": "0800 948 497",
+          "tel": "0800948497"
+        }
+      ]
+    },
+    {
+      "id": "canterbury",
+      "name": "Canterbury",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Christchurch",
+          "phone": "0800 920 092",
+          "tel": "0800920092"
+        }
+      ]
+    },
+    {
+      "id": "south_canterbury",
+      "name": "South Canterbury",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Timaru",
+          "phone": "0800 277 997",
+          "tel": "0800277997"
+        }
+      ]
+    },
+    {
+      "id": "west_coast",
+      "name": "West Coast",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Greymouth",
+          "phone": "0800 757 678",
+          "tel": "0800757678"
+        }
+      ]
+    },
+    {
+      "id": "otago_southland",
+      "name": "Otago and Southland",
+      "status": "transcribed_pending_check",
+      "teams": [
+        {
+          "place": "Otago and Southland (press 1 Southland, 2 Otago)",
+          "phone": "0800 467 846",
+          "tel": "0800467846"
+        }
+      ]
+    }
+  ],
+  "see_source_text": "We have not confirmed this region's crisis-team number. Find it in the Mental Health Foundation helplines directory (mentalhealth.org.nz), or call 111."
+}

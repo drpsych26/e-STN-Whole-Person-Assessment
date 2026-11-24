@@ -18,7 +18,7 @@ redis = ["redis>=5,<8"]
 azure = ["azure-identity>=1.19,<2", "azure-keyvault-secrets>=4.9,<5"]
 
 [tool.setuptools.package-data]
-app = ["migrations/*/*.sql"]
+app = ["migrations/*/*.sql", "data/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
