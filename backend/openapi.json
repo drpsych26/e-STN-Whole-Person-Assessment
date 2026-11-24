@@ -3562,6 +3562,85 @@
           }
         }
       }
+    },
+    "/v1/scoring/instruments": {
+      "get": {
+        "tags": [
+          "scoring"
+        ],
+        "summary": "Instruments",
+        "description": "Licence register: implemented instruments (and whether active) and those not implemented, with reasons.",
+        "operationId": "instruments_v1_scoring_instruments_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Instruments V1 Scoring Instruments Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/scoring/{instrument_id}": {
+      "post": {
+        "tags": [
+          "scoring"
+        ],
+        "summary": "Score",
+        "description": "Body: {\"responses\": {\"phq9_1\": 0, ...}}. Stateless: nothing is stored except an audit event.",
+        "operationId": "score_v1_scoring__instrument_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "instrument_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Instrument Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Score V1 Scoring  Instrument Id  Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

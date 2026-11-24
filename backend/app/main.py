@@ -16,6 +16,7 @@ from .identity_events import router as identity_router
 from .onboarding_routes import router as onboarding_router
 from .notification_routes import router as notification_router
 from .crisis_resources import router as crisis_router
+from .scoring_routes import router as scoring_router
 
 app = FastAPI(
     title="STN API",
@@ -122,6 +123,7 @@ app.include_router(identity_router)
 app.include_router(onboarding_router)
 app.include_router(notification_router)
 app.include_router(crisis_router)
+app.include_router(scoring_router)
 
 
 # Registered last, so it is the outermost middleware: every response (including rate-limit
