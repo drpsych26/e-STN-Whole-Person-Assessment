@@ -180,6 +180,16 @@ class RedisRateLimiter:
         allowed, retry_ms = self._run(key, limit, window, False)
         return (False, 0) if allowed else (True, self._seconds(retry_ms))
 
+    def ping(self) -> None:
+        """Readiness probe: the shared store answers (raises RateLimitUnavailable otherwise)."""
+        try:
+            if not self._redis.ping():
+                raise RateLimitUnavailable("Rate-limit store is unavailable.")
+        except RateLimitUnavailable:
+            raise
+        except Exception as exc:
+            raise RateLimitUnavailable("Rate-limit store is unavailable.") from exc
+
     def reset(self) -> None:
         """Delete this limiter's keys (tests and operator use)."""
         try:

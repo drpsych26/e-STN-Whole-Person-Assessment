@@ -1,0 +1,7 @@
+# Only the app package, the entrypoint and the lock file are needed in the image.
+*
+!app/
+!docker-entrypoint.sh
+!requirements.lock
+app/**/__pycache__
+app/**/*.pyc
