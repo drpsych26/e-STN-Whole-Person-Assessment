@@ -33,8 +33,9 @@ App repository (`drpsych26/e-STN-Whole-Person-Assessment`). Stacked PRs retarget
 | 4 | #66 | `feature/crisis-panel` (on #64) | D-15 crisis panel (provisional) | 9/9 |
 | 5 | #68 | `feature/immutable-audit-retention` (on #66) | D-18/D-13 evidence storage (off) and export job | 11/11 |
 | 6 | #69 | `feature/observability` (on #68) | Request ids, structured logs | 9/9 |
-| 7 | #70 | `feature/server-side-scoring` (on #69) | PHQ-9/GAD-7 scoring (inactive) | see PR |
-| 8 | this PR | `docs/status-registers` (on #70) | These registers | — |
+| 7 | #70 | `feature/server-side-scoring` (on #69) | PHQ-9/GAD-7 scoring (inactive) | green |
+| 8 | #71 | `docs/status-registers` (on #70) | These registers | docs |
+| 9 | #72 | `ci/security-scanning` (on #71) | pip-audit + Bandit gate; two hardenings | see PR |
 | any | #60 (draft) | `feature/release-gates` (on main) | G01–G13 engine and dashboard | 10 + 1 skipped |
 | — | #61 | `docs/status-update-2026-11-25` | Another session's go-live-gate note | not reviewed here |
 | never | #52 | `feature/stage1-corrections` | Reference only. **Do not merge.** Close after this stack lands | — |

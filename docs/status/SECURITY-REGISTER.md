@@ -17,6 +17,7 @@ Updated 25 Nov 2026. Controls in place, residual risks, and verification. Findin
 | Logging | Route templates only; no ids, bodies or tokens; request ids; content-free 500s | `observability.py` | `test_observability.py` |
 | Headers | HSTS, nosniff, DENY framing, no-referrer, COOP/CORP, strict API CSP, no-store | `main.py` | `test_security_headers.py` |
 | Browser | Prototypes: no inline handlers, script-src by hash. Crisis panel: script-src 'self' | `prototype/`, `frontend/` | headless Chrome runs |
+| Dependency and static analysis | pip-audit (strict, locked deps: 0 known vulnerabilities); Bandit medium+ against a reviewed baseline (20 B608, none injectable) | `backend-api.yml` security-scan (#72) | probe file fails the gate |
 | Supply chain | All actions SHA-pinned; no untrusted interpolation; no pull_request_target; contents: write only in artifact-only jobs | workflows | `check_workflow_security.py` in CI |
 | Android signing | Keystore written only after tests; removed always; release job separate and opt-in | `android-apk.yml` | static check (no Flutter here) |
 | Notifications | Ids/codes only in parameters; no client identity in templates; memory provider refused in hosted envs | `notifications.py` | `test_notifications.py` |
@@ -31,5 +32,4 @@ Updated 25 Nov 2026. Controls in place, residual risks, and verification. Findin
 | No penetration test | High | Gate G08: independent tester before release |
 | No live IdP, Key Vault, storage, or restore test | High | Azure + Entra (external dependencies) |
 | `style-src 'unsafe-inline'` in prototypes | Low | Move style attributes to classes when the prototypes are replaced |
-| Dependency scanning beyond Dependabot (pip-audit, SAST) | Medium | Next session: add pip-audit and Bandit to CI |
 | Prototype `localStorage` | Medium | Synthetic UAT only; never identifiable data |
