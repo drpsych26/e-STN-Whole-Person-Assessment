@@ -43,6 +43,8 @@ Windows are configurable per deployment with `STN_SAFETY_ACK_MINUTES` (for examp
 
 ## 5. New Zealand crisis contacts (verified 25 November 2026)
 
+The machine-readable register used by the client crisis panel is `backend/app/data/crisis_resources.json` (component: `frontend/crisis-panel/`). It also lists regional crisis-team numbers transcribed from the Mental Health Foundation directory (June 2026), which a person must check against the PDF before release.
+
 Checked against the Mental Health Foundation helplines directory, Lifeline Aotearoa's own notice of 6 November 2025, and the Health New Zealand HealthEd helplines resource. Re-verify before any release and at least every quarter: these services have changed hours recently.
 
 | Service | Contact | Hours | Notes |

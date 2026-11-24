@@ -3509,6 +3509,59 @@
           }
         }
       }
+    },
+    "/v1/public/crisis-resources": {
+      "get": {
+        "tags": [
+          "public"
+        ],
+        "summary": "Crisis Resources",
+        "description": "Public, unauthenticated. Crisis contacts by tier, optionally with one region's crisis team.",
+        "operationId": "crisis_resources_v1_public_crisis_resources_get",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[a-z_]{2,40}$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Region"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Crisis Resources V1 Public Crisis Resources Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

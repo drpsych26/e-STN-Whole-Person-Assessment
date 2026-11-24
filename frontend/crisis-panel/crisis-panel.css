@@ -1,0 +1,20 @@
+/* Neutral, high-contrast styling; inherits the host page's fonts. */
+.stn-crisis{border:2px solid #1a1a1a;border-radius:12px;padding:16px;background:#fff;color:#111;max-width:760px}
+.stn-crisis h2{margin:0 0 8px;font-size:1.4rem}
+.stn-crisis h3{margin:0 0 4px;font-size:1.1rem}
+.stn-crisis-statement{font-weight:600}
+.stn-crisis-provisional{background:#fff4d6;border:1px solid #8a6d00;color:#3d3000;padding:8px;border-radius:8px}
+.stn-crisis-region{margin:12px 0;display:flex;flex-direction:column;gap:4px}
+.stn-crisis-region select{min-height:44px;font-size:1rem;padding:6px;border:1px solid #333;border-radius:6px;background:#fff;color:#111}
+.stn-crisis-tier{border-top:1px solid #ccc;padding:12px 0}
+.stn-crisis-immediate_danger{border-left:6px solid #b00020;padding-left:10px}
+.stn-crisis-urgent_crisis{border-left:6px solid #c45a00;padding-left:10px}
+.stn-crisis-distress{border-left:6px solid #2f4f8f;padding-left:10px}
+.stn-crisis-routine_support{border-left:6px solid #555;padding-left:10px}
+.stn-crisis ul{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:10px}
+.stn-crisis li{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:baseline}
+.stn-crisis-label{font-weight:700;flex-basis:100%}
+.stn-crisis-call{display:inline-block;min-height:44px;line-height:44px;padding:0 14px;border-radius:22px;background:#111;color:#fff;text-decoration:none;font-weight:700}
+.stn-crisis-call:focus-visible,.stn-crisis select:focus-visible{outline:3px solid #2f6fdf;outline-offset:2px}
+.stn-crisis-hours{font-weight:600}
+.stn-crisis-detail,.stn-crisis-when,.stn-crisis-verified{color:#333}
