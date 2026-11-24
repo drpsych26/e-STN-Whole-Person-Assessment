@@ -1,0 +1,275 @@
+name: Deploy staging (manual)
+
+# Manual only. Synthetic data only: staging must never hold identifiable client information.
+# Runbook: docs/operations/DEPLOYMENT-RUNBOOK.md
+#
+# Order of work (nothing in Azure changes until the preflight step passes):
+#   1. preflight: required GitHub variables present and well formed
+#   2. OIDC login (workload identity federation; no client secrets)
+#   3. foundation: network, DNS, monitoring, identities, Key Vault, registry, PostgreSQL, Redis
+#   4. image: build and push stn-api:<commit> (or reuse an existing tag for a rollback)
+#   5. migrate: the 'migrate' slot runs the new image, applies migrations, and must report ready
+#   6. release: the API slot moves to the new image; /readyz must report the new build
+#   The migrate slot is always stopped afterwards.
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "foundation = infrastructure only (first run); full = infrastructure, migrations and API"
+        type: choice
+        options: [full, foundation]
+        default: full
+      image_tag:
+        description: "Rollback: redeploy this existing image tag instead of building the commit. Leave empty normally."
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      STN_DEPLOY_PRINCIPAL_OBJECT_ID: ${{ vars.AZURE_DEPLOY_PRINCIPAL_OBJECT_ID }}
+      STN_OIDC_ISSUER: ${{ vars.STN_OIDC_ISSUER }}
+      STN_OIDC_AUDIENCE: ${{ vars.STN_OIDC_AUDIENCE }}
+      STN_OIDC_JWKS_URL: ${{ vars.STN_OIDC_JWKS_URL }}
+      STN_OIDC_ROLE_MAP: ${{ vars.STN_OIDC_ROLE_MAP }}
+      STN_OIDC_ORG_CLAIM: ${{ vars.STN_OIDC_ORG_CLAIM }}
+      STN_MFA_ACRS_VALUES: ${{ vars.STN_MFA_ACRS_VALUES }}
+      STN_BOOTSTRAP_ADMIN_ORG: ${{ vars.STN_BOOTSTRAP_ADMIN_ORG }}
+      STN_BOOTSTRAP_ADMIN_SUBJECT: ${{ vars.STN_BOOTSTRAP_ADMIN_SUBJECT }}
+      PHASE: ${{ inputs.phase }}
+      INPUT_IMAGE_TAG: ${{ inputs.image_tag }}
+      PARAMS: infra/azure/staging.bicepparam
+      BICEP_VERSION: v0.49.2
+      BICEP_SHA256: 0ab9de90c2493f206f8281bae74f9ee2d5ed3605548dab1adf41fef185e1f7c5
+    steps:
+      - name: Preflight (stops here, changing nothing, if staging is not configured)
+        run: |
+          missing=""
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_RESOURCE_GROUP; do
+            if [ -z "$(printenv "$name")" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error title=Staging is not configured::Missing variables in the GitHub 'staging' environment:${missing}. Nothing was changed. Follow docs/operations/DEPLOYMENT-RUNBOOK.md sections 2-5."
+            exit 1
+          fi
+          guid='^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID; do
+            if ! printenv "$name" | grep -Eq "$guid"; then
+              echo "::error title=Staging is misconfigured::${name} is not a GUID. Nothing was changed."
+              exit 1
+            fi
+          done
+          if [ -n "$STN_DEPLOY_PRINCIPAL_OBJECT_ID" ] && ! printf '%s' "$STN_DEPLOY_PRINCIPAL_OBJECT_ID" | grep -Eq "$guid"; then
+            echo "::error title=Staging is misconfigured::AZURE_DEPLOY_PRINCIPAL_OBJECT_ID is not a GUID. Nothing was changed."
+            exit 1
+          fi
+          if ! printf '%s' "$AZURE_RESOURCE_GROUP" | grep -Eq '^[A-Za-z0-9._()-]{1,90}$'; then
+            echo "::error title=Staging is misconfigured::AZURE_RESOURCE_GROUP is not a valid resource group name. Nothing was changed."
+            exit 1
+          fi
+          if [ -n "$INPUT_IMAGE_TAG" ] && ! printf '%s' "$INPUT_IMAGE_TAG" | grep -Eq '^[A-Za-z0-9._-]{1,64}$'; then
+            echo "::error title=Invalid input::image_tag must match ^[A-Za-z0-9._-]{1,64}\$. Nothing was changed."
+            exit 1
+          fi
+          if [ "$PHASE" = "full" ] && [ -z "$STN_OIDC_ISSUER$STN_OIDC_AUDIENCE" ]; then
+            echo "::warning::STN_OIDC_ISSUER / STN_OIDC_AUDIENCE are not set: the API will refuse every sign-in until they are."
+          fi
+          echo "Preflight passed (phase: ${PHASE})."
+
+      - uses: actions/checkout@v7
+
+      - name: Install pinned Bicep CLI (checksum verified)
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/bicep" \
+            "https://github.com/Azure/bicep/releases/download/${BICEP_VERSION}/bicep-linux-x64"
+          echo "${BICEP_SHA256}  $RUNNER_TEMP/bicep" | sha256sum --check --strict
+          chmod +x "$RUNNER_TEMP/bicep"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Azure login (OIDC)
+        id: login
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3.1.0
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Use the pinned Bicep CLI from Azure CLI
+        run: |
+          az config set bicep.use_binary_from_path=true bicep.check_version=false --only-show-errors
+          az bicep version
+
+      - name: Deploy foundation
+        id: foundation
+        env:
+          STN_DEPLOY_COMPUTE: "false"
+        run: |
+          az group show --name "$AZURE_RESOURCE_GROUP" --query id -o none || {
+            echo "::error::Resource group $AZURE_RESOURCE_GROUP does not exist or this identity cannot read it (runbook section 2)."
+            exit 1
+          }
+          az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "stn-foundation-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --parameters "$PARAMS" \
+            --query properties.outputs -o json > "$RUNNER_TEMP/foundation.json"
+          {
+            echo "registry=$(jq -r .registryName.value "$RUNNER_TEMP/foundation.json")"
+            echo "login_server=$(jq -r .registryLoginServer.value "$RUNNER_TEMP/foundation.json")"
+            echo "app=$(jq -r .appName.value "$RUNNER_TEMP/foundation.json")"
+            echo "key_vault=$(jq -r .keyVaultName.value "$RUNNER_TEMP/foundation.json")"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check the data-encryption keys exist (metadata only; no secret value is read)
+        if: inputs.phase == 'full'
+        env:
+          KEY_VAULT: ${{ steps.foundation.outputs.key_vault }}
+        run: |
+          key_ids=$(bicep build-params "$PARAMS" --stdout | jq -r '.parametersJson | fromjson | .parameters.dataKeySecretNames.value[]')
+          [ -n "$key_ids" ] || { echo "::error::No data key ids in $PARAMS."; exit 1; }
+          for key_id in $key_ids; do
+            if ! az resource show --resource-group "$AZURE_RESOURCE_GROUP" \
+                --namespace Microsoft.KeyVault --parent "vaults/${KEY_VAULT}" \
+                --resource-type secrets --name "$key_id" --query id -o none 2>/dev/null; then
+              echo "::error title=Data key missing::Key Vault ${KEY_VAULT} has no secret '${key_id}'. Add it (runbook section 6), then re-run. Infrastructure is deployed; no API change was made."
+              exit 1
+            fi
+            echo "Data key secret '${key_id}' present."
+          done
+
+      - name: Build and push image, or select the rollback image
+        id: image
+        if: inputs.phase == 'full'
+        env:
+          REGISTRY: ${{ steps.foundation.outputs.registry }}
+          LOGIN_SERVER: ${{ steps.foundation.outputs.login_server }}
+        run: |
+          if [ -n "$INPUT_IMAGE_TAG" ]; then
+            tag="$INPUT_IMAGE_TAG"
+            az acr repository show --name "$REGISTRY" --image "stn-api:${tag}" -o none || {
+              echo "::error::Image stn-api:${tag} is not in ${REGISTRY}. Nothing was changed in the app."
+              exit 1
+            }
+          else
+            tag="${GITHUB_SHA::12}"
+            az acr login --name "$REGISTRY"
+            docker build --pull=false --build-arg "STN_BUILD_ID=${tag}" \
+              --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+              -t "${LOGIN_SERVER}/stn-api:${tag}" backend
+            docker push "${LOGIN_SERVER}/stn-api:${tag}"
+          fi
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+          echo "Release image: stn-api:${tag}"
+
+      - name: Record the image the API runs now
+        id: current
+        if: inputs.phase == 'full'
+        env:
+          APP: ${{ steps.foundation.outputs.app }}
+          NEW_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          current=""
+          if fx=$(az webapp config show --resource-group "$AZURE_RESOURCE_GROUP" --name "$APP" --query linuxFxVersion -o tsv 2>/dev/null); then
+            case "$fx" in *"/stn-api:"*) current="${fx##*/stn-api:}" ;; esac
+          fi
+          if [ -z "$current" ]; then
+            current="$NEW_TAG"
+            echo "First compute deployment: the API starts on the new image and is not ready until migrations finish."
+          fi
+          echo "tag=${current}" >> "$GITHUB_OUTPUT"
+          echo "API currently runs: stn-api:${current}"
+
+      - name: Deploy migrate slot with the new image (API image unchanged)
+        if: inputs.phase == 'full'
+        env:
+          STN_DEPLOY_COMPUTE: "true"
+          STN_API_IMAGE_TAG: ${{ steps.current.outputs.tag }}
+          STN_MIGRATE_IMAGE_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "stn-migrate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --parameters "$PARAMS" -o none
+
+      - name: Run migrations (migrate slot must report ready on the new build)
+        if: inputs.phase == 'full'
+        env:
+          APP: ${{ steps.foundation.outputs.app }}
+          NEW_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          az webapp start --resource-group "$AZURE_RESOURCE_GROUP" --name "$APP" --slot migrate
+          host=$(az webapp show --resource-group "$AZURE_RESOURCE_GROUP" --name "$APP" --slot migrate --query defaultHostName -o tsv)
+          expected="{\"status\":\"ready\",\"build\":\"${NEW_TAG}\"}"
+          for attempt in $(seq 1 90); do
+            body=$(curl -sS --max-time 10 "https://${host}/readyz" || true)
+            if [ "$(printf '%s' "$body" | jq -c . 2>/dev/null)" = "$expected" ]; then
+              echo "Migrations applied; migrate slot ready on ${NEW_TAG} (attempt ${attempt})."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error title=Migrations did not complete::The migrate slot did not report ready on ${NEW_TAG} within 15 minutes. The API still runs its previous image. Check the slot's console logs in Log Analytics (runbook section 12)."
+          exit 1
+
+      - name: Release the new image to the API
+        if: inputs.phase == 'full'
+        env:
+          STN_DEPLOY_COMPUTE: "true"
+          STN_API_IMAGE_TAG: ${{ steps.image.outputs.tag }}
+          STN_MIGRATE_IMAGE_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          az deployment group create \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "stn-release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --parameters "$PARAMS" -o none
+
+      - name: Smoke test /healthz and /readyz
+        if: inputs.phase == 'full'
+        env:
+          APP: ${{ steps.foundation.outputs.app }}
+          NEW_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          host=$(az webapp show --resource-group "$AZURE_RESOURCE_GROUP" --name "$APP" --query defaultHostName -o tsv)
+          expected="{\"status\":\"ready\",\"build\":\"${NEW_TAG}\"}"
+          for attempt in $(seq 1 60); do
+            body=$(curl -sS --max-time 10 "https://${host}/readyz" || true)
+            if [ "$(printf '%s' "$body" | jq -c . 2>/dev/null)" = "$expected" ]; then
+              live=$(curl -fsS --max-time 10 "https://${host}/healthz" | jq -c .)
+              [ "$live" = "{\"status\":\"alive\",\"build\":\"${NEW_TAG}\"}" ] || { echo "::error::/healthz returned ${live}"; exit 1; }
+              echo "Staging API ready on ${NEW_TAG}: https://${host}"
+              echo "### Staging deployed: \`stn-api:${NEW_TAG}\` on https://${host}" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error title=Smoke test failed::/readyz did not report ready on ${NEW_TAG} within 10 minutes (last response: ${body:-none}). See runbook section 9 for rollback."
+          exit 1
+
+      - name: Stop the migrate slot
+        if: always() && steps.login.outcome == 'success' && steps.foundation.outputs.app != ''
+        env:
+          APP: ${{ steps.foundation.outputs.app }}
+        run: |
+          if az webapp show --resource-group "$AZURE_RESOURCE_GROUP" --name "$APP" --slot migrate --query id -o none 2>/dev/null; then
+            az webapp stop --resource-group "$AZURE_RESOURCE_GROUP" --name "$APP" --slot migrate
+            echo "Migrate slot stopped."
+          fi

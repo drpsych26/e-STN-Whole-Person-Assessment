@@ -1,0 +1,97 @@
+name: STN infrastructure validation
+
+# Compiles and lints the Bicep templates and checks the deploy workflow's guard rails.
+# No Azure login and no credentials: nothing here can reach a subscription.
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra-validate.yml"
+      - ".github/workflows/deploy-staging.yml"
+      - "tools/check_deploy_workflows.py"
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra-validate.yml"
+      - ".github/workflows/deploy-staging.yml"
+      - "tools/check_deploy_workflows.py"
+
+permissions:
+  contents: read
+
+jobs:
+  bicep:
+    runs-on: ubuntu-latest
+    env:
+      BICEP_VERSION: v0.49.2
+      BICEP_SHA256: 0ab9de90c2493f206f8281bae74f9ee2d5ed3605548dab1adf41fef185e1f7c5
+    defaults:
+      run:
+        working-directory: infra/azure
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install pinned Bicep CLI (checksum verified)
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/bicep" \
+            "https://github.com/Azure/bicep/releases/download/${BICEP_VERSION}/bicep-linux-x64"
+          echo "${BICEP_SHA256}  $RUNNER_TEMP/bicep" | sha256sum --check --strict
+          chmod +x "$RUNNER_TEMP/bicep"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Build template (linter errors fail the build)
+        run: bicep build main.bicep --outfile "$RUNNER_TEMP/main.json"
+      - name: Lint template
+        run: bicep lint main.bicep
+      - name: Build parameter files (foundation phase)
+        run: |
+          bicep build-params staging.bicepparam --outfile "$RUNNER_TEMP/staging.foundation.json"
+          bicep build-params production.bicepparam --outfile "$RUNNER_TEMP/production.foundation.json"
+      - name: Build parameter files (compute phase, synthetic image tags)
+        env:
+          STN_DEPLOY_COMPUTE: "true"
+          STN_API_IMAGE_TAG: ci0000000000
+          STN_MIGRATE_IMAGE_TAG: ci0000000001
+          STN_OIDC_ISSUER: https://issuer.invalid/v2.0
+          STN_OIDC_AUDIENCE: api://stn-ci
+        run: |
+          bicep build-params staging.bicepparam --outfile "$RUNNER_TEMP/staging.compute.json"
+          bicep build-params production.bicepparam --outfile "$RUNNER_TEMP/production.compute.json"
+          python3 - "$RUNNER_TEMP/staging.compute.json" <<'PY'
+          import json, sys
+          params = json.load(open(sys.argv[1]))["parameters"]
+          assert params["deployCompute"]["value"] is True
+          assert params["apiImageTag"]["value"] == "ci0000000000"
+          assert params["migrateImageTag"]["value"] == "ci0000000001"
+          assert params["location"]["value"] == "newzealandnorth"
+          assert params["postgresGeoRedundantBackup"]["value"] == "Disabled"
+          print("compute-phase parameters resolve as expected")
+          PY
+      - name: Template security properties
+        run: |
+          python3 - "$RUNNER_TEMP/main.json" <<'PY'
+          import json, sys
+          text = open(sys.argv[1]).read()
+          template = json.loads(text)
+          assert template["parameters"]["location"]["defaultValue"] == "newzealandnorth"
+          for needle in ('"passwordAuth": "Disabled"', '"enablePurgeProtection": true',
+                         '"adminUserEnabled": false', '"minimumTlsVersion": "1.2"',
+                         'require_secure_connection', '"httpsOnly": true',
+                         '"ftpsState": "Disabled"', '"enableRbacAuthorization": true'):
+              assert needle in text, f"missing {needle}"
+          assert text.count('"publicNetworkAccess": "Disabled"') >= 2, "database and Redis must be private"
+          for word in ("administratorLoginPassword", "clientSecret"):
+              assert word not in text, f"template must not contain {word}"
+          print("template security properties present")
+          PY
+
+  deploy-workflow-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install PyYAML
+        run: python -m pip install "pyyaml==6.0.2"
+      - name: Check deploy-staging.yml guard rails
+        run: python tools/check_deploy_workflows.py

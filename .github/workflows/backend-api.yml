@@ -115,3 +115,103 @@ jobs:
       - name: Run API tests with the Redis rate-limit store (SQLite)
         run: python -m pytest -rs
 
+
+  container-image:
+    # Builds the production image and runs it as it will run in Azure: read-only root
+    # filesystem, no capabilities, migration role first, then the API as a least-privilege
+    # runtime role with auto-migration off. Then scans it; HIGH/CRITICAL with a fix fail.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: stn_ci
+          POSTGRES_PASSWORD: stn_ci_only
+          POSTGRES_DB: stn_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U stn_ci -d stn_ci"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      IMAGE: stn-api:ci
+      # Throwaway CI database and role; these credentials are not secrets.
+      PG_ADMIN_URL: postgresql://stn_ci:stn_ci_only@localhost:5432/stn_ci
+      PG_RUNTIME_URL: postgresql://stn_runtime:stn_runtime_ci_only@localhost:5432/stn_ci
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build image
+        run: docker build --pull --build-arg STN_BUILD_ID="${GITHUB_SHA::12}" -t "$IMAGE" backend
+      - name: Create a least-privilege runtime role (synthetic)
+        run: |
+          docker run --rm --network host -e PGPASSWORD=stn_ci_only postgres:16 \
+            psql -v ON_ERROR_STOP=1 -h localhost -U stn_ci -d stn_ci \
+            -c "CREATE ROLE stn_runtime LOGIN PASSWORD 'stn_runtime_ci_only'"
+      - name: Run the migration role and wait for readiness
+        run: |
+          docker run -d --name stn-migrate --network host --read-only --tmpfs /tmp \
+            --cap-drop ALL --security-opt no-new-privileges \
+            -e STN_PROCESS_ROLE=migrate -e PORT=8001 \
+            -e STN_DATABASE_URL="$PG_ADMIN_URL" -e STN_DB_RUNTIME_ROLE=stn_runtime \
+            -e STN_BOOTSTRAP_ADMIN_ORG=org-ci -e STN_BOOTSTRAP_ADMIN_SUBJECT=subject-ci-admin "$IMAGE"
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/readyz || true)
+            [ "$code" = "200" ] && break; sleep 1
+          done
+          docker logs stn-migrate
+          test "$code" = "200"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8001/v1/me)" = "404"
+          # The bootstrap admin was registered and activated (synthetic subject).
+          status=$(docker run --rm --network host -e PGPASSWORD=stn_ci_only postgres:16 \
+            psql -At -h localhost -U stn_ci -d stn_ci \
+            -c "SELECT status FROM clinician_accounts WHERE org_id = 'org-ci' AND subject = 'subject-ci-admin'")
+          test "$status" = "active"
+      - name: Run the API as the runtime role (auto-migration off)
+        run: |
+          key="$(python3 -c 'import base64, secrets; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())')"
+          docker run -d --name stn-api --network host --read-only --tmpfs /tmp \
+            --cap-drop ALL --security-opt no-new-privileges \
+            -e PORT=8000 -e STN_DATABASE_URL="$PG_RUNTIME_URL" -e STN_DATABASE_AUTO_MIGRATE=false \
+            -e STN_DATA_KEY="$key" "$IMAGE"
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/readyz || true)
+            [ "$code" = "200" ] && break; sleep 1
+          done
+          docker logs stn-api
+          test "$code" = "200"
+      - name: Check probes, identity and headers
+        run: |
+          set -euo pipefail
+          curl -sf http://127.0.0.1:8000/healthz | tee /tmp/healthz.json
+          python3 - <<'PY'
+          import json, os
+          body = json.load(open("/tmp/healthz.json"))
+          assert body == {"status": "alive", "build": os.environ["GITHUB_SHA"][:12]}, body
+          PY
+          test "$(curl -s http://127.0.0.1:8000/readyz)" = "{\"status\":\"ready\",\"build\":\"${GITHUB_SHA::12}\"}"
+          ! curl -sI http://127.0.0.1:8000/healthz | grep -qi '^server:'
+          test "$(docker exec stn-api id -u)" = "10001"
+          ! docker exec stn-api sh -c 'touch /srv/app/x' 2>/dev/null
+          # Protected routes refuse a request without a bearer token.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/v1/me)" = "401"
+          # The container's own HEALTHCHECK reports healthy.
+          for i in $(seq 1 24); do
+            [ "$(docker inspect --format '{{.State.Health.Status}}' stn-api)" = "healthy" ] && exit 0; sleep 5
+          done
+          docker inspect --format '{{json .State.Health}}' stn-api; exit 1
+      - name: Not ready without a database
+        run: |
+          docker run -d --name stn-nodb --network host --read-only --tmpfs /tmp -e PORT=8002 "$IMAGE"
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:8002/healthz >/dev/null && break; sleep 1; done
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8002/readyz)" = "503"
+      - name: Vulnerability scan (fail on fixable HIGH/CRITICAL)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: stn-api:ci
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
+          severity: CRITICAL,HIGH

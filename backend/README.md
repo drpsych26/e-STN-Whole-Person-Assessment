@@ -89,7 +89,7 @@ The generated OpenAPI document is `openapi.json`. Regenerate it after route chan
 | `STN_KEY_PROVIDER` | `env` (default) or `azure-keyvault` |
 | `STN_DATA_KEYS`, `STN_DATA_ACTIVE_KEY_ID` | Keyring for the `env` provider: `<key-id>:<urlsafe-base64 32 bytes>,...` and the id used for new writes |
 | `STN_DATA_KEY` | Single-key setting, still accepted as key id `legacy` (active when it is the only key). Generate keys with `python -c "import base64,secrets;print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())"`, keep them in a secrets manager, and never commit them |
-| `STN_KEYVAULT_URL`, `STN_KEYVAULT_KEY_IDS` | Key Vault provider: vault URL and secret names (each name is the key id). Needs `azure-identity` and `azure-keyvault-secrets`, which are not dependencies yet; without them the provider fails closed |
+| `STN_KEYVAULT_URL`, `STN_KEYVAULT_KEY_IDS` | Key Vault provider: vault URL and secret names (each name is the key id). Needs the `azure` pip extra (`azure-identity`, `azure-keyvault-secrets`; included in the container image); without it the provider fails closed. Uses the managed identity named by `AZURE_CLIENT_ID` |
 | `STN_RETENTION_PERIOD_DAYS` | Minimum retention period before disposal. Unset or invalid means disposal is refused. Set only the value confirmed by legal advice |
 | `STN_RATE_LIMIT_IP_PER_MINUTE`, `STN_RATE_LIMIT_WRITES_PER_MINUTE`, `STN_RATE_LIMIT_AUTH_FAILURES_PER_MINUTE` | Limits (defaults 600, 120, 20). `STN_RATE_LIMIT_ENABLED=false` disables them for local debugging only |
 | `STN_TRUST_FORWARDED_FOR` | Use the first `X-Forwarded-For` address as the client IP. Enable only behind a proxy that overwrites that header |
@@ -100,6 +100,13 @@ The generated OpenAPI document is `openapi.json`. Regenerate it after route chan
 | `STN_ACCESS_REVIEW_STALE_DAYS` | Active accounts unused for this many days are flagged in the access review (default 90) |
 | `STN_PRIVACY_RESPONSE_WORKING_DAYS` | Working days after receipt for the due date of access and correction requests. Unset means no due dates. Set only the value the privacy officer has confirmed |
 | `STN_PRIVACY_NON_WORKING_DATES`, `STN_PRIVACY_EXCLUDE_SUMMER_PERIOD` | Comma-separated `YYYY-MM-DD` dates (public holidays) that do not count; `true` also skips 25 December to 15 January. Both need the privacy officer's confirmation |
+| `STN_DATABASE_AUTH` | `password` (default: credentials in the URL, or none) or `azure-managed-identity` (a Microsoft Entra token for the managed identity named by `AZURE_CLIENT_ID` is used as the PostgreSQL password; needs the `azure` extra; fails closed with 503 if no token is available) |
+| `STN_DATABASE_AUTO_MIGRATE` | Default on (migrations are applied on first use). Set `false` in deployed API instances: migrations then run only in the separate migration step, and the API reports not ready until the schema matches its build |
+| `STN_BUILD_ID` | Build identifier shown by `/healthz` and `/readyz` (the image sets it to the commit). Only `[A-Za-z0-9._-]{1,64}` is shown; anything else reads `unknown` |
+| `STN_READINESS_CACHE_SECONDS` | How long a `/readyz` result is reused (default 5; 0 disables) |
+| `STN_PROCESS_ROLE` | Container only: `api` (default) or `migrate` (see "Container image") |
+| `STN_DB_RUNTIME_ROLE`, `STN_DB_CREATE_ENTRA_PRINCIPAL` | Migration step only: the API's database role to grant data privileges to, and whether to create it first as a Microsoft Entra principal |
+| `STN_BOOTSTRAP_ADMIN_ORG`, `STN_BOOTSTRAP_ADMIN_SUBJECT` | Migration step only: register and activate this subject in the account registry if it has never been registered (an existing account is never changed) |
 
 ## Local synthetic-only run
 
@@ -117,6 +124,24 @@ Redis tests (the shared rate-limit store) run when `STN_TEST_REDIS_URL` is set, 
 
 CI runs three passes: SQLite, PostgreSQL (fails rather than skips if the database is unavailable, then runs the backup/restore drill below), and SQLite with the Redis rate-limit store (fails rather than skips if Redis is unavailable).
 
+## Health, readiness and the migration step
+
+- `GET /healthz` (liveness): `{"status": "alive", "build": "<id>"}`. No dependencies, no authentication. `GET /health/live` remains for older probes.
+- `GET /readyz` (readiness): 200 `{"status": "ready", "build": "<id>"}` only when the database schema exactly matches this build, the active data key is available and the shared rate-limit store answers (when enabled); otherwise 503 `{"status": "not_ready", "build": "<id>"}`. It never says which check failed; the server log records the check name and exception class only.
+- `python -m app.migrate` applies migrations as a separate step (idempotent, advisory-locked on PostgreSQL), prints the schema version, and can create the API's Entra database principal, grant it data privileges only (no CREATE, ALTER or ownership) and bootstrap the first registry account. `--status` reports without changing anything. Exit 0 success, 1 failure, 2 configuration error.
+
+## Container image
+
+`backend/Dockerfile` builds a two-stage image from a digest-pinned `python:3.12-slim-bookworm`, installs `requirements.lock` (hash-pinned, generated with `uv pip compile --extra postgres --extra redis --extra azure --generate-hashes`) with `--require-hashes`, and runs as user 10001 with the application read-only, so it also runs with a read-only root filesystem (`--read-only --tmpfs /tmp`). No secrets are baked in; configuration comes from the environment. `STN_PROCESS_ROLE=api` serves the API; `STN_PROCESS_ROLE=migrate` runs `python -m app.migrate` and, if it succeeds, serves only `/healthz` and `/readyz` (`app.migrate_server`). CI builds the image, runs both roles against PostgreSQL 16 with a least-privilege runtime role, checks the probes, the non-root user and the read-only application, and scans the image with Trivy (fails on fixable HIGH or CRITICAL findings).
+
+```sh
+cd backend
+docker build --build-arg STN_BUILD_ID=local -t stn-api:local .
+docker run --rm --read-only --tmpfs /tmp -p 8000:8000 -e STN_DATA_DB=/tmp/stn.sqlite3 stn-api:local
+```
+
+Deployment to Azure (Bicep templates in `infra/azure/`, manual staging workflow): `docs/operations/DEPLOYMENT-RUNBOOK.md`.
+
 ## Key rotation
 
 1. Generate a new key and add it to the keyring next to the current one (`STN_DATA_KEYS`, or a new Key Vault secret listed in `STN_KEYVAULT_KEY_IDS`).
@@ -131,8 +156,8 @@ CI runs three passes: SQLite, PostgreSQL (fails rather than skips if the databas
 ## Not in this increment (required before any real client data)
 
 - An operator procedure for moving pre-v2 rows out of organisation `unassigned`; joiner/mover/leaver procedures that keep the account registry and the identity provider's role assignments in step.
-- Connection pooling, idempotency keys and a correlation-id policy; Azure Cache for Redis (private endpoint, TLS) or gateway limits provisioned for production.
-- A live Key Vault integration test (managed identity, secret permissions, rotation in a staging subscription) and a decision on per-record envelope keys; point-in-time recovery and disaster-recovery exercises in Azure.
+- Connection pooling, idempotency keys and a correlation-id policy. Azure Managed Redis (private endpoint, TLS) is defined in `infra/azure/` but not provisioned.
+- A live Key Vault integration test (managed identity, secret permissions, rotation in the staging subscription) and a decision on per-record envelope keys; point-in-time recovery and disaster-recovery exercises in Azure. The deploy kit defines these resources; none has been deployed.
 - An approved clinical field schema; the legally confirmed retention period and anchor; the approved consent text and its versions; the privacy officer's confirmed response period, working-day rules and access-request procedure (identity checks, withholding grounds, secure release to the client, transfers).
 - The clinical safety SOP: who acknowledges flags, coverage hours, timeouts, escalation and incident recording, all approved by clinical governance.
 - Privacy impact assessment, threat model, independent penetration test, and production go-live approval.

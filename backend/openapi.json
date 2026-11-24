@@ -3,7 +3,7 @@
   "info": {
     "title": "STN API",
     "description": "Non-live integration API. Clinician sign-in via OIDC, server-side roles (clinician, reviewer, admin), MFA enforcement and organisation scoping; encrypted, owner-scoped client and assessment records with key rotation; human review and sign-off workflow; consent records, legal holds and two-person disposal; logged exports; reviewer assignment; clinician account registry with two-person reactivation and access review; client access and correction requests; rate limiting (in-process or Redis); hash-chained audit. No diagnosis, scoring, risk disposition or crisis automation is exposed.",
-    "version": "0.4.0"
+    "version": "0.5.0"
   },
   "paths": {
     "/health/live": {
@@ -12,6 +12,7 @@
           "health"
         ],
         "summary": "Liveness",
+        "description": "Kept for existing callers; /healthz is the platform liveness probe.",
         "operationId": "liveness_health_live_get",
         "responses": {
           "200": {
@@ -25,6 +26,50 @@
                   "type": "object",
                   "title": "Response Liveness Health Live Get"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/healthz": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Healthz",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Healthz Healthz Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/readyz": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Readyz",
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }

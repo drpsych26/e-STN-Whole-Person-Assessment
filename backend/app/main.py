@@ -2,7 +2,7 @@
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from . import ratelimit
+from . import health, ratelimit
 from .assessment_routes import audit_router
 from .assessment_routes import router as assessments_router
 from .auth import require_identity
@@ -14,7 +14,7 @@ from .rbac import mfa_required
 
 app = FastAPI(
     title="STN API",
-    version="0.4.0",
+    version="0.5.0",
     description=(
         "Non-live integration API. Clinician sign-in via OIDC, server-side roles "
         "(clinician, reviewer, admin), MFA enforcement and organisation scoping; encrypted, "
@@ -51,7 +51,11 @@ async def per_ip_rate_limit(request: Request, call_next):
 
 @app.get("/health/live", tags=["health"])
 def liveness() -> dict[str, str]:
+    """Kept for existing callers; /healthz is the platform liveness probe."""
     return {"status": "alive"}
+
+
+app.include_router(health.make_router(health.api_readiness))
 
 
 @app.get("/v1/me", tags=["identity"])
