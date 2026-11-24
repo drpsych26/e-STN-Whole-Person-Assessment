@@ -32,6 +32,28 @@ jobs:
       - name: Run API tests (SQLite)
         run: python -m pytest
 
+  security-scan:
+    # Dependency vulnerabilities (pip-audit, fails on any known vulnerability in the hash-locked set)
+    # and static analysis (Bandit, medium+ severity; reviewed findings are in bandit-baseline.json,
+    # so only new findings fail).
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: "3.12"
+      - name: Install scanners (pinned)
+        run: python -m pip install "pip-audit==2.10.1" "bandit==1.9.4"
+      - name: pip-audit (locked runtime dependencies)
+        run: pip-audit --strict --progress-spinner off -r requirements.lock
+      - name: Bandit (new medium/high findings fail)
+        run: bandit -q -r app -ll -b bandit-baseline.json
+
   api-tests-postgres:
     runs-on: ubuntu-latest
     services:
