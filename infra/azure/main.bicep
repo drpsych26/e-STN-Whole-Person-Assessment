@@ -57,6 +57,19 @@ param postgresHighAvailability string = 'Disabled'
 
 // Redis (shared rate-limit store). Without it, run exactly one API instance.
 param redisEnabled bool = true
+
+@description('Deploy write-once evidence storage for audit exports and database dumps (D-13, D-18). Chargeable: off until approved.')
+param deployEvidenceStorage bool = false
+
+@description('Evidence storage redundancy. ZRS keeps three copies across zones inside New Zealand North.')
+@allowed([ 'Standard_LRS', 'Standard_ZRS' ])
+param evidenceStorageSku string = 'Standard_ZRS'
+
+@description('Retention lock (days) for audit-chain exports. Default 10 years; confirm with the privacy officer.')
+param auditRetentionDays int = 3650
+
+@description('Retention lock (days) for logical database dumps.')
+param dumpRetentionDays int = 35
 param redisSkuName string = 'Balanced_B0'
 
 // Registry
@@ -128,6 +141,7 @@ var names = {
   registry: 'acrstn${envShort}${suffix}'
   postgres: 'pg-stn-${envShort}-${suffix}'
   redis: 'redis-stn-${envShort}-${suffix}'
+  evidence: 'ststnev${envShort}${suffix}'
   plan: 'asp-stn-${envShort}-nzn'
   app: 'app-stn-api-${envShort}-${suffix}'
 }
@@ -235,6 +249,38 @@ module registryEndpoint 'modules/privateEndpoint.bicep' = {
   }
 }
 
+module blobZone 'modules/privateDnsZone.bicep' = if (deployEvidenceStorage) {
+  name: 'dns-blob'
+  params: { zoneName: 'privatelink.blob.${environment().suffixes.storage}', vnetId: network.outputs.vnetId, tags: allTags }
+}
+
+module evidenceStorage 'modules/evidence-storage.bicep' = if (deployEvidenceStorage) {
+  name: 'evidence-storage'
+  params: {
+    location: location
+    tags: allTags
+    name: names.evidence
+    skuName: evidenceStorageSku
+    workspaceId: monitoring.outputs.workspaceId
+    writerPrincipalId: identities.outputs.migratePrincipalId
+    auditRetentionDays: auditRetentionDays
+    dumpRetentionDays: dumpRetentionDays
+  }
+}
+
+module evidenceEndpoint 'modules/privateEndpoint.bicep' = if (deployEvidenceStorage) {
+  name: 'pe-evidence'
+  params: {
+    location: location
+    tags: allTags
+    name: 'pe-${names.evidence}'
+    subnetId: network.outputs.endpointSubnetId
+    targetResourceId: evidenceStorage!.outputs.id
+    groupId: 'blob'
+    privateDnsZoneId: blobZone!.outputs.zoneId
+  }
+}
+
 module postgres 'modules/postgres.bicep' = {
   name: 'postgres'
   params: {
@@ -335,6 +381,7 @@ var migrateSettings = union(
     STN_DATABASE_AUTH: 'azure-managed-identity'
     STN_DB_RUNTIME_ROLE: names.apiIdentity
     STN_DB_CREATE_ENTRA_PRINCIPAL: 'true'
+    STN_EVIDENCE_BLOB_ENDPOINT: deployEvidenceStorage ? evidenceStorage!.outputs.blobEndpoint : ''
   },
   empty(bootstrapAdminOrg) || empty(bootstrapAdminSubject) ? {} : {
     STN_BOOTSTRAP_ADMIN_ORG: bootstrapAdminOrg
@@ -376,3 +423,4 @@ output keyVaultName string = keyVault.outputs.name
 output postgresServerName string = postgres.outputs.name
 output apiIdentityName string = names.apiIdentity
 output migrateIdentityName string = names.migrateIdentity
+output evidenceStorageName string = deployEvidenceStorage ? evidenceStorage!.outputs.name : ''
