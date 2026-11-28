@@ -237,3 +237,31 @@ def test_admin_governance_routes_need_admin_and_same_org(backend, act, retention
     assert client.post("/v1/admin/legal-holds", json={"client_id": cid, "reason_code": "x"}).status_code == 404
     assert client.post("/v1/admin/disposals", json={"client_id": cid, "reason_code": "x"}).status_code == 404
     assert client.get("/v1/admin/retention/due").json() == []
+
+
+def test_unresolved_safety_escalation_blocks_disposal(backend, act, retention):
+    cid = new_client(act)
+    act(OWNER, "clinician")
+    aid = client.post("/v1/assessments", json={"client_id": cid, "form_id": "f", "form_version": "v1",
+                                               "payload": PAYLOAD}).json()["id"]
+    esc = client.post("/v1/safety-escalations", json={"client_id": cid, "source": "clinician_report",
+                                                      "severity": "increased_concern"}).json()["id"]
+    retention()
+    act(ADMIN1, "admin")
+    assert client.get("/v1/admin/retention/due").json() == []
+    blocked = request_disposal(act, cid)
+    assert blocked.status_code == 409 and "safety escalation" in blocked.json()["detail"]
+
+    act(OWNER, "clinician")
+    client.post(f"/v1/safety-escalations/{esc}/acknowledge")
+    assert client.post(f"/v1/safety-escalations/{esc}/resolve", json={
+        "resolution_code": "monitoring_plan_documented", "documentation_ref": aid}).status_code == 200
+    disposal = request_disposal(act, cid)
+    assert disposal.status_code == 201, disposal.text
+
+    act(OWNER, "clinician")  # concern raised again after the request: approval must be refused
+    assert client.post("/v1/safety-escalations", json={"client_id": cid, "source": "client_contact",
+                                                       "severity": "urgent_assessment"}).status_code == 201
+    act(ADMIN2, "admin")
+    response = client.post(f"/v1/admin/disposals/{disposal.json()['id']}/approve")
+    assert response.status_code == 409 and "safety escalation" in response.json()["detail"]

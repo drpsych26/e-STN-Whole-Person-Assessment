@@ -21,8 +21,8 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -57,8 +57,8 @@ jobs:
       # Fail instead of skipping if the PostgreSQL pass cannot run.
       STN_REQUIRE_PG_TESTS: "1"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -104,8 +104,8 @@ jobs:
       # Fail instead of skipping if the Redis tests cannot run.
       STN_REQUIRE_REDIS_TESTS: "1"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: "3.12"
           cache: pip
@@ -141,7 +141,7 @@ jobs:
       PG_ADMIN_URL: postgresql://stn_ci:stn_ci_only@localhost:5432/stn_ci
       PG_RUNTIME_URL: postgresql://stn_runtime:stn_runtime_ci_only@localhost:5432/stn_ci
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Build image
         run: docker build --pull --build-arg STN_BUILD_ID="${GITHUB_SHA::12}" -t "$IMAGE" backend
       - name: Create a least-privilege runtime role (synthetic)

@@ -2630,6 +2630,266 @@
           }
         ]
       }
+    },
+    "/v1/safety-escalations": {
+      "get": {
+        "tags": [
+          "safety"
+        ],
+        "summary": "Unresolved Queue",
+        "description": "Open and acknowledged escalations: overdue first, then highest tier, then oldest. Codes and ids only.",
+        "operationId": "unresolved_queue_v1_safety_escalations_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Unresolved Queue V1 Safety Escalations Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "safety"
+        ],
+        "summary": "Open Escalation",
+        "description": "Body: client_id, source, severity, optional assessment_id (required for assessment sources).",
+        "operationId": "open_escalation_v1_safety_escalations_post",
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Open Escalation V1 Safety Escalations Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/v1/safety-escalations/{escalation_id}": {
+      "get": {
+        "tags": [
+          "safety"
+        ],
+        "summary": "Read Escalation",
+        "operationId": "read_escalation_v1_safety_escalations__escalation_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "escalation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Escalation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Read Escalation V1 Safety Escalations  Escalation Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/safety-escalations/{escalation_id}/acknowledge": {
+      "post": {
+        "tags": [
+          "safety"
+        ],
+        "summary": "Acknowledge",
+        "description": "Take ownership (first acknowledgement) or take over ownership (handover).",
+        "operationId": "acknowledge_v1_safety_escalations__escalation_id__acknowledge_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "escalation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Escalation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Acknowledge V1 Safety Escalations  Escalation Id  Acknowledge Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/safety-escalations/{escalation_id}/resolve": {
+      "post": {
+        "tags": [
+          "safety"
+        ],
+        "summary": "Resolve",
+        "description": "Body: resolution_code, documentation_ref (an assessment of the same client).",
+        "operationId": "resolve_v1_safety_escalations__escalation_id__resolve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "escalation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Escalation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Resolve V1 Safety Escalations  Escalation Id  Resolve Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/safety-escalations/by-client/{client_id}": {
+      "get": {
+        "tags": [
+          "safety"
+        ],
+        "summary": "Client History",
+        "operationId": "client_history_v1_safety_escalations_by_client__client_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response Client History V1 Safety Escalations By Client  Client Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

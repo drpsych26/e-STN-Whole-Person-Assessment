@@ -22,6 +22,7 @@ Deployment settings (all fail closed):
 from __future__ import annotations
 
 import os
+import re
 import sqlite3
 import threading
 from contextlib import contextmanager
@@ -43,10 +44,27 @@ class StoreNotConfigured(RuntimeError):
     """Raised when no database is configured or the configured driver is unavailable."""
 
 
+ENVIRONMENT_ENV = "STN_ENVIRONMENT"
+HOSTED_ENVIRONMENTS = frozenset({"staging", "production"})
+_TLS_MODES = re.compile(r"(?:^|[?&])sslmode=(require|verify-ca|verify-full)(?:&|$)")
+
+
+def hosted_environment() -> bool:
+    """True when STN_ENVIRONMENT names a hosted environment (staging or production)."""
+    return os.getenv(ENVIRONMENT_ENV, "").strip().lower() in HOSTED_ENVIRONMENTS
+
+
 def dialect() -> str:
-    if os.getenv(URL_ENV, "").strip():
+    """Pick the database. In a hosted environment, only PostgreSQL over TLS is accepted (fail closed)."""
+    url = os.getenv(URL_ENV, "").strip()
+    if url:
+        if hosted_environment() and not _TLS_MODES.search(url):
+            raise StoreNotConfigured(
+                "Hosted environments require sslmode=require, verify-ca or verify-full in STN_DATABASE_URL.")
         return "postgres"
     if os.getenv(DB_ENV, "").strip():
+        if hosted_environment():
+            raise StoreNotConfigured("SQLite is for tests and local synthetic runs only; staging and production need PostgreSQL.")
         return "sqlite"
     raise StoreNotConfigured("Record store is not configured.")
 
