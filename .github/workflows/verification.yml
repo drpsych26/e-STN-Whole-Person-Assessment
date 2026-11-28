@@ -124,6 +124,8 @@ jobs:
         with:
           flutter-version: '3.47.9'
           cache: true
+      - name: Cache Gradle dependencies
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
       - name: Analyze, test, and build each Flutter project
         shell: bash
         run: |
@@ -159,7 +161,20 @@ jobs:
             dart format --output=none --set-exit-if-changed lib test
             flutter analyze
             flutter test
-            flutter build apk --debug
+            # Retry only transient Maven Central/Gradle 429 responses. Do not mask real build errors.
+            for attempt in 1 2 3; do
+              if flutter build apk --debug 2>&1 | tee /tmp/stn-default-apk-build.log; then
+                break
+              fi
+              if ! grep -qE '429|Too Many Requests' /tmp/stn-default-apk-build.log; then
+                exit 1
+              fi
+              if [ "$attempt" -eq 3 ]; then
+                echo "Gradle dependency resolution remained rate-limited after 3 attempts." >&2
+                exit 1
+              fi
+              sleep $((attempt * 30))
+            done
             cd "$GITHUB_WORKSPACE"
           done
       - name: Default build contains no sign-in plugin
@@ -187,8 +202,8 @@ jobs:
   flutter-clinician-api-variant:
     # Builds the opt-in clinician sign-in variant (AppAuth + package:http) natively,
     # with synthetic placeholder configuration. Nothing here contacts a real service.
-    needs: prototype-static-checks
-    if: needs.prototype-static-checks.outputs.flutter_source_present == 'true'
+    needs: [prototype-static-checks, flutter-build-tests]
+    if: always() && needs.prototype-static-checks.outputs.flutter_source_present == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -196,6 +211,8 @@ jobs:
         with:
           flutter-version: '3.47.9'
           cache: true
+      - name: Cache Gradle dependencies
+        uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
       - name: Restore Flutter v4 source and apply the clinician API build variant
         shell: bash
         run: |
@@ -228,12 +245,27 @@ jobs:
           flutter test
       - name: Build debug APK with clinician sign-in enabled (synthetic configuration)
         working-directory: flutter/source/supportive_therapy_network_v4
-        run: >-
-          flutter build apk --debug
-          --dart-define=STN_API_ENABLED=true
-          --dart-define=STN_API_BASE_URL=https://api.synthetic.invalid
-          --dart-define=STN_OIDC_ISSUER=https://login.synthetic.invalid/tenant/v2.0
-          --dart-define=STN_OIDC_CLIENT_ID=00000000-0000-0000-0000-000000000000
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            if flutter build apk --debug \
+              --dart-define=STN_API_ENABLED=true \
+              --dart-define=STN_API_BASE_URL=https://api.synthetic.invalid \
+              --dart-define=STN_OIDC_ISSUER=https://login.synthetic.invalid/tenant/v2.0 \
+              --dart-define=STN_OIDC_CLIENT_ID=00000000-0000-0000-0000-000000000000 \
+              2>&1 | tee /tmp/stn-clinician-apk-build.log; then
+              break
+            fi
+            if ! grep -qE '429|Too Many Requests' /tmp/stn-clinician-apk-build.log; then
+              exit 1
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Gradle dependency resolution remained rate-limited after 3 attempts." >&2
+              exit 1
+            fi
+            sleep $((attempt * 30))
+          done
       - name: Verify AppAuth redirect scheme and INTERNET permission in the APK
         working-directory: flutter/source/supportive_therapy_network_v4
         shell: bash
